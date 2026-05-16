@@ -20,7 +20,13 @@
     }
 
     .project {
-      margin-top: 20px;
+      margin-top: 24px;
+    }
+
+    .folder {
+      margin-top: 12px;
+      padding-left: 12px;
+      border-left: 1px solid #333;
     }
 
     .card {
@@ -41,6 +47,7 @@
     .meta {
       color: #aaa;
       font-size: 12px;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -48,16 +55,55 @@
 <body>
 
 <h1>80 Studios Scouts</h1>
+<div id="content">Loading projects...</div>
 
-<div class="project">
-  <h2>Test Project</h2>
+<script>
+  const DATA_URL = "/data/projects.json";
+  const content = document.getElementById("content");
 
-  <a class="card" href="/scouts/gallery.html">
-    <div>Test Location / Test Gallery</div>
-    <div class="meta">INT / Test Location</div>
-  </a>
+  function renderFolders(folders) {
+    let html = "";
 
-</div>
+    folders.forEach(folder => {
+      html += `<div class="folder"><h3>${folder.name}</h3>`;
+
+      (folder.galleries || []).forEach(gallery => {
+        html += `
+          <a class="card" href="/scouts/gallery.html?gallery=${gallery.id}">
+            <div>${gallery.title}</div>
+            <div class="meta">${gallery.subtitle || ""}</div>
+          </a>
+        `;
+      });
+
+      if (folder.folders && folder.folders.length > 0) {
+        html += renderFolders(folder.folders);
+      }
+
+      html += `</div>`;
+    });
+
+    return html;
+  }
+
+  fetch(DATA_URL)
+    .then(response => response.json())
+    .then(data => {
+      let html = "";
+
+      (data.projects || []).forEach(project => {
+        html += `<div class="project"><h2>${project.name}</h2>`;
+        html += renderFolders(project.folders || []);
+        html += `</div>`;
+      });
+
+      content.innerHTML = html || "No projects found.";
+    })
+    .catch(error => {
+      content.innerHTML = "Could not load project data.";
+      console.error(error);
+    });
+</script>
 
 </body>
 </html>
