@@ -54,6 +54,25 @@
 }
 
 
+.folder h3 {
+  cursor: pointer;
+  color: #ddd;
+}
+
+.folder h3::before {
+  content: "▾ ";
+  color: #777;
+}
+
+.folder.collapsed h3::before {
+  content: "▸ ";
+}
+
+.folder.collapsed > .folder,
+.folder.collapsed > .card {
+  display: none;
+}
+    
     
     .meta {
       color: #aaa;
@@ -116,6 +135,15 @@
       content.innerHTML = "Could not load project data.";
       console.error(error);
     });
+
+document.addEventListener("click", function(event) {
+  if (event.target.tagName === "H3") {
+    event.target.parentElement.classList.toggle("collapsed");
+  }
+});
+
+
+  
 </script>
 
 </body>
