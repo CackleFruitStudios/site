@@ -68,14 +68,16 @@
       html += `<div class="folder"><h3>${folder.name}</h3>`;
 
       (folder.galleries || []).forEach(gallery => {
-        html += `
-          <a class="card" href="/scouts/gallery.html?gallery=${gallery.id}">
-            <div>${gallery.title}</div>
-            <div class="meta">${gallery.subtitle || ""}</div>
-          </a>
-        `;
-      });
+  const thumb = gallery.images?.[0] || "";
 
+  html += `
+    <a class="card" href="/scouts/gallery.html?gallery=${gallery.id}">
+      ${thumb ? `<img src="${thumb}" class="thumb">` : ""}
+      <div>${gallery.title}</div>
+      <div class="meta">${gallery.subtitle || ""}</div>
+    </a>
+  `;
+});
       if (folder.folders && folder.folders.length > 0) {
         html += renderFolders(folder.folders);
       }
