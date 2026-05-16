@@ -1,9 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Gallery</title>
+  <title>Test Gallery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .header {
+      padding: 20px;
+      text-align: center;
+      font-size: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 5px;
+    }
+
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      cursor: pointer;
+    }
+
+    .lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .lightbox img {
+      max-width: 95%;
+      max-height: 95%;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>Gallery Page</h1>
+
+<div class="header">
+  Test Gallery – Location Name
+</div>
+
+<div class="grid">
+  <img src="PASTE_IMAGE_URL_HERE">
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img">
+</div>
+
+<script>
+  const images = document.querySelectorAll(".grid img");
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightbox-img");
+
+  images.forEach(img => {
+    img.onclick = () => {
+      lightbox.style.display = "flex";
+      lightboxImg.src = img.src;
+    }
+  });
+
+  function closeLightbox() {
+    lightbox.style.display = "none";
+  }
+</script>
+
 </body>
 </html>
