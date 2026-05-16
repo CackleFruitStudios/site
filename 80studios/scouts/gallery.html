@@ -58,28 +58,6 @@
       max-height: 95%;
     }
 
-    .nav {
-      position: fixed;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0,0,0,0.5);
-      color: white;
-      border: 1px solid #444;
-      width: 56px;
-      height: 72px;
-      font-size: 48px;
-      cursor: pointer;
-      z-index: 20;
-    }
-
-    .prev {
-      left: 12px;
-    }
-
-    .next {
-      right: 12px;
-    }
-
     .counter {
       position: fixed;
       bottom: 16px;
@@ -108,9 +86,7 @@
 <div class="grid" id="gallery-grid"></div>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <button class="nav prev" onclick="prevImage(event)">‹</button>
   <img id="lightbox-img" onclick="event.stopPropagation()">
-  <button class="nav next" onclick="nextImage(event)">›</button>
   <div class="counter" id="counter"></div>
 </div>
 
