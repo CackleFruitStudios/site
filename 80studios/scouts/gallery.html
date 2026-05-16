@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Test Gallery</title>
+  <title>Scout Gallery</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <meta name="robots" content="noindex,nofollow">
 
   <style>
@@ -17,7 +16,17 @@
     .header {
       padding: 20px;
       text-align: center;
-      font-size: 20px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      margin: 0 0 6px 0;
+    }
+
+    .header p {
+      margin: 0;
+      color: #aaa;
+      font-size: 14px;
     }
 
     .grid {
@@ -26,28 +35,33 @@
       gap: 5px;
     }
 
-    img {
+    .grid img {
       width: 100%;
       height: auto;
       display: block;
       cursor: pointer;
+      background: #222;
     }
 
     .lightbox {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.9);
+      inset: 0;
+      background: rgba(0,0,0,0.92);
       display: none;
       justify-content: center;
       align-items: center;
+      z-index: 10;
     }
 
     .lightbox img {
       max-width: 95%;
       max-height: 95%;
+    }
+
+    .message {
+      padding: 30px;
+      text-align: center;
+      color: #aaa;
     }
   </style>
 </head>
@@ -55,35 +69,90 @@
 <body>
 
 <div class="header">
-  Test Gallery – Location Name
+  <h1 id="gallery-title">Loading gallery...</h1>
+  <p id="gallery-subtitle"></p>
 </div>
 
-<div class="grid">
-<img src="https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_1.png">
-<img src="https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_2.png">
-<img src="https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_3.png">
-<img src="https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_4.png">
-</div>
+<div class="grid" id="gallery-grid"></div>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightbox-img">
 </div>
 
 <script>
-  const images = document.querySelectorAll(".grid img");
+  const DATA_URL = "/data/projects.json";
+
+  const params = new URLSearchParams(window.location.search);
+  const galleryId = params.get("gallery") || "test-gallery";
+
+  const titleEl = document.getElementById("gallery-title");
+  const subtitleEl = document.getElementById("gallery-subtitle");
+  const gridEl = document.getElementById("gallery-grid");
   const lightbox = document.getElementById("lightbox");
   const lightboxImg = document.getElementById("lightbox-img");
 
-  images.forEach(img => {
-    img.onclick = () => {
-      lightbox.style.display = "flex";
-      lightboxImg.src = img.src;
+  function findGallery(projects, id) {
+    for (const project of projects) {
+      const found = searchFolders(project.folders || [], id);
+      if (found) return found;
     }
-  });
+    return null;
+  }
+
+  function searchFolders(folders, id) {
+    for (const folder of folders) {
+      for (const gallery of folder.galleries || []) {
+        if (gallery.id === id) return gallery;
+      }
+
+      const found = searchFolders(folder.folders || [], id);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function openLightbox(src) {
+    lightbox.style.display = "flex";
+    lightboxImg.src = src;
+  }
 
   function closeLightbox() {
     lightbox.style.display = "none";
+    lightboxImg.src = "";
   }
+
+  fetch(DATA_URL)
+    .then(response => response.json())
+    .then(data => {
+      const gallery = findGallery(data.projects || [], galleryId);
+
+      if (!gallery) {
+        titleEl.textContent = "Gallery not found";
+        gridEl.innerHTML = '<div class="message">Check the gallery ID in the URL.</div>';
+        return;
+      }
+
+      titleEl.textContent = gallery.title || "Untitled Gallery";
+      subtitleEl.textContent = gallery.subtitle || "";
+
+      if (!gallery.images || gallery.images.length === 0) {
+        gridEl.innerHTML = '<div class="message">No images added yet.</div>';
+        return;
+      }
+
+      gallery.images.forEach(src => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = gallery.title || "Scout image";
+        img.onclick = () => openLightbox(src);
+        gridEl.appendChild(img);
+      });
+    })
+    .catch(error => {
+      titleEl.textContent = "Could not load gallery";
+      gridEl.innerHTML = '<div class="message">There was a problem loading projects.json.</div>';
+      console.error(error);
+    });
 </script>
 
 </body>
