@@ -58,6 +58,38 @@
       max-height: 95%;
     }
 
+    .nav {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.5);
+      color: white;
+      border: 1px solid #444;
+      width: 56px;
+      height: 72px;
+      font-size: 48px;
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    .prev {
+      left: 12px;
+    }
+
+    .next {
+      right: 12px;
+    }
+
+    .counter {
+      position: fixed;
+      bottom: 16px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #aaa;
+      font-size: 14px;
+    }
+
     .message {
       padding: 30px;
       text-align: center;
@@ -76,26 +108,35 @@
 <div class="grid" id="gallery-grid"></div>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <img id="lightbox-img">
+  <button class="nav prev" onclick="prevImage(event)">‹</button>
+  <img id="lightbox-img" onclick="event.stopPropagation()">
+  <button class="nav next" onclick="nextImage(event)">›</button>
+  <div class="counter" id="counter"></div>
 </div>
 
 <script>
   const DATA_URL = "/data/projects.json";
 
   const params = new URLSearchParams(window.location.search);
-  const galleryId = params.get("gallery") || "test-gallery";
+  const galleryId = params.get("gallery") || "inkwell-inn-dining-room-heroes";
 
   const titleEl = document.getElementById("gallery-title");
   const subtitleEl = document.getElementById("gallery-subtitle");
   const gridEl = document.getElementById("gallery-grid");
+
   const lightbox = document.getElementById("lightbox");
   const lightboxImg = document.getElementById("lightbox-img");
+  const counterEl = document.getElementById("counter");
+
+  let currentImages = [];
+  let currentIndex = 0;
 
   function findGallery(projects, id) {
     for (const project of projects) {
       const found = searchFolders(project.folders || [], id);
       if (found) return found;
     }
+
     return null;
   }
 
@@ -108,18 +149,88 @@
       const found = searchFolders(folder.folders || [], id);
       if (found) return found;
     }
+
     return null;
   }
 
-  function openLightbox(src) {
+  function updateLightbox() {
+    lightboxImg.src = currentImages[currentIndex];
+    counterEl.textContent = `${currentIndex + 1} / ${currentImages.length}`;
+  }
+
+  function openLightbox(index) {
+    currentIndex = index;
+    updateLightbox();
     lightbox.style.display = "flex";
-    lightboxImg.src = src;
   }
 
   function closeLightbox() {
     lightbox.style.display = "none";
     lightboxImg.src = "";
   }
+
+  function prevImage(event) {
+    event.stopPropagation();
+
+    if (currentImages.length === 0) return;
+
+    currentIndex--;
+
+    if (currentIndex < 0) {
+      currentIndex = currentImages.length - 1;
+    }
+
+    updateLightbox();
+  }
+
+  function nextImage(event) {
+    event.stopPropagation();
+
+    if (currentImages.length === 0) return;
+
+    currentIndex++;
+
+    if (currentIndex >= currentImages.length) {
+      currentIndex = 0;
+    }
+
+    updateLightbox();
+  }
+
+  document.addEventListener("keydown", function(event) {
+    if (lightbox.style.display !== "flex") return;
+
+    if (event.key === "ArrowLeft") {
+      prevImage(event);
+    }
+
+    if (event.key === "ArrowRight") {
+      nextImage(event);
+    }
+
+    if (event.key === "Escape") {
+      closeLightbox();
+    }
+  });
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  lightbox.addEventListener("touchstart", function(event) {
+    touchStartX = event.changedTouches[0].screenX;
+  });
+
+  lightbox.addEventListener("touchend", function(event) {
+    touchEndX = event.changedTouches[0].screenX;
+
+    if (touchEndX < touchStartX - 50) {
+      nextImage(event);
+    }
+
+    if (touchEndX > touchStartX + 50) {
+      prevImage(event);
+    }
+  });
 
   fetch(DATA_URL)
     .then(response => response.json())
@@ -135,16 +246,18 @@
       titleEl.textContent = gallery.title || "Untitled Gallery";
       subtitleEl.textContent = gallery.subtitle || "";
 
-      if (!gallery.images || gallery.images.length === 0) {
+      currentImages = gallery.images || [];
+
+      if (currentImages.length === 0) {
         gridEl.innerHTML = '<div class="message">No images added yet.</div>';
         return;
       }
 
-      gallery.images.forEach(src => {
+      currentImages.forEach((src, index) => {
         const img = document.createElement("img");
         img.src = src;
         img.alt = gallery.title || "Scout image";
-        img.onclick = () => openLightbox(src);
+        img.onclick = () => openLightbox(index);
         gridEl.appendChild(img);
       });
     })
