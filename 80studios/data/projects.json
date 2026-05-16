@@ -1,22 +1,28 @@
 {
   "projects": [
     {
-      "id": "test-pr",
-      "name": "Test Project",
+      "id": "wls4",
+      "name": "White Lotus S4",
       "folders": [
         {
-          "id": "test-gal",
-          "name": "Test Gallery",
-          "galleries": [
+          "id": "ep-408",
+          "name": "Episode 408",
+          "folders": [
             {
-              "id": "test-gallery",
-              "title": "Test Location / Test Gallery",
-              "subtitle": "INT / Test Location",
-              "images": [
-                "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_1.png",
-                "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_2.png",
-                "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_3.png",
-                "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_4.png"
+              "id": "int-dakota-lobby",
+              "name": "INT Dakota Like Apartment - Lobby",
+              "galleries": [
+                {
+                  "id": "test-gallery",
+                  "title": "The Clebourne",
+                  "subtitle": "255 W 105th Street / Lobby Options",
+                  "images": [
+                    "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_1.png",
+                    "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_2.png",
+                    "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_3.png",
+                    "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/test_gal/still_4.png"
+                  ]
+                }
               ]
             }
           ]
