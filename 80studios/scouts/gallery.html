@@ -87,6 +87,15 @@
       text-align: center;
       color: #aaa;
     }
+
+.breadcrumb {
+  color: #666;
+  font-size: 12px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+    
   </style>
 </head>
 
@@ -96,6 +105,9 @@
   
 <div class="header">
   <a class="back-link" href="/scouts/">← Back to Scouts</a>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
   <h1 id="gallery-title">Loading gallery...</h1>
   <p id="gallery-subtitle"></p>
 </div>
@@ -122,7 +134,7 @@
 
   const lightbox = document.getElementById("lightbox");
   const lightboxImg = document.getElementById("lightbox-img");
-  const counterEl = document.getElementById("counter");
+  const breadcrumbEl = document.getElementById("breadcrumb");
 
   let currentImages = [];
   let currentIndex = 0;
