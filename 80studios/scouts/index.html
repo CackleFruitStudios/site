@@ -98,7 +98,7 @@
       html += `<div class="folder"><h3>${folder.name}</h3>`;
 
       (folder.galleries || []).forEach(gallery => {
-  const thumb = gallery.images?.[0] || "";
+const thumb = gallery.cover || gallery.images?.[0] || "";
 
   html += `
     <a class="card" href="/scouts/gallery.html?gallery=${gallery.id}">
