@@ -129,41 +129,68 @@
   let currentImages = [];
   let currentIndex = 0;
 
-  function findGallery(projects, id) {
-    for (const project of projects) {
-      const found = searchFolders(project.folders || [], id, [project.name]);
 
-      if (found) {
-        return found;
+
+  
+ function findGallery(projects, id) {
+
+  for (const project of projects) {
+
+    const found = searchFolders(
+      project.folders || [],
+      id,
+      [project.name]
+    );
+
+    if (found) {
+      return found;
+    }
+  }
+
+  return null;
+}
+
+function searchFolders(folders, id, path) {
+
+  for (const folder of folders) {
+
+    const currentPath = [...path, folder.name];
+
+    for (const gallery of folder.galleries || []) {
+
+      if (gallery.id === id) {
+
+        return {
+          gallery: gallery,
+          path: currentPath
+        };
       }
     }
 
-    return null;
-  }
+    const found = searchFolders(
+      folder.folders || [],
+      id,
+      currentPath
+    );
 
-  function searchFolders(folders, id, path) {
-    for (const folder of folders) {
-      const currentPath = [...path, folder.name];
-
-      for (const gallery of folder.galleries || []) {
-        if (gallery.id === id) {
-          return {
-            gallery: gallery,
-            path: currentPath
-          };
-        }
-      }
-
-      const found = searchFolders(folder.folders || [], id, currentPath);
-
-      if (found) {
-        return found;
-      }
+    if (found) {
+      return found;
     }
-
-    return null;
   }
 
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+  
   function updateLightbox() {
     lightboxImg.src = currentImages[currentIndex];
     counterEl.textContent = `${currentIndex + 1} / ${currentImages.length}`;
@@ -248,15 +275,16 @@
     .then(data => {
       const result = findGallery(data.projects || [], galleryId);
 
-      if (!result) {
-        titleEl.textContent = "Gallery not found";
-        gridEl.innerHTML = '<div class="message">Check the gallery ID in the URL.</div>';
-        return;
-      }
+if (!result) {
+  titleEl.textContent = "Gallery not found";
+  gridEl.innerHTML = '<div class="message">Check the gallery ID in the URL.</div>';
+  return;
+}
 
-      const gallery = result.gallery;
+const gallery = result.gallery;
 
-      breadcrumbEl.textContent = result.path.join(" / ");
+breadcrumbEl.textContent = result.path.join(" / ");
+      
       titleEl.textContent = gallery.title || "Untitled Gallery";
       subtitleEl.textContent = gallery.subtitle || "";
 
