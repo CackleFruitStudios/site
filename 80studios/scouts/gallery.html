@@ -299,7 +299,17 @@ if (!result) {
 
 const gallery = result.gallery;
 
-breadcrumbEl.textContent = result.path.join(" / ");
+breadcrumbEl.innerHTML = result.path
+  .map((item, index) => {
+    const isLast = index === result.path.length - 1;
+
+    if (isLast) {
+      return `<span>${item}</span>`;
+    }
+
+    return `<a href="/scouts/">${item}</a>`;
+  })
+  .join(" / ");
       
       titleEl.textContent = gallery.title || "Untitled Gallery";
       subtitleEl.textContent = gallery.subtitle || "";
