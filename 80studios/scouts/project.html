@@ -76,6 +76,15 @@
       background: #252525;
     }
 
+    .thumb {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: #222;
+    }
+
     .meta {
       color: #888;
       font-size: 12px;
@@ -195,31 +204,61 @@
 </div>
 
 <script>
+
   const DATA_URL = "/data/projects.json";
 
-  const params = new URLSearchParams(window.location.search);
-  const projectId = params.get("project") || "on-the-vineyard";
+  const params =
+    new URLSearchParams(window.location.search);
 
-  const projectTitleEl = document.getElementById("project-title");
-  const contentEl = document.getElementById("content");
+  const projectId =
+    params.get("project") ||
+    "on-the-vineyard";
 
-  function renderFolders(folders, currentPath = "") {
+  const projectTitleEl =
+    document.getElementById("project-title");
+
+  const contentEl =
+    document.getElementById("content");
+
+  function renderFolders(
+    folders,
+    currentPath = ""
+  ) {
 
     let html = "";
 
     folders.forEach(folder => {
 
-      const folderPath = currentPath
-        ? `${currentPath}/${folder.id}`
-        : folder.id;
+      const folderPath =
+        currentPath
+          ? `${currentPath}/${folder.id}`
+          : folder.id;
+
+      const thumb =
+        folder.cover ||
+        "";
 
       html += `
-        <a class="card" href="/scouts/folder.html?path=${projectId}/${folderPath}">
-          <div>${folder.name}</div>
+        <a
+          class="card"
+          href="/scouts/folder.html?path=${projectId}/${folderPath}"
+        >
+
+          ${thumb
+            ? `<img src="${thumb}" class="thumb">`
+            : ""
+          }
+
+          <div>
+            ${folder.name}
+          </div>
+
           <div class="meta">
-            ${(folder.folders || []).length} folders •
+            ${(folder.folders || []).length} folders
+            •
             ${(folder.galleries || []).length} galleries
           </div>
+
         </a>
       `;
     });
@@ -228,24 +267,32 @@
   }
 
   fetch(DATA_URL)
+
     .then(response => response.json())
+
     .then(data => {
 
-      const project = (data.projects || []).find(
-        p => p.id === projectId
-      );
+      const project =
+        (data.projects || []).find(
+          p => p.id === projectId
+        );
 
       if (!project) {
-        projectTitleEl.textContent = "Project Not Found";
+
+        projectTitleEl.textContent =
+          "Project Not Found";
+
         contentEl.innerHTML = `
           <p class="message">
             Check the project URL.
           </p>
         `;
+
         return;
       }
 
-      projectTitleEl.textContent = project.name;
+      projectTitleEl.textContent =
+        project.name;
 
       contentEl.innerHTML = `
         <div class="section-title">
@@ -255,11 +302,13 @@
         ${renderFolders(project.folders || [])}
       `;
     })
+
     .catch(error => {
 
       console.error(error);
 
-      projectTitleEl.textContent = "Could Not Load Project";
+      projectTitleEl.textContent =
+        "Could Not Load Project";
 
       contentEl.innerHTML = `
         <p class="message">
@@ -267,6 +316,7 @@
         </p>
       `;
     });
+
 </script>
 
 </body>
