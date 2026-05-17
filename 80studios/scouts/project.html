@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scout Project</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    .breadcrumb {
+      color: #999;
+      font-size: 13px;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    .breadcrumb a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 26px;
+      font-size: 14px;
+    }
+
+    .section-title {
+      color: #aaa;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 30px;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      display: block;
+      background: #1c1c1c;
+      color: white;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #333;
+    }
+
+    .card:hover {
+      background: #252525;
+    }
+
+    .meta {
+      color: #888;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .admin-panel {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .admin-card {
+      background: #181818;
+      border: 1px solid #2a2a2a;
+      padding: 14px;
+      border-radius: 6px;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    .coming-soon {
+      color: #666;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    .message {
+      color: #888;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 12px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+<a class="back-link" href="/scouts/">← Back to Scouts</a>
+
+<div class="breadcrumb">
+  <a href="/scouts/">Projects</a>
+</div>
+
+<h1 id="project-title">Loading Project...</h1>
+
+<div class="subtitle" id="project-subtitle">
+  Scout Project Overview
+</div>
+
+<hr>
+
+<div id="content"></div>
+
+<div class="admin-panel">
+
+  <div class="section-title">
+    Admin Tools
+  </div>
+
+  <div class="admin-grid">
+
+    <div class="admin-card">
+      Upload Queue
+      <div class="coming-soon">
+        Coming Soon
+      </div>
+    </div>
+
+    <div class="admin-card">
+      Folder Organizer
+      <div class="coming-soon">
+        Coming Soon
+      </div>
+    </div>
+
+    <div class="admin-card">
+      File Pull Library
+      <div class="coming-soon">
+        Cross-project scout archive
+      </div>
+    </div>
+
+    <div class="admin-card">
+      Location Tags
+      <div class="coming-soon">
+        Future reusable metadata system
+      </div>
+    </div>
+
+    <div class="admin-card">
+      Contact Rolodex
+      <div class="coming-soon">
+        Linked location contacts
+      </div>
+    </div>
+
+    <div class="admin-card">
+      Scout Notes
+      <div class="coming-soon">
+        Internal-only notes system
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  const DATA_URL = "/data/projects.json";
+
+  const params = new URLSearchParams(window.location.search);
+  const projectId = params.get("project") || "on-the-vineyard";
+
+  const projectTitleEl = document.getElementById("project-title");
+  const contentEl = document.getElementById("content");
+
+  function renderFolders(folders, currentPath = "") {
+
+    let html = "";
+
+    folders.forEach(folder => {
+
+      const folderPath = currentPath
+        ? `${currentPath}/${folder.id}`
+        : folder.id;
+
+      html += `
+        <a class="card" href="/scouts/folder.html?path=${projectId}/${folderPath}">
+          <div>${folder.name}</div>
+          <div class="meta">
+            ${(folder.folders || []).length} folders •
+            ${(folder.galleries || []).length} galleries
+          </div>
+        </a>
+      `;
+    });
+
+    return html;
+  }
+
+  fetch(DATA_URL)
+    .then(response => response.json())
+    .then(data => {
+
+      const project = (data.projects || []).find(
+        p => p.id === projectId
+      );
+
+      if (!project) {
+        projectTitleEl.textContent = "Project Not Found";
+        contentEl.innerHTML = `
+          <p class="message">
+            Check the project URL.
+          </p>
+        `;
+        return;
+      }
+
+      projectTitleEl.textContent = project.name;
+
+      contentEl.innerHTML = `
+        <div class="section-title">
+          Root Folders
+        </div>
+
+        ${renderFolders(project.folders || [])}
+      `;
+    })
+    .catch(error => {
+
+      console.error(error);
+
+      projectTitleEl.textContent = "Could Not Load Project";
+
+      contentEl.innerHTML = `
+        <p class="message">
+          There was a problem loading projects.json.
+        </p>
+      `;
+    });
+</script>
+
+</body>
+</html>
