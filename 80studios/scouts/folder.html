@@ -122,7 +122,8 @@
 
   const DATA_URL = "/data/projects.json";
 
-  const params = new URLSearchParams(window.location.search);
+  const params =
+    new URLSearchParams(window.location.search);
 
   const pathParam =
     params.get("path") ||
@@ -275,18 +276,29 @@
           .map(item => item.id)
           .join("/");
 
+        const thumb =
+          child.cover ||
+          "";
+
         html += `
           <a
             class="card"
             href="/scouts/folder.html?path=${childPath}"
           >
 
+            ${thumb
+              ? `<img src="${thumb}" class="thumb">`
+              : ""
+            }
+
             <div>
               ${child.name}
             </div>
 
             <div class="meta">
-              Folder
+              ${(child.folders || []).length} folders
+              •
+              ${(child.galleries || []).length} galleries
             </div>
 
           </a>
