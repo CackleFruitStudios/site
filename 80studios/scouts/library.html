@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scout Library</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .section-title {
+      color: #aaa;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 30px;
+      margin-bottom: 10px;
+    }
+
+    .location-card {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 12px;
+    }
+
+    .location-header {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .thumb {
+      width: 140px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #222;
+      flex-shrink: 0;
+    }
+
+    .location-title {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .meta {
+      color: #aaa;
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      background: #282828;
+      border: 1px solid #3a3a3a;
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    .gallery-list {
+      margin-top: 14px;
+      border-top: 1px solid #333;
+      padding-top: 10px;
+    }
+
+    .gallery-link {
+      display: block;
+      padding: 8px 0;
+      color: #ddd;
+      font-size: 14px;
+    }
+
+    .gallery-link:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    .message {
+      color: #aaa;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 12px 0;
+    }
+
+    @media (max-width: 600px) {
+      .location-header {
+        display: block;
+      }
+
+      .thumb {
+        width: 100%;
+        height: 180px;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<a class="back-link" href="/scouts/">← Back to Scouts</a>
+
+<h1>Location Library</h1>
+
+<div class="subtitle">
+  Reusable scout archive for file pulls, past locations, tags, and cross-project reference.
+</div>
+
+<hr>
+
+<div id="content">Loading library...</div>
+
+<script>
+
+  const DATA_URL = "/data/projects.json";
+
+  const contentEl =
+    document.getElementById("content");
+
+  function collectGalleriesFromFolders(
+    folders,
+    projectName,
+    path = [],
+    library = {}
+  ) {
+
+    folders.forEach(folder => {
+
+      const currentPath =
+        [...path, folder.name];
+
+      (folder.galleries || []).forEach(gallery => {
+
+        if (!gallery.library || !gallery.library.locationId) {
+          return;
+        }
+
+        const locationId =
+          gallery.library.locationId;
+
+        if (!library[locationId]) {
+
+          library[locationId] = {
+            locationId: locationId,
+            locationName:
+              gallery.library.locationName ||
+              gallery.title,
+            town:
+              gallery.library.town ||
+              "",
+            state:
+              gallery.library.state ||
+              "",
+            country:
+              gallery.library.country ||
+              "",
+            cover:
+              gallery.cover ||
+              gallery.images?.[0] ||
+              "",
+            tags: new Set(),
+            categories: new Set(),
+            looks: new Set(),
+            searchTerms: new Set(),
+            projects: new Set(),
+            galleries: []
+          };
+        }
+
+        const item =
+          library[locationId];
+
+        (gallery.library.tags || []).forEach(tag =>
+          item.tags.add(tag)
+        );
+
+        (gallery.library.categories || []).forEach(category =>
+          item.categories.add(category)
+        );
+
+        (gallery.library.looks || []).forEach(look =>
+          item.looks.add(look)
+        );
+
+        (gallery.library.searchTerms || []).forEach(term =>
+          item.searchTerms.add(term)
+        );
+
+        item.projects.add(projectName);
+
+        item.galleries.push({
+          id: gallery.id,
+          title: gallery.title,
+          subtitle: gallery.subtitle || "",
+          path: currentPath.join(" / "),
+          imageCount: (gallery.images || []).length
+        });
+      });
+
+      collectGalleriesFromFolders(
+        folder.folders || [],
+        projectName,
+        currentPath,
+        library
+      );
+    });
+
+    return library;
+  }
+
+  function renderSetItems(set) {
+
+    return [...set]
+      .map(item => `<span class="tag">${item}</span>`)
+      .join("");
+  }
+
+  function renderLibrary(library) {
+
+    const locations =
+      Object.values(library);
+
+    if (locations.length === 0) {
+
+      contentEl.innerHTML = `
+        <p class="message">
+          No library locations found yet.
+        </p>
+      `;
+
+      return;
+    }
+
+    let html = `
+      <div class="section-title">
+        Locations
+      </div>
+    `;
+
+    locations.forEach(location => {
+
+      html += `
+        <div class="location-card">
+
+          <div class="location-header">
+
+            ${location.cover
+              ? `<img src="${location.cover}" class="thumb">`
+              : ""
+            }
+
+            <div>
+
+              <div class="location-title">
+                ${location.locationName}
+              </div>
+
+              <div class="meta">
+                ${location.town}${location.state ? ", " + location.state : ""}
+              </div>
+
+              <div class="meta">
+                Projects:
+                ${[...location.projects].join(", ")}
+              </div>
+
+              <div class="tags">
+                ${renderSetItems(location.tags)}
+                ${renderSetItems(location.categories)}
+                ${renderSetItems(location.looks)}
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="gallery-list">
+      `;
+
+      location.galleries.forEach(gallery => {
+
+        html += `
+          <a
+            class="gallery-link"
+            href="/scouts/gallery.html?gallery=${gallery.id}"
+          >
+            ${gallery.title}
+            <div class="meta">
+              ${gallery.path}
+              •
+              ${gallery.imageCount} photos
+            </div>
+          </a>
+        `;
+      });
+
+      html += `
+          </div>
+        </div>
+      `;
+    });
+
+    contentEl.innerHTML = html;
+  }
+
+  fetch(DATA_URL)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+      let library = {};
+
+      (data.projects || []).forEach(project => {
+
+        library = collectGalleriesFromFolders(
+          project.folders || [],
+          project.name,
+          [],
+          library
+        );
+      });
+
+      renderLibrary(library);
+    })
+
+    .catch(error => {
+
+      console.error(error);
+
+      contentEl.innerHTML = `
+        <p class="message">
+          Could not load library.
+        </p>
+      `;
+    });
+
+</script>
+
+</body>
+</html>
