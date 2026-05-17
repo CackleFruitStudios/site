@@ -19,6 +19,16 @@
       margin-bottom: 10px;
     }
 
+    h2 a {
+      color: white;
+      text-decoration: none;
+    }
+
+    h2 a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
     .project {
       margin-top: 24px;
     }
@@ -44,36 +54,34 @@
       background: #252525;
     }
 
-.thumb {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  background: #222;
-}
+    .thumb {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: #222;
+    }
 
+    .folder h3 {
+      cursor: pointer;
+      color: #ddd;
+    }
 
-.folder h3 {
-  cursor: pointer;
-  color: #ddd;
-}
+    .folder h3::before {
+      content: "▾ ";
+      color: #777;
+    }
 
-.folder h3::before {
-  content: "▾ ";
-  color: #777;
-}
+    .folder.collapsed h3::before {
+      content: "▸ ";
+    }
 
-.folder.collapsed h3::before {
-  content: "▸ ";
-}
+    .folder.collapsed > .folder,
+    .folder.collapsed > .card {
+      display: none;
+    }
 
-.folder.collapsed > .folder,
-.folder.collapsed > .card {
-  display: none;
-}
-    
-    
     .meta {
       color: #aaa;
       font-size: 12px;
@@ -85,34 +93,64 @@
 <body>
 
 <h1>80 Studios Scouts</h1>
-<div id="content">Loading projects...</div>
+
+<div id="content">
+  Loading projects...
+</div>
 
 <script>
+
   const DATA_URL = "/data/projects.json";
+
   const content = document.getElementById("content");
 
   function renderFolders(folders) {
+
     let html = "";
 
     folders.forEach(folder => {
-      html += `<div class="folder"><h3>${folder.name}</h3>`;
+
+      html += `
+        <div class="folder">
+          <h3>${folder.name}</h3>
+      `;
 
       (folder.galleries || []).forEach(gallery => {
-const thumb = gallery.cover || gallery.images?.[0] || "";
 
-  html += `
-    <a class="card" href="/scouts/gallery.html?gallery=${gallery.id}">
-      ${thumb ? `<img src="${thumb}" class="thumb">` : ""}
-      <div>${gallery.title}</div>
-<div class="meta">
-  ${gallery.subtitle || ""}
-  •
-  ${(gallery.images || []).length} photos
-</div>
-    </a>
-  `;
-});
-      if (folder.folders && folder.folders.length > 0) {
+        const thumb =
+          gallery.cover ||
+          gallery.images?.[0] ||
+          "";
+
+        html += `
+          <a
+            class="card"
+            href="/scouts/gallery.html?gallery=${gallery.id}"
+          >
+
+            ${thumb
+              ? `<img src="${thumb}" class="thumb">`
+              : ""
+            }
+
+            <div>
+              ${gallery.title}
+            </div>
+
+            <div class="meta">
+              ${gallery.subtitle || ""}
+              •
+              ${(gallery.images || []).length} photos
+            </div>
+
+          </a>
+        `;
+      });
+
+      if (
+        folder.folders &&
+        folder.folders.length > 0
+      ) {
         html += renderFolders(folder.folders);
       }
 
@@ -123,31 +161,61 @@ const thumb = gallery.cover || gallery.images?.[0] || "";
   }
 
   fetch(DATA_URL)
+
     .then(response => response.json())
+
     .then(data => {
+
       let html = "";
 
       (data.projects || []).forEach(project => {
-        html += `<div class="project"><h2>${project.name}</h2>`;
-        html += renderFolders(project.folders || []);
-        html += `</div>`;
+
+        html += `
+          <div class="project">
+
+            <h2>
+              <a
+                href="/scouts/project.html?project=${project.id}"
+              >
+                ${project.name}
+              </a>
+            </h2>
+        `;
+
+        html += renderFolders(
+          project.folders || []
+        );
+
+        html += `
+          </div>
+        `;
       });
 
-      content.innerHTML = html || "No projects found.";
+      content.innerHTML =
+        html || "No projects found.";
     })
+
     .catch(error => {
-      content.innerHTML = "Could not load project data.";
+
+      content.innerHTML =
+        "Could not load project data.";
+
       console.error(error);
     });
 
-document.addEventListener("click", function(event) {
-  if (event.target.tagName === "H3") {
-    event.target.parentElement.classList.toggle("collapsed");
-  }
-});
+  document.addEventListener(
+    "click",
+    function(event) {
 
+      if (event.target.tagName === "H3") {
 
-  
+        event.target.parentElement.classList.toggle(
+          "collapsed"
+        );
+      }
+    }
+  );
+
 </script>
 
 </body>
