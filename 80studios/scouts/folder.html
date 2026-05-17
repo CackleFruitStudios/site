@@ -166,9 +166,13 @@
           return `<span>${item.name}</span>`;
         }
 
-        const path = buildPath(pathObjects, index);
+    if (index === 0) {
+  return `<a href="/scouts/">${item.name}</a>`;
+}
 
-        return `<a href="/scouts/folder.html?path=${path}">${item.name}</a>`;
+const path = buildPath(pathObjects, index);
+
+return `<a href="/scouts/folder.html?path=${path}">${item.name}</a>`;
       })
       .join(" / ");
   }
