@@ -25,6 +25,25 @@
                           "title": "Inkwell Inn — Dining Room — Heroes",
                           "subtitle": "On The Vineyard / INT Inkwell Inn",
                           "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
+"admin": {
+  "address": "",
+  "primaryContact": {
+    "name": "",
+    "role": "",
+    "phone": "",
+    "email": ""
+  },
+  "additionalContacts": [],
+  "price": "",
+  "availability": "",
+  "parking": "",
+  "power": "",
+  "bathrooms": "",
+  "permitNotes": "",
+  "unionNotes": "",
+  "notes": ""
+},
+                          
                           "images": [
                             "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
                             "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
@@ -43,6 +62,26 @@
                           "title": "Inkwell Inn — Dining Room — Window Views / Plates",
                           "subtitle": "On The Vineyard / INT Inkwell Inn",
                           "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+                          
+"admin": {
+  "address": "",
+  "primaryContact": {
+    "name": "",
+    "role": "",
+    "phone": "",
+    "email": ""
+  },
+  "additionalContacts": [],
+  "price": "",
+  "availability": "",
+  "parking": "",
+  "power": "",
+  "bathrooms": "",
+  "permitNotes": "",
+  "unionNotes": "",
+  "notes": ""
+},
+                          
                           "images": [
                             "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
                             "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
