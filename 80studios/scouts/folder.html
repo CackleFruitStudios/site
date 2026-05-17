@@ -37,9 +37,18 @@
       line-height: 1.4;
     }
 
+    .breadcrumb a {
+      color: inherit;
+      text-decoration: none;
+    }
+
     .breadcrumb a:hover {
       color: #fff;
       text-decoration: underline;
+    }
+
+    .breadcrumb span {
+      color: #aaa;
     }
 
     h1 {
@@ -88,6 +97,12 @@
     .message {
       color: #aaa;
     }
+
+    hr {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 10px 0;
+    }
   </style>
 </head>
 
@@ -97,25 +112,44 @@
 
 <div class="breadcrumb" id="breadcrumb"></div>
 
+<hr>
+
 <h1 id="folder-title">Loading folder...</h1>
 
 <div id="content"></div>
 
 <script>
+
   const DATA_URL = "/data/projects.json";
 
   const params = new URLSearchParams(window.location.search);
-  const pathParam = params.get("path") || "on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room";
 
-  const folderTitleEl = document.getElementById("folder-title");
-  const breadcrumbEl = document.getElementById("breadcrumb");
-  const contentEl = document.getElementById("content");
+  const pathParam =
+    params.get("path") ||
+    "on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room";
+
+  const folderTitleEl =
+    document.getElementById("folder-title");
+
+  const breadcrumbEl =
+    document.getElementById("breadcrumb");
+
+  const contentEl =
+    document.getElementById("content");
 
   function findFolder(projects, pathParts) {
-    for (const project of projects) {
-      if (project.id !== pathParts[0]) continue;
 
-      const found = searchFolders(project.folders || [], pathParts.slice(1), [project]);
+    for (const project of projects) {
+
+      if (project.id !== pathParts[0]) {
+        continue;
+      }
+
+      const found = searchFolders(
+        project.folders || [],
+        pathParts.slice(1),
+        [project]
+      );
 
       if (found) {
         return found;
@@ -125,7 +159,12 @@
     return null;
   }
 
-  function searchFolders(folders, remainingParts, pathObjects) {
+  function searchFolders(
+    folders,
+    remainingParts,
+    pathObjects
+  ) {
+
     if (remainingParts.length === 0) {
       return null;
     }
@@ -133,24 +172,36 @@
     const currentId = remainingParts[0];
 
     for (const folder of folders) {
-      if (folder.id !== currentId) continue;
 
-      const newPathObjects = [...pathObjects, folder];
+      if (folder.id !== currentId) {
+        continue;
+      }
+
+      const newPathObjects = [
+        ...pathObjects,
+        folder
+      ];
 
       if (remainingParts.length === 1) {
+
         return {
           folder: folder,
           pathObjects: newPathObjects
         };
       }
 
-      return searchFolders(folder.folders || [], remainingParts.slice(1), newPathObjects);
+      return searchFolders(
+        folder.folders || [],
+        remainingParts.slice(1),
+        newPathObjects
+      );
     }
 
     return null;
   }
 
   function buildPath(pathObjects, index) {
+
     return pathObjects
       .slice(0, index + 1)
       .map(item => item.id)
@@ -158,94 +209,200 @@
   }
 
   function renderBreadcrumb(pathObjects) {
+
     breadcrumbEl.innerHTML = pathObjects
+
       .map((item, index) => {
-        const isLast = index === pathObjects.length - 1;
+
+        const isLast =
+          index === pathObjects.length - 1;
 
         if (isLast) {
-          return `<span>${item.name}</span>`;
+
+          return `
+            <span>${item.name}</span>
+          `;
         }
 
-    if (index === 0) {
-  return `<a href="/scouts/">${item.name}</a>`;
-}
+        if (index === 0) {
 
-const path = buildPath(pathObjects, index);
+          return `
+            <a
+              href="/scouts/project.html?project=${item.id}"
+            >
+              ${item.name}
+            </a>
+          `;
+        }
 
-return `<a href="/scouts/folder.html?path=${path}">${item.name}</a>`;
+        const path =
+          buildPath(pathObjects, index);
+
+        return `
+          <a
+            href="/scouts/folder.html?path=${path}"
+          >
+            ${item.name}
+          </a>
+        `;
       })
+
       .join(" / ");
   }
 
   function renderFolder(folder, pathObjects) {
+
     let html = "";
 
-    const childFolders = folder.folders || [];
-    const galleries = folder.galleries || [];
+    const childFolders =
+      folder.folders || [];
+
+    const galleries =
+      folder.galleries || [];
 
     if (childFolders.length > 0) {
-      html += `<div class="section-title">Folders</div>`;
+
+      html += `
+        <div class="section-title">
+          Folders
+        </div>
+      `;
 
       childFolders.forEach(child => {
-        const childPath = [...pathObjects, child].map(item => item.id).join("/");
+
+        const childPath =
+          [...pathObjects, child]
+          .map(item => item.id)
+          .join("/");
 
         html += `
-          <a class="card" href="/scouts/folder.html?path=${childPath}">
-            <div>${child.name}</div>
-            <div class="meta">Folder</div>
+          <a
+            class="card"
+            href="/scouts/folder.html?path=${childPath}"
+          >
+
+            <div>
+              ${child.name}
+            </div>
+
+            <div class="meta">
+              Folder
+            </div>
+
           </a>
         `;
       });
     }
 
     if (galleries.length > 0) {
-      html += `<div class="section-title">Galleries</div>`;
+
+      html += `
+        <div class="section-title">
+          Galleries
+        </div>
+      `;
 
       galleries.forEach(gallery => {
-        const thumb = gallery.cover || gallery.images?.[0] || "";
+
+        const thumb =
+          gallery.cover ||
+          gallery.images?.[0] ||
+          "";
 
         html += `
-          <a class="card" href="/scouts/gallery.html?gallery=${gallery.id}">
-            ${thumb ? `<img src="${thumb}" class="thumb">` : ""}
-            <div>${gallery.title}</div>
+          <a
+            class="card"
+            href="/scouts/gallery.html?gallery=${gallery.id}"
+          >
+
+            ${thumb
+              ? `<img src="${thumb}" class="thumb">`
+              : ""
+            }
+
+            <div>
+              ${gallery.title}
+            </div>
+
             <div class="meta">
               ${gallery.subtitle || ""}
               •
               ${(gallery.images || []).length} photos
             </div>
+
           </a>
         `;
       });
     }
 
     if (!html) {
-      html = `<p class="message">This folder is empty.</p>`;
+
+      html = `
+        <p class="message">
+          This folder is empty.
+        </p>
+      `;
     }
 
     contentEl.innerHTML = html;
   }
 
   fetch(DATA_URL)
+
     .then(response => response.json())
+
     .then(data => {
-      const pathParts = pathParam.split("/").filter(Boolean);
-      const result = findFolder(data.projects || [], pathParts);
+
+      const pathParts =
+        pathParam.split("/").filter(Boolean);
+
+      const result =
+        findFolder(
+          data.projects || [],
+          pathParts
+        );
 
       if (!result) {
-        folderTitleEl.textContent = "Folder not found";
-        contentEl.innerHTML = '<p class="message">Check the folder path in the URL.</p>';
+
+        folderTitleEl.textContent =
+          "Folder not found";
+
+        contentEl.innerHTML = `
+          <p class="message">
+            Check the folder path in the URL.
+          </p>
+        `;
+
         return;
       }
 
-      folderTitleEl.textContent = result.folder.name;
-      renderBreadcrumb(result.pathObjects);
-      renderFolder(result.folder, result.pathObjects);
+      folderTitleEl.textContent =
+        result.folder.name;
+
+      renderBreadcrumb(
+        result.pathObjects
+      );
+
+      renderFolder(
+        result.folder,
+        result.pathObjects
+      );
     })
+
     .catch(error => {
-      folderTitleEl.textContent = "Could not load folder";
-      contentEl.innerHTML = '<p class="message">There was a problem loading projects.json.</p>';
+
+      folderTitleEl.textContent =
+        "Could not load folder";
+
+      contentEl.innerHTML = `
+        <p class="message">
+          There was a problem loading projects.json.
+        </p>
+      `;
+
       console.error(error);
     });
+
 </script>
 
 </body>
