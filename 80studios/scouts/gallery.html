@@ -18,20 +18,25 @@
       text-align: center;
     }
 
-.back-link {
-  display: inline-block;
-  color: #888;
-  text-decoration: none;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
+    .back-link {
+      display: inline-block;
+      color: #888;
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
 
-.back-link:hover {
-  color: #fff;
-}
+    .back-link:hover {
+      color: #fff;
+    }
 
+    .breadcrumb {
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
 
-    
     .header h1 {
       font-size: 22px;
       margin: 0 0 6px 0;
@@ -87,33 +92,17 @@
       text-align: center;
       color: #aaa;
     }
-
-.breadcrumb {
-  color: #666;
-  font-size: 12px;
-  margin-bottom: 10px;
-  line-height: 1.4;
-}
-
-    
   </style>
 </head>
 
 <body>
 
-
-  
 <div class="header">
   <a class="back-link" href="/scouts/">← Back to Scouts</a>
-
   <div class="breadcrumb" id="breadcrumb"></div>
-
   <h1 id="gallery-title">Loading gallery...</h1>
   <p id="gallery-subtitle"></p>
 </div>
-
-  
-  
 
 <div class="grid" id="gallery-grid"></div>
 
@@ -130,32 +119,46 @@
 
   const titleEl = document.getElementById("gallery-title");
   const subtitleEl = document.getElementById("gallery-subtitle");
+  const breadcrumbEl = document.getElementById("breadcrumb");
   const gridEl = document.getElementById("gallery-grid");
 
   const lightbox = document.getElementById("lightbox");
   const lightboxImg = document.getElementById("lightbox-img");
-  const breadcrumbEl = document.getElementById("breadcrumb");
+  const counterEl = document.getElementById("counter");
 
   let currentImages = [];
   let currentIndex = 0;
 
   function findGallery(projects, id) {
     for (const project of projects) {
-      const found = searchFolders(project.folders || [], id);
-      if (found) return found;
+      const found = searchFolders(project.folders || [], id, [project.name]);
+
+      if (found) {
+        return found;
+      }
     }
 
     return null;
   }
 
-  function searchFolders(folders, id) {
+  function searchFolders(folders, id, path) {
     for (const folder of folders) {
+      const currentPath = [...path, folder.name];
+
       for (const gallery of folder.galleries || []) {
-        if (gallery.id === id) return gallery;
+        if (gallery.id === id) {
+          return {
+            gallery: gallery,
+            path: currentPath
+          };
+        }
       }
 
-      const found = searchFolders(folder.folders || [], id);
-      if (found) return found;
+      const found = searchFolders(folder.folders || [], id, currentPath);
+
+      if (found) {
+        return found;
+      }
     }
 
     return null;
@@ -243,14 +246,17 @@
   fetch(DATA_URL)
     .then(response => response.json())
     .then(data => {
-      const gallery = findGallery(data.projects || [], galleryId);
+      const result = findGallery(data.projects || [], galleryId);
 
-      if (!gallery) {
+      if (!result) {
         titleEl.textContent = "Gallery not found";
         gridEl.innerHTML = '<div class="message">Check the gallery ID in the URL.</div>';
         return;
       }
 
+      const gallery = result.gallery;
+
+      breadcrumbEl.textContent = result.path.join(" / ");
       titleEl.textContent = gallery.title || "Untitled Gallery";
       subtitleEl.textContent = gallery.subtitle || "";
 
