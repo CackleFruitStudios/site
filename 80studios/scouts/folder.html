@@ -4,10 +4,245 @@
   <title>Scout Folder</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    .breadcrumb {
+      color: #999;
+      font-size: 13px;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    .breadcrumb a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      color: #aaa;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 28px;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      display: block;
+      background: #1c1c1c;
+      color: white;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: 1px solid #333;
+    }
+
+    .card:hover {
+      background: #252525;
+    }
+
+    .thumb {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: #222;
+    }
+
+    .meta {
+      color: #aaa;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .message {
+      color: #aaa;
+    }
+  </style>
 </head>
-<body style="background:#111;color:white;font-family:Arial;padding:20px;">
-  <h1>Folder Page</h1>
-  <p>This page will show folders and galleries.</p>
-  <a href="/scouts/" style="color:#999;">← Back to Scouts</a>
+
+<body>
+
+<a class="back-link" href="/scouts/">← Back to Scouts</a>
+
+<div class="breadcrumb" id="breadcrumb"></div>
+
+<h1 id="folder-title">Loading folder...</h1>
+
+<div id="content"></div>
+
+<script>
+  const DATA_URL = "/data/projects.json";
+
+  const params = new URLSearchParams(window.location.search);
+  const pathParam = params.get("path") || "on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room";
+
+  const folderTitleEl = document.getElementById("folder-title");
+  const breadcrumbEl = document.getElementById("breadcrumb");
+  const contentEl = document.getElementById("content");
+
+  function findFolder(projects, pathParts) {
+    for (const project of projects) {
+      if (project.id !== pathParts[0]) continue;
+
+      const found = searchFolders(project.folders || [], pathParts.slice(1), [project]);
+
+      if (found) {
+        return found;
+      }
+    }
+
+    return null;
+  }
+
+  function searchFolders(folders, remainingParts, pathObjects) {
+    if (remainingParts.length === 0) {
+      return null;
+    }
+
+    const currentId = remainingParts[0];
+
+    for (const folder of folders) {
+      if (folder.id !== currentId) continue;
+
+      const newPathObjects = [...pathObjects, folder];
+
+      if (remainingParts.length === 1) {
+        return {
+          folder: folder,
+          pathObjects: newPathObjects
+        };
+      }
+
+      return searchFolders(folder.folders || [], remainingParts.slice(1), newPathObjects);
+    }
+
+    return null;
+  }
+
+  function buildPath(pathObjects, index) {
+    return pathObjects
+      .slice(0, index + 1)
+      .map(item => item.id)
+      .join("/");
+  }
+
+  function renderBreadcrumb(pathObjects) {
+    breadcrumbEl.innerHTML = pathObjects
+      .map((item, index) => {
+        const isLast = index === pathObjects.length - 1;
+
+        if (isLast) {
+          return `<span>${item.name}</span>`;
+        }
+
+        const path = buildPath(pathObjects, index);
+
+        return `<a href="/scouts/folder.html?path=${path}">${item.name}</a>`;
+      })
+      .join(" / ");
+  }
+
+  function renderFolder(folder, pathObjects) {
+    let html = "";
+
+    const childFolders = folder.folders || [];
+    const galleries = folder.galleries || [];
+
+    if (childFolders.length > 0) {
+      html += `<div class="section-title">Folders</div>`;
+
+      childFolders.forEach(child => {
+        const childPath = [...pathObjects, child].map(item => item.id).join("/");
+
+        html += `
+          <a class="card" href="/scouts/folder.html?path=${childPath}">
+            <div>${child.name}</div>
+            <div class="meta">Folder</div>
+          </a>
+        `;
+      });
+    }
+
+    if (galleries.length > 0) {
+      html += `<div class="section-title">Galleries</div>`;
+
+      galleries.forEach(gallery => {
+        const thumb = gallery.cover || gallery.images?.[0] || "";
+
+        html += `
+          <a class="card" href="/scouts/gallery.html?gallery=${gallery.id}">
+            ${thumb ? `<img src="${thumb}" class="thumb">` : ""}
+            <div>${gallery.title}</div>
+            <div class="meta">
+              ${gallery.subtitle || ""}
+              •
+              ${(gallery.images || []).length} photos
+            </div>
+          </a>
+        `;
+      });
+    }
+
+    if (!html) {
+      html = `<p class="message">This folder is empty.</p>`;
+    }
+
+    contentEl.innerHTML = html;
+  }
+
+  fetch(DATA_URL)
+    .then(response => response.json())
+    .then(data => {
+      const pathParts = pathParam.split("/").filter(Boolean);
+      const result = findFolder(data.projects || [], pathParts);
+
+      if (!result) {
+        folderTitleEl.textContent = "Folder not found";
+        contentEl.innerHTML = '<p class="message">Check the folder path in the URL.</p>';
+        return;
+      }
+
+      folderTitleEl.textContent = result.folder.name;
+      renderBreadcrumb(result.pathObjects);
+      renderFolder(result.folder, result.pathObjects);
+    })
+    .catch(error => {
+      folderTitleEl.textContent = "Could not load folder";
+      contentEl.innerHTML = '<p class="message">There was a problem loading projects.json.</p>';
+      console.error(error);
+    });
+</script>
+
 </body>
 </html>
