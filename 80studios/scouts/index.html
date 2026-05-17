@@ -104,7 +104,11 @@
     <a class="card" href="/scouts/gallery.html?gallery=${gallery.id}">
       ${thumb ? `<img src="${thumb}" class="thumb">` : ""}
       <div>${gallery.title}</div>
-      <div class="meta">${gallery.subtitle || ""}</div>
+<div class="meta">
+  ${gallery.subtitle || ""}
+  •
+  ${(gallery.images || []).length} photos
+</div>
     </a>
   `;
 });
