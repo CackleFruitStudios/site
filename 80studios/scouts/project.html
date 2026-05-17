@@ -30,6 +30,22 @@
       color: #fff;
     }
 
+    .top-nav {
+      margin-bottom: 18px;
+    }
+
+    .top-nav a {
+      display: inline-block;
+      color: #999;
+      font-size: 14px;
+      margin-right: 14px;
+    }
+
+    .top-nav a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
     .breadcrumb {
       color: #999;
       font-size: 13px;
@@ -113,6 +129,10 @@
       font-size: 13px;
     }
 
+    .admin-card:hover {
+      background: #222;
+    }
+
     .coming-soon {
       color: #666;
       font-size: 12px;
@@ -134,6 +154,11 @@
 <body>
 
 <a class="back-link" href="/scouts/">← Back to Scouts</a>
+
+<div class="top-nav">
+  <a href="/scouts/">Projects</a>
+  <a href="/scouts/library.html">Library</a>
+</div>
 
 <div class="breadcrumb">
   <a href="/scouts/">Projects</a>
@@ -171,12 +196,12 @@
       </div>
     </div>
 
-    <div class="admin-card">
+    <a class="admin-card" href="/scouts/library.html">
       File Pull Library
       <div class="coming-soon">
         Cross-project scout archive
       </div>
-    </div>
+    </a>
 
     <div class="admin-card">
       Location Tags
