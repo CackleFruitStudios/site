@@ -4,32 +4,99 @@
       "id": "on-the-vineyard",
       "name": "On The Vineyard",
       "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
+
+      "library": {
+        "projectType": "Series",
+        "productionCompany": "",
+        "archived": false
+      },
+
       "folders": [
         {
           "id": "inkwell-inn",
           "name": "Inkwell Inn",
           "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
+
+          "library": {
+            "locationId": "inkwell-inn-marthas-vineyard",
+            "locationName": "Inkwell Inn",
+            "town": "Martha's Vineyard",
+            "state": "MA",
+            "country": "USA",
+
+            "tags": [
+              "hotel",
+              "restaurant",
+              "new england",
+              "coastal"
+            ]
+          },
+
           "folders": [
             {
               "id": "int-inkwell-inn",
               "name": "INT Inkwell Inn",
               "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
+
               "folders": [
                 {
                   "id": "dining-room",
                   "name": "Dining Room",
                   "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+
                   "folders": [
                     {
                       "id": "heroes",
                       "name": "Heroes",
                       "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
+
                       "galleries": [
                         {
                           "id": "inkwell-inn-dining-room-heroes",
                           "title": "Inkwell Inn — Dining Room — Heroes",
                           "subtitle": "On The Vineyard / INT Inkwell Inn",
                           "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
+
+                          "library": {
+                            "locationId": "inkwell-inn-marthas-vineyard",
+                            "locationName": "Inkwell Inn",
+                            "town": "Martha's Vineyard",
+                            "state": "MA",
+                            "country": "USA",
+
+                            "tags": [
+                              "restaurant",
+                              "new england",
+                              "wood interior",
+                              "waterfront",
+                              "dining room",
+                              "period-friendly"
+                            ],
+
+                            "categories": [
+                              "Hospitality",
+                              "Dining",
+                              "Hero Location"
+                            ],
+
+                            "looks": [
+                              "Day",
+                              "Warm",
+                              "Upscale"
+                            ],
+
+                            "searchTerms": [
+                              "wood paneling",
+                              "window light",
+                              "coastal",
+                              "classic inn"
+                            ],
+
+                            "archivedProjects": [
+                              "On The Vineyard"
+                            ]
+                          },
+
                           "admin": {
                             "address": "",
                             "primaryContact": {
@@ -48,6 +115,7 @@
                             "unionNotes": "",
                             "notes": ""
                           },
+
                           "images": [
                             "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
                             "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
@@ -57,16 +125,55 @@
                         }
                       ]
                     },
+
                     {
                       "id": "window-views-plates",
                       "name": "Window Views / Plates",
                       "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
+
                       "galleries": [
                         {
                           "id": "inkwell-inn-dining-room-window-views-plates",
                           "title": "Inkwell Inn — Dining Room — Window Views / Plates",
                           "subtitle": "On The Vineyard / INT Inkwell Inn",
                           "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+
+                          "library": {
+                            "locationId": "inkwell-inn-marthas-vineyard",
+                            "locationName": "Inkwell Inn",
+                            "town": "Martha's Vineyard",
+                            "state": "MA",
+                            "country": "USA",
+
+                            "tags": [
+                              "restaurant",
+                              "windows",
+                              "plates",
+                              "new england",
+                              "waterfront"
+                            ],
+
+                            "categories": [
+                              "Plates",
+                              "Window Views"
+                            ],
+
+                            "looks": [
+                              "Day",
+                              "Natural Light"
+                            ],
+
+                            "searchTerms": [
+                              "window plates",
+                              "coastal light",
+                              "background plates"
+                            ],
+
+                            "archivedProjects": [
+                              "On The Vineyard"
+                            ]
+                          },
+
                           "admin": {
                             "address": "",
                             "primaryContact": {
@@ -85,6 +192,7 @@
                             "unionNotes": "",
                             "notes": ""
                           },
+
                           "images": [
                             "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
                             "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
