@@ -96,6 +96,71 @@
       letter-spacing: 1px;
       margin-bottom: 8px;
     }
+
+    .upload-zone {
+      margin-top: 12px;
+      border: 2px dashed #444;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      color: #888;
+      background: #141414;
+    }
+
+    .upload-zone:hover {
+      border-color: #666;
+      background: #181818;
+    }
+
+    .queue-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .queue-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 14px;
+    }
+
+    .queue-title {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .queue-meta {
+      color: #888;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .pending {
+      background: #3a2d12;
+      color: #e5b95c;
+    }
+
+    .complete {
+      background: #18351d;
+      color: #71d685;
+    }
+
+    .failed {
+      background: #3b1717;
+      color: #f07a7a;
+    }
   </style>
 </head>
 
@@ -106,7 +171,7 @@
 <h1>Admin Planner</h1>
 
 <div class="subtitle">
-  Generate clean R2 paths, filenames, and starter JSON without touching uploads or auth yet.
+  Upload planning, scout prep, JSON generation, and future asset management.
 </div>
 
 <div class="panel">
@@ -123,22 +188,22 @@
 
     <div>
       <label>Project ID</label>
-      <input id="projectId" value="on-the-vineyard">
+      <input id="projectId" value="harbor-noir">
     </div>
 
     <div>
       <label>Folder Path</label>
-      <input id="folderPath" value="inkwell-inn/int-inkwell-inn/dining-room/heroes">
+      <input id="folderPath" value="blackwater-inn/int-blackwater-inn/dining-room/heroes">
     </div>
 
     <div>
-      <label>Gallery / Category ID</label>
-      <input id="galleryId" value="inkwell-inn-dining-room-heroes">
+      <label>Gallery ID</label>
+      <input id="galleryId" value="blackwater-dining-room-heroes">
     </div>
 
     <div>
       <label>Display Title</label>
-      <input id="title" value="Inkwell Inn — Dining Room — Heroes">
+      <input id="title" value="Blackwater Inn — Dining Room — Heroes">
     </div>
 
     <div>
@@ -164,9 +229,81 @@
   </div>
 
   <label>Tags / Search Terms</label>
-  <input id="tags" value="restaurant, new england, wood interior, waterfront">
 
-  <button onclick="generate()">Generate</button>
+  <input
+    id="tags"
+    value="restaurant, new england, wood interior, waterfront"
+  >
+
+  <button onclick="generate()">
+    Generate
+  </button>
+
+</div>
+
+<div class="panel">
+
+  <div class="output-title">
+    Upload Queue
+  </div>
+
+  <div class="upload-zone">
+    Drag & Drop Scout Photos Here
+    <br><br>
+    Future:
+    auto-tagging • duplicate detection • R2 upload • metadata extraction
+  </div>
+
+  <div class="queue-grid">
+
+    <div class="queue-card">
+      <div class="queue-title">
+        still_1.png
+      </div>
+
+      <div class="queue-meta">
+        Pending upload<br>
+        Dining Room Heroes<br>
+        14.2 MB
+      </div>
+
+      <div class="status pending">
+        Pending
+      </div>
+    </div>
+
+    <div class="queue-card">
+      <div class="queue-title">
+        still_2.png
+      </div>
+
+      <div class="queue-meta">
+        Uploaded to R2<br>
+        Metadata generated<br>
+        Tagged: waterfront
+      </div>
+
+      <div class="status complete">
+        Complete
+      </div>
+    </div>
+
+    <div class="queue-card">
+      <div class="queue-title">
+        still_3.png
+      </div>
+
+      <div class="queue-meta">
+        Upload interrupted<br>
+        Retry required
+      </div>
+
+      <div class="status failed">
+        Failed
+      </div>
+    </div>
+
+  </div>
 
 </div>
 
@@ -186,6 +323,7 @@
 </div>
 
 <script>
+
   const PUBLIC_BASE =
     "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts";
 
@@ -199,20 +337,44 @@
   }
 
   function generate() {
-    const type = document.getElementById("type").value;
-    const projectId = slugify(document.getElementById("projectId").value);
-    const folderPath = document.getElementById("folderPath").value
+
+    const type =
+      document.getElementById("type").value;
+
+    const projectId =
+      slugify(
+        document.getElementById("projectId").value
+      );
+
+    const folderPath =
+      document.getElementById("folderPath").value
       .split("/")
       .map(slugify)
       .filter(Boolean)
       .join("/");
 
-    const galleryId = slugify(document.getElementById("galleryId").value);
-    const title = document.getElementById("title").value.trim();
-    const prefix = document.getElementById("prefix").value.trim();
-    const count = parseInt(document.getElementById("count").value, 10);
-    const extension = document.getElementById("extension").value;
-    const tags = document.getElementById("tags").value
+    const galleryId =
+      slugify(
+        document.getElementById("galleryId").value
+      );
+
+    const title =
+      document.getElementById("title").value.trim();
+
+    const prefix =
+      document.getElementById("prefix").value.trim();
+
+    const count =
+      parseInt(
+        document.getElementById("count").value,
+        10
+      );
+
+    const extension =
+      document.getElementById("extension").value;
+
+    const tags =
+      document.getElementById("tags").value
       .split(",")
       .map(tag => tag.trim())
       .filter(Boolean);
@@ -228,6 +390,7 @@
     const urls = [];
 
     for (let i = 1; i <= count; i++) {
+
       urls.push(
         `${PUBLIC_BASE}/${root}/${prefix}${i}.${extension}`
       );
@@ -238,14 +401,21 @@
 
     document.getElementById("filenames").value =
       urls
-        .map((url, index) => `${prefix}${index + 1}.${extension}`)
-        .join("\n");
+      .map((url, index) =>
+        `${prefix}${index + 1}.${extension}`
+      )
+      .join("\n");
 
     const starterJson = {
+
       id: galleryId,
+
       title: title,
+
       subtitle: projectId,
+
       cover: urls[0] || "",
+
       library: {
         locationId: "",
         locationName: "",
@@ -258,6 +428,7 @@
         searchTerms: tags,
         archivedProjects: []
       },
+
       admin: {
         address: "",
         primaryContact: {
@@ -276,7 +447,22 @@
         unionNotes: "",
         notes: ""
       },
-      images: urls
+
+      images: urls.map((url, index) => ({
+        assetId:
+          `${galleryId}-${String(index + 1).padStart(3, "0")}`,
+
+        url: url,
+
+        filename:
+          `${prefix}${index + 1}.${extension}`,
+
+        tags: [],
+
+        caption: "",
+
+        source: "r2"
+      }))
     };
 
     document.getElementById("jsonOutput").value =
@@ -284,6 +470,7 @@
   }
 
   generate();
+
 </script>
 
 </body>
