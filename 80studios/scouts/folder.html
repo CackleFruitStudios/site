@@ -159,6 +159,22 @@
   const contentEl =
     document.getElementById("content");
 
+  function getImageUrl(image) {
+    if (typeof image === "string") {
+      return image;
+    }
+
+    return image?.url || "";
+  }
+
+  function getFirstImageUrl(images) {
+    if (!images || images.length === 0) {
+      return "";
+    }
+
+    return getImageUrl(images[0]);
+  }
+
   function findFolder(projects, pathParts) {
 
     for (const project of projects) {
@@ -339,7 +355,7 @@
 
         const thumb =
           gallery.cover ||
-          gallery.images?.[0] ||
+          getFirstImageUrl(gallery.images) ||
           "";
 
         html += `
