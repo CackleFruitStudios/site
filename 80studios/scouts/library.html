@@ -210,6 +210,22 @@
 
   let masterLibrary = {};
 
+  function getImageUrl(image) {
+    if (typeof image === "string") {
+      return image;
+    }
+
+    return image?.url || "";
+  }
+
+  function getFirstImageUrl(images) {
+    if (!images || images.length === 0) {
+      return "";
+    }
+
+    return getImageUrl(images[0]);
+  }
+
   function collectGalleriesFromFolders(
     folders,
     projectName,
@@ -249,7 +265,7 @@
               "",
             cover:
               gallery.cover ||
-              gallery.images?.[0] ||
+              getFirstImageUrl(gallery.images) ||
               "",
             tags: new Set(),
             categories: new Set(),
