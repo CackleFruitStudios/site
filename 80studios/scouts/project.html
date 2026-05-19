@@ -245,6 +245,22 @@
   const contentEl =
     document.getElementById("content");
 
+  function getImageUrl(image) {
+    if (typeof image === "string") {
+      return image;
+    }
+
+    return image?.url || "";
+  }
+
+  function getFirstImageUrl(images) {
+    if (!images || images.length === 0) {
+      return "";
+    }
+
+    return getImageUrl(images[0]);
+  }
+
   function renderFolders(
     folders,
     currentPath = ""
