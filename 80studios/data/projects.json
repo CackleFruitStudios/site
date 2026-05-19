@@ -4,121 +4,63 @@
       "id": "harbor-noir",
       "name": "Harbor Noir",
       "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
-
       "library": {
         "projectType": "Series",
         "productionCompany": "North Coast Pictures",
         "archived": false
       },
-
       "folders": [
         {
           "id": "blackwater-inn",
           "name": "Blackwater Inn",
           "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
-
-          "library": {
-            "locationId": "blackwater-inn-demo",
-            "locationName": "Blackwater Inn",
-            "town": "Greyport",
-            "state": "RI",
-            "country": "USA",
-
-            "tags": [
-              "hotel",
-              "restaurant",
-              "new england",
-              "coastal"
-            ]
-          },
-
           "folders": [
             {
               "id": "int-blackwater-inn",
               "name": "INT Blackwater Inn",
-              "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
-
               "folders": [
                 {
                   "id": "dining-room",
                   "name": "Dining Room",
-                  "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
-
                   "folders": [
                     {
                       "id": "heroes",
                       "name": "Heroes",
-                      "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
-
                       "galleries": [
                         {
                           "id": "blackwater-dining-room-heroes",
                           "title": "Blackwater Inn — Dining Room — Heroes",
                           "subtitle": "Harbor Noir / INT Blackwater Inn",
                           "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
-
                           "library": {
                             "locationId": "blackwater-inn-demo",
                             "locationName": "Blackwater Inn",
                             "town": "Greyport",
                             "state": "RI",
                             "country": "USA",
-
                             "tags": [
                               "restaurant",
-                              "new england",
                               "wood interior",
-                              "waterfront",
-                              "dining room",
-                              "period-friendly"
+                              "waterfront"
                             ],
-
                             "categories": [
-                              "Hospitality",
-                              "Dining",
-                              "Hero Location"
+                              "Dining"
                             ],
-
                             "looks": [
-                              "Day",
                               "Warm",
                               "Upscale"
                             ],
-
                             "searchTerms": [
-                              "wood paneling",
-                              "window light",
-                              "coastal",
                               "classic inn"
                             ],
-
                             "archivedProjects": [
                               "Harbor Noir"
                             ]
                           },
-
-                          "admin": {
-                            "address": "",
-                            "primaryContact": {
-                              "name": "",
-                              "role": "",
-                              "phone": "",
-                              "email": ""
-                            },
-                            "additionalContacts": [],
-                            "price": "",
-                            "availability": "",
-                            "parking": "",
-                            "power": "",
-                            "bathrooms": "",
-                            "permitNotes": "",
-                            "unionNotes": "",
-                            "notes": ""
-                          },
-
+                          "admin": {},
                           "images": [
                             {
-                              "assetId": "hn-bw-dr-heroes-001",
+                              "assetId": "hn-001",
                               "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
                               "filename": "still_1.png",
                               "tags": [],
@@ -126,130 +68,9 @@
                               "source": "r2"
                             },
                             {
-                              "assetId": "hn-bw-dr-heroes-002",
+                              "assetId": "hn-002",
                               "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
                               "filename": "still_2.png",
-                              "tags": [],
-                              "caption": "",
-                              "source": "r2"
-                            },
-                            {
-                              "assetId": "hn-bw-dr-heroes-003",
-                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
-                              "filename": "still_3.png",
-                              "tags": [],
-                              "caption": "",
-                              "source": "r2"
-                            },
-                            {
-                              "assetId": "hn-bw-dr-heroes-004",
-                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
-                              "filename": "still_4.png",
-                              "tags": [],
-                              "caption": "",
-                              "source": "r2"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-
-                    {
-                      "id": "window-views-plates",
-                      "name": "Window Views / Plates",
-                      "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
-
-                      "galleries": [
-                        {
-                          "id": "blackwater-window-views-plates",
-                          "title": "Blackwater Inn — Window Views / Plates",
-                          "subtitle": "Harbor Noir / INT Blackwater Inn",
-                          "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
-
-                          "library": {
-                            "locationId": "blackwater-inn-demo",
-                            "locationName": "Blackwater Inn",
-                            "town": "Greyport",
-                            "state": "RI",
-                            "country": "USA",
-
-                            "tags": [
-                              "restaurant",
-                              "windows",
-                              "plates",
-                              "new england",
-                              "waterfront"
-                            ],
-
-                            "categories": [
-                              "Plates",
-                              "Window Views"
-                            ],
-
-                            "looks": [
-                              "Day",
-                              "Natural Light"
-                            ],
-
-                            "searchTerms": [
-                              "window plates",
-                              "coastal light",
-                              "background plates"
-                            ],
-
-                            "archivedProjects": [
-                              "Harbor Noir"
-                            ]
-                          },
-
-                          "admin": {
-                            "address": "",
-                            "primaryContact": {
-                              "name": "",
-                              "role": "",
-                              "phone": "",
-                              "email": ""
-                            },
-                            "additionalContacts": [],
-                            "price": "",
-                            "availability": "",
-                            "parking": "",
-                            "power": "",
-                            "bathrooms": "",
-                            "permitNotes": "",
-                            "unionNotes": "",
-                            "notes": ""
-                          },
-
-                          "images": [
-                            {
-                              "assetId": "hn-bw-plates-001",
-                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
-                              "filename": "still_1.png",
-                              "tags": [],
-                              "caption": "",
-                              "source": "r2"
-                            },
-                            {
-                              "assetId": "hn-bw-plates-002",
-                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
-                              "filename": "still_2.png",
-                              "tags": [],
-                              "caption": "",
-                              "source": "r2"
-                            },
-                            {
-                              "assetId": "hn-bw-plates-003",
-                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
-                              "filename": "still_3.png",
-                              "tags": [],
-                              "caption": "",
-                              "source": "r2"
-                            },
-                            {
-                              "assetId": "hn-bw-plates-004",
-                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
-                              "filename": "still_4.png",
                               "tags": [],
                               "caption": "",
                               "source": "r2"
@@ -259,6 +80,133 @@
                       ]
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "gud-felluzz",
+      "name": "Gud Felluzz",
+      "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+      "library": {
+        "projectType": "Feature",
+        "productionCompany": "Wiseguy Pictures",
+        "archived": false
+      },
+      "folders": [
+        {
+          "id": "vesuvio-social-club",
+          "name": "Vesuvio Social Club",
+          "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+          "folders": [],
+          "galleries": [
+            {
+              "id": "vesuvio-bar-heroes",
+              "title": "Vesuvio Social Club — Bar Heroes",
+              "subtitle": "Gud Felluzz / INT Club",
+              "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+              "library": {
+                "locationId": "vesuvio-demo",
+                "locationName": "Vesuvio Social Club",
+                "town": "North Jersey",
+                "state": "NJ",
+                "country": "USA",
+                "tags": [
+                  "mob",
+                  "bar",
+                  "red booth",
+                  "period"
+                ],
+                "categories": [
+                  "Club"
+                ],
+                "looks": [
+                  "Night",
+                  "Moody"
+                ],
+                "searchTerms": [
+                  "gangster bar"
+                ],
+                "archivedProjects": [
+                  "Gud Felluzz"
+                ]
+              },
+              "admin": {},
+              "images": [
+                {
+                  "assetId": "gf-001",
+                  "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+                  "filename": "still_3.png",
+                  "tags": [],
+                  "caption": "",
+                  "source": "r2"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "uber-driver",
+      "name": "Uber Driver",
+      "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
+      "library": {
+        "projectType": "Feature",
+        "productionCompany": "Night Meter Films",
+        "archived": false
+      },
+      "folders": [
+        {
+          "id": "late-night-diner",
+          "name": "Late Night Diner",
+          "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
+          "folders": [],
+          "galleries": [
+            {
+              "id": "diner-night-plates",
+              "title": "Late Night Diner — Night Plates",
+              "subtitle": "Uber Driver / EXT Diner",
+              "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
+              "library": {
+                "locationId": "diner-demo",
+                "locationName": "Late Night Diner",
+                "town": "Queens",
+                "state": "NY",
+                "country": "USA",
+                "tags": [
+                  "diner",
+                  "night",
+                  "urban"
+                ],
+                "categories": [
+                  "Street"
+                ],
+                "looks": [
+                  "Rain",
+                  "Neon"
+                ],
+                "searchTerms": [
+                  "late night"
+                ],
+                "archivedProjects": [
+                  "Uber Driver"
+                ]
+              },
+              "admin": {},
+              "images": [
+                {
+                  "assetId": "ud-001",
+                  "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
+                  "filename": "still_4.png",
+                  "tags": [],
+                  "caption": "",
+                  "source": "r2"
                 }
               ]
             }
