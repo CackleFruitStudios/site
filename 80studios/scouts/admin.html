@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scout Admin Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    a {
+      color: #999;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: white;
+      text-decoration: underline;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      color: #aaa;
+      font-size: 13px;
+      margin-top: 14px;
+      margin-bottom: 5px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #1c1c1c;
+      color: white;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 160px;
+      font-family: monospace;
+      white-space: pre;
+    }
+
+    button {
+      margin-top: 18px;
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #333;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .panel {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 18px;
+    }
+
+    .output-title {
+      color: #aaa;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<a href="/scouts/">← Back to Scouts</a>
+
+<h1>Admin Planner</h1>
+
+<div class="subtitle">
+  Generate clean R2 paths, filenames, and starter JSON without touching uploads or auth yet.
+</div>
+
+<div class="panel">
+
+  <div class="grid">
+
+    <div>
+      <label>Type</label>
+      <select id="type">
+        <option value="scout">Scout Gallery</option>
+        <option value="lookbook">Lookbook</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Project ID</label>
+      <input id="projectId" value="on-the-vineyard">
+    </div>
+
+    <div>
+      <label>Folder Path</label>
+      <input id="folderPath" value="inkwell-inn/int-inkwell-inn/dining-room/heroes">
+    </div>
+
+    <div>
+      <label>Gallery / Category ID</label>
+      <input id="galleryId" value="inkwell-inn-dining-room-heroes">
+    </div>
+
+    <div>
+      <label>Display Title</label>
+      <input id="title" value="Inkwell Inn — Dining Room — Heroes">
+    </div>
+
+    <div>
+      <label>Image Prefix</label>
+      <input id="prefix" value="still_">
+    </div>
+
+    <div>
+      <label>Image Count</label>
+      <input id="count" type="number" value="4">
+    </div>
+
+    <div>
+      <label>Extension</label>
+      <select id="extension">
+        <option value="png">png</option>
+        <option value="jpg">jpg</option>
+        <option value="jpeg">jpeg</option>
+        <option value="webp">webp</option>
+      </select>
+    </div>
+
+  </div>
+
+  <label>Tags / Search Terms</label>
+  <input id="tags" value="restaurant, new england, wood interior, waterfront">
+
+  <button onclick="generate()">Generate</button>
+
+</div>
+
+<div class="panel">
+  <div class="output-title">R2 Folder Path</div>
+  <textarea id="r2Path" readonly></textarea>
+</div>
+
+<div class="panel">
+  <div class="output-title">Expected Filenames</div>
+  <textarea id="filenames" readonly></textarea>
+</div>
+
+<div class="panel">
+  <div class="output-title">Starter JSON</div>
+  <textarea id="jsonOutput" readonly></textarea>
+</div>
+
+<script>
+  const PUBLIC_BASE =
+    "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts";
+
+  function slugify(value) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function generate() {
+    const type = document.getElementById("type").value;
+    const projectId = slugify(document.getElementById("projectId").value);
+    const folderPath = document.getElementById("folderPath").value
+      .split("/")
+      .map(slugify)
+      .filter(Boolean)
+      .join("/");
+
+    const galleryId = slugify(document.getElementById("galleryId").value);
+    const title = document.getElementById("title").value.trim();
+    const prefix = document.getElementById("prefix").value.trim();
+    const count = parseInt(document.getElementById("count").value, 10);
+    const extension = document.getElementById("extension").value;
+    const tags = document.getElementById("tags").value
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(Boolean);
+
+    const root =
+      type === "lookbook"
+        ? `lookbooks/${projectId}/${folderPath}`
+        : `${projectId}/${folderPath}`;
+
+    const fullPath =
+      `80scouts/${root}/`;
+
+    const urls = [];
+
+    for (let i = 1; i <= count; i++) {
+      urls.push(
+        `${PUBLIC_BASE}/${root}/${prefix}${i}.${extension}`
+      );
+    }
+
+    document.getElementById("r2Path").value =
+      fullPath;
+
+    document.getElementById("filenames").value =
+      urls
+        .map((url, index) => `${prefix}${index + 1}.${extension}`)
+        .join("\n");
+
+    const starterJson = {
+      id: galleryId,
+      title: title,
+      subtitle: projectId,
+      cover: urls[0] || "",
+      library: {
+        locationId: "",
+        locationName: "",
+        town: "",
+        state: "",
+        country: "USA",
+        tags: tags,
+        categories: [],
+        looks: [],
+        searchTerms: tags,
+        archivedProjects: []
+      },
+      admin: {
+        address: "",
+        primaryContact: {
+          name: "",
+          role: "",
+          phone: "",
+          email: ""
+        },
+        additionalContacts: [],
+        price: "",
+        availability: "",
+        parking: "",
+        power: "",
+        bathrooms: "",
+        permitNotes: "",
+        unionNotes: "",
+        notes: ""
+      },
+      images: urls
+    };
+
+    document.getElementById("jsonOutput").value =
+      JSON.stringify(starterJson, null, 2);
+  }
+
+  generate();
+</script>
+
+</body>
+</html>
