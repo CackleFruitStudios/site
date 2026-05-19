@@ -30,26 +30,26 @@
       color: #fff;
     }
 
- .breadcrumb {
-  color: #999;
-  font-size: 13px;
-  margin-bottom: 10px;
-  line-height: 1.4;
-}
+    .breadcrumb {
+      color: #999;
+      font-size: 13px;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
 
-.breadcrumb a {
-  color: inherit;
-  text-decoration: none;
-}
+    .breadcrumb a {
+      color: inherit;
+      text-decoration: none;
+    }
 
-.breadcrumb a:hover {
-  color: #fff;
-  text-decoration: underline;
-}
+    .breadcrumb a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
 
-.breadcrumb span {
-  color: #aaa;
-}
+    .breadcrumb span {
+      color: #aaa;
+    }
 
     .header h1 {
       font-size: 22px;
@@ -101,15 +101,12 @@
       font-size: 14px;
     }
 
-hr {
-  border: none;
-  border-top: 1px solid #333;
-  margin: 10px 0;
-}
+    hr {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 10px 0;
+    }
 
-.message {
-
-    
     .message {
       padding: 30px;
       text-align: center;
@@ -122,14 +119,16 @@ hr {
 
 <div class="header">
   <a class="back-link" href="/scouts/">← Back to Scouts</a>
-<hr>
 
-  
+  <hr>
+
   <div class="breadcrumb" id="breadcrumb"></div>
-<hr>
-  
+
+  <hr>
+
   <h1 id="gallery-title">Loading gallery...</h1>
-<hr>
+
+  <hr>
 
   <p id="gallery-subtitle"></p>
 </div>
@@ -159,70 +158,59 @@ hr {
   let currentImages = [];
   let currentIndex = 0;
 
-
-
-  
- function findGallery(projects, id) {
-
-  for (const project of projects) {
-
-    const found = searchFolders(
-      project.folders || [],
-      id,
-      [project.name]
-    );
-
-    if (found) {
-      return found;
+  function getImageUrl(image) {
+    if (typeof image === "string") {
+      return image;
     }
+
+    return image.url || "";
   }
 
-  return null;
-}
+  function findGallery(projects, id) {
+    for (const project of projects) {
+      const found = searchFolders(
+        project.folders || [],
+        id,
+        [project.name]
+      );
 
-function searchFolders(folders, id, path) {
-
-  for (const folder of folders) {
-
-    const currentPath = [...path, folder.name];
-
-    for (const gallery of folder.galleries || []) {
-
-      if (gallery.id === id) {
-
-        return {
-          gallery: gallery,
-          path: currentPath
-        };
+      if (found) {
+        return found;
       }
     }
 
-    const found = searchFolders(
-      folder.folders || [],
-      id,
-      currentPath
-    );
-
-    if (found) {
-      return found;
-    }
+    return null;
   }
 
-  return null;
-}
+  function searchFolders(folders, id, path) {
+    for (const folder of folders) {
+      const currentPath = [...path, folder.name];
 
+      for (const gallery of folder.galleries || []) {
+        if (gallery.id === id) {
+          return {
+            gallery: gallery,
+            path: currentPath
+          };
+        }
+      }
 
+      const found = searchFolders(
+        folder.folders || [],
+        id,
+        currentPath
+      );
 
+      if (found) {
+        return found;
+      }
+    }
 
+    return null;
+  }
 
-
-
-
-
-
-  
   function updateLightbox() {
-    lightboxImg.src = currentImages[currentIndex];
+    lightboxImg.src = getImageUrl(currentImages[currentIndex]);
     counterEl.textContent = `${currentIndex + 1} / ${currentImages.length}`;
   }
 
@@ -305,26 +293,26 @@ function searchFolders(folders, id, path) {
     .then(data => {
       const result = findGallery(data.projects || [], galleryId);
 
-if (!result) {
-  titleEl.textContent = "Gallery not found";
-  gridEl.innerHTML = '<div class="message">Check the gallery ID in the URL.</div>';
-  return;
-}
+      if (!result) {
+        titleEl.textContent = "Gallery not found";
+        gridEl.innerHTML = '<div class="message">Check the gallery ID in the URL.</div>';
+        return;
+      }
 
-const gallery = result.gallery;
+      const gallery = result.gallery;
 
-breadcrumbEl.innerHTML = result.path
-  .map((item, index) => {
-    const isLast = index === result.path.length - 1;
+      breadcrumbEl.innerHTML = result.path
+        .map((item, index) => {
+          const isLast = index === result.path.length - 1;
 
-    if (isLast) {
-      return `<span>${item}</span>`;
-    }
+          if (isLast) {
+            return `<span>${item}</span>`;
+          }
 
-    return `<a href="/scouts/">${item}</a>`;
-  })
-  .join(" / ");
-      
+          return `<a href="/scouts/">${item}</a>`;
+        })
+        .join(" / ");
+
       titleEl.textContent = gallery.title || "Untitled Gallery";
       subtitleEl.textContent = gallery.subtitle || "";
 
@@ -335,11 +323,14 @@ breadcrumbEl.innerHTML = result.path
         return;
       }
 
-      currentImages.forEach((src, index) => {
+      currentImages.forEach((image, index) => {
+        const src = getImageUrl(image);
+
         const img = document.createElement("img");
         img.src = src;
         img.alt = gallery.title || "Scout image";
         img.onclick = () => openLightbox(index);
+
         gridEl.appendChild(img);
       });
     })
