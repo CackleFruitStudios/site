@@ -41,6 +41,26 @@
       font-size: 14px;
     }
 
+    .search-wrap {
+      margin-bottom: 20px;
+    }
+
+    .search-input {
+      width: 100%;
+      box-sizing: border-box;
+      background: #1c1c1c;
+      border: 1px solid #333;
+      color: white;
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: #555;
+    }
+
     .section-title {
       color: #aaa;
       font-size: 13px;
@@ -123,6 +143,12 @@
       color: #aaa;
     }
 
+    .result-count {
+      color: #777;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
     hr {
       border: none;
       border-top: 1px solid #333;
@@ -130,6 +156,7 @@
     }
 
     @media (max-width: 600px) {
+
       .location-header {
         display: block;
       }
@@ -155,6 +182,17 @@
 
 <hr>
 
+<div class="search-wrap">
+  <input
+    type="text"
+    id="search"
+    class="search-input"
+    placeholder="Search locations, tags, looks, categories..."
+  >
+</div>
+
+<div class="result-count" id="result-count"></div>
+
 <div id="content">Loading library...</div>
 
 <script>
@@ -163,6 +201,14 @@
 
   const contentEl =
     document.getElementById("content");
+
+  const searchInput =
+    document.getElementById("search");
+
+  const resultCountEl =
+    document.getElementById("result-count");
+
+  let masterLibrary = {};
 
   function collectGalleriesFromFolders(
     folders,
@@ -262,16 +308,58 @@
       .join("");
   }
 
-  function renderLibrary(library) {
+  function matchesSearch(location, query) {
+
+    if (!query) return true;
+
+    const searchable = [
+      location.locationName,
+      location.town,
+      location.state,
+      ...location.tags,
+      ...location.categories,
+      ...location.looks,
+      ...location.searchTerms,
+      ...location.projects
+    ]
+
+    .join(" ")
+    .toLowerCase();
+
+    return searchable.includes(query);
+  }
+
+  function renderLibrary(library, query = "") {
 
     const locations =
-      Object.values(library);
+      Object.values(library)
+
+      .filter(location =>
+        matchesSearch(
+          {
+            ...location,
+            tags: [...location.tags],
+            categories: [...location.categories],
+            looks: [...location.looks],
+            searchTerms: [...location.searchTerms],
+            projects: [...location.projects]
+          },
+          query
+        )
+      )
+
+      .sort((a, b) =>
+        a.locationName.localeCompare(b.locationName)
+      );
+
+    resultCountEl.textContent =
+      `${locations.length} location${locations.length !== 1 ? "s" : ""}`;
 
     if (locations.length === 0) {
 
       contentEl.innerHTML = `
         <p class="message">
-          No library locations found yet.
+          No matching locations found.
         </p>
       `;
 
@@ -332,11 +420,13 @@
             href="/scouts/gallery.html?gallery=${gallery.id}"
           >
             ${gallery.title}
+
             <div class="meta">
               ${gallery.path}
               •
               ${gallery.imageCount} photos
             </div>
+
           </a>
         `;
       });
@@ -349,6 +439,16 @@
 
     contentEl.innerHTML = html;
   }
+
+  searchInput.addEventListener("input", function() {
+
+    const query =
+      searchInput.value
+        .trim()
+        .toLowerCase();
+
+    renderLibrary(masterLibrary, query);
+  });
 
   fetch(DATA_URL)
 
@@ -368,7 +468,9 @@
         );
       });
 
-      renderLibrary(library);
+      masterLibrary = library;
+
+      renderLibrary(masterLibrary);
     })
 
     .catch(error => {
