@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>On The Vineyard RI Lookbook</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      padding: 32px 20px 18px;
+      text-align: center;
+      border-bottom: 1px solid #333;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      color: #999;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    section {
+      padding: 28px 18px;
+      border-bottom: 1px solid #222;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 0 0 14px;
+      color: #ddd;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 8px;
+    }
+
+    .grid img {
+      width: 100%;
+      height: 170px;
+      object-fit: cover;
+      display: block;
+      cursor: pointer;
+      background: #222;
+    }
+
+    .grid img:hover {
+      opacity: 0.86;
+    }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.94);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .lightbox img {
+      max-width: 96%;
+      max-height: 92%;
+    }
+
+    .counter {
+      position: fixed;
+      bottom: 16px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    footer {
+      padding: 18px;
+      color: #555;
+      font-size: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>On The Vineyard RI Lookbook</h1>
+  <div class="subtitle">Visual reference galleries</div>
+</header>
+
+<main id="lookbook"></main>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" onclick="event.stopPropagation()">
+  <div class="counter" id="counter"></div>
+</div>
+
+<footer>
+  Private client reference lookbook
+</footer>
+
+<script>
+  const BASE_URL = "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/lookbooks/on-the-vineyard-ri";
+
+  const galleries = [
+    {
+      title: "Inns",
+      folder: "inn",
+      prefix: "inn",
+      count: 7
+    },
+    {
+      title: "Marinas",
+      folder: "marina",
+      prefix: "marina",
+      count: 7
+    },
+    {
+      title: "Lighthouses",
+      folder: "lighthouse",
+      prefix: "light",
+      count: 7
+    },
+    {
+      title: "Town Looks",
+      folder: "town",
+      prefix: "town",
+      count: 7
+    },
+    {
+      title: "Houses",
+      folder: "houses",
+      prefix: "house",
+      count: 7
+    },
+    {
+      title: "Scenery",
+      folder: "scenery",
+      prefix: "scenery",
+      count: 7
+    }
+  ];
+
+  const lookbook = document.getElementById("lookbook");
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightbox-img");
+  const counter = document.getElementById("counter");
+
+  let allImages = [];
+  let currentIndex = 0;
+
+  function imageUrl(gallery, number) {
+    return `${BASE_URL}/${gallery.folder}/${gallery.prefix}${number}.png`;
+  }
+
+  function render() {
+    let html = "";
+
+    galleries.forEach(gallery => {
+      html += `
+        <section>
+          <h2>${gallery.title}</h2>
+          <div class="grid">
+      `;
+
+      for (let i = 1; i <= gallery.count; i++) {
+        const src = imageUrl(gallery, i);
+        allImages.push(src);
+        const index = allImages.length - 1;
+
+        html += `
+          <img src="${src}" onclick="openLightbox(${index})" alt="${gallery.title} ${i}">
+        `;
+      }
+
+      html += `
+          </div>
+        </section>
+      `;
+    });
+
+    lookbook.innerHTML = html;
+  }
+
+  function updateLightbox() {
+    lightboxImg.src = allImages[currentIndex];
+    counter.textContent = `${currentIndex + 1} / ${allImages.length}`;
+  }
+
+  function openLightbox(index) {
+    currentIndex = index;
+    updateLightbox();
+    lightbox.style.display = "flex";
+  }
+
+  function closeLightbox() {
+    lightbox.style.display = "none";
+    lightboxImg.src = "";
+  }
+
+  function nextImage(event) {
+    if (event) event.stopPropagation();
+    currentIndex++;
+    if (currentIndex >= allImages.length) currentIndex = 0;
+    updateLightbox();
+  }
+
+  function prevImage(event) {
+    if (event) event.stopPropagation();
+    currentIndex--;
+    if (currentIndex < 0) currentIndex = allImages.length - 1;
+    updateLightbox();
+  }
+
+  document.addEventListener("keydown", function(event) {
+    if (lightbox.style.display !== "flex") return;
+
+    if (event.key === "ArrowRight") nextImage(event);
+    if (event.key === "ArrowLeft") prevImage(event);
+    if (event.key === "Escape") closeLightbox();
+  });
+
+  let touchStartX = 0;
+
+  lightbox.addEventListener("touchstart", function(event) {
+    touchStartX = event.changedTouches[0].screenX;
+  });
+
+  lightbox.addEventListener("touchend", function(event) {
+    const touchEndX = event.changedTouches[0].screenX;
+
+    if (touchEndX < touchStartX - 50) nextImage(event);
+    if (touchEndX > touchStartX + 50) prevImage(event);
+  });
+
+  render();
+</script>
+
+</body>
+</html>
