@@ -117,10 +117,38 @@
                           },
 
                           "images": [
-                            "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
-                            "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
-                            "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
-                            "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png"
+                            {
+                              "assetId": "otv-inn-dr-heroes-001",
+                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
+                              "filename": "still_1.png",
+                              "tags": [],
+                              "caption": "",
+                              "source": "r2"
+                            },
+                            {
+                              "assetId": "otv-inn-dr-heroes-002",
+                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
+                              "filename": "still_2.png",
+                              "tags": [],
+                              "caption": "",
+                              "source": "r2"
+                            },
+                            {
+                              "assetId": "otv-inn-dr-heroes-003",
+                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+                              "filename": "still_3.png",
+                              "tags": [],
+                              "caption": "",
+                              "source": "r2"
+                            },
+                            {
+                              "assetId": "otv-inn-dr-heroes-004",
+                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
+                              "filename": "still_4.png",
+                              "tags": [],
+                              "caption": "",
+                              "source": "r2"
+                            }
                           ]
                         }
                       ]
@@ -194,10 +222,38 @@
                           },
 
                           "images": [
-                            "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
-                            "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
-                            "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
-                            "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png"
+                            {
+                              "assetId": "otv-inn-dr-plates-001",
+                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_1.png",
+                              "filename": "still_1.png",
+                              "tags": [],
+                              "caption": "",
+                              "source": "r2"
+                            },
+                            {
+                              "assetId": "otv-inn-dr-plates-002",
+                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_2.png",
+                              "filename": "still_2.png",
+                              "tags": [],
+                              "caption": "",
+                              "source": "r2"
+                            },
+                            {
+                              "assetId": "otv-inn-dr-plates-003",
+                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_3.png",
+                              "filename": "still_3.png",
+                              "tags": [],
+                              "caption": "",
+                              "source": "r2"
+                            },
+                            {
+                              "assetId": "otv-inn-dr-plates-004",
+                              "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts/on-the-vineyard/inkwell-inn/int-inkwell-inn/dining-room/heroes/still_4.png",
+                              "filename": "still_4.png",
+                              "tags": [],
+                              "caption": "",
+                              "source": "r2"
+                            }
                           ]
                         }
                       ]
