@@ -1,0 +1,53 @@
+{
+  "lookbooks": [
+    {
+      "id": "on-the-vineyard-ri",
+      "title": "On The Vineyard RI Lookbook",
+      "status": "active",
+      "categories": [
+        {
+          "id": "inn",
+          "title": "Inns",
+          "folder": "inn",
+          "prefix": "inn",
+          "count": 7
+        },
+        {
+          "id": "marina",
+          "title": "Marinas",
+          "folder": "marina",
+          "prefix": "marina",
+          "count": 7
+        },
+        {
+          "id": "lighthouse",
+          "title": "Lighthouses",
+          "folder": "lighthouse",
+          "prefix": "light",
+          "count": 7
+        },
+        {
+          "id": "town",
+          "title": "Town Looks",
+          "folder": "town",
+          "prefix": "town",
+          "count": 7
+        },
+        {
+          "id": "houses",
+          "title": "Houses",
+          "folder": "houses",
+          "prefix": "house",
+          "count": 7
+        },
+        {
+          "id": "scenery",
+          "title": "Scenery",
+          "folder": "scenery",
+          "prefix": "scenery",
+          "count": 7
+        }
+      ]
+    }
+  ]
+}
