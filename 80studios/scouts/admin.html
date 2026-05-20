@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
+
     body {
       margin: 0;
       background: #111;
@@ -101,66 +102,56 @@
       margin-top: 12px;
       border: 2px dashed #444;
       border-radius: 8px;
-      padding: 30px;
+      padding: 40px;
       text-align: center;
       color: #888;
       background: #141414;
+      transition: 0.2s;
     }
 
-    .upload-zone:hover {
-      border-color: #666;
-      background: #181818;
+    .upload-zone.dragover {
+      border-color: #888;
+      background: #1d1d1d;
     }
 
-    .queue-grid {
+    .preview-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 14px;
-      margin-top: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
     }
 
-    .queue-card {
+    .preview-card {
       background: #1a1a1a;
       border: 1px solid #333;
       border-radius: 6px;
-      padding: 14px;
+      overflow: hidden;
     }
 
-    .queue-title {
-      font-size: 14px;
-      margin-bottom: 8px;
+    .preview-card img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+      background: #222;
     }
 
-    .queue-meta {
-      color: #888;
+    .preview-info {
+      padding: 10px;
+    }
+
+    .preview-name {
       font-size: 12px;
-      line-height: 1.5;
+      margin-bottom: 6px;
+      word-break: break-word;
     }
 
-    .status {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 4px 8px;
-      border-radius: 999px;
+    .preview-meta {
+      color: #888;
       font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      line-height: 1.4;
     }
 
-    .pending {
-      background: #3a2d12;
-      color: #e5b95c;
-    }
-
-    .complete {
-      background: #18351d;
-      color: #71d685;
-    }
-
-    .failed {
-      background: #3b1717;
-      color: #f07a7a;
-    }
   </style>
 </head>
 
@@ -171,7 +162,7 @@
 <h1>Admin Planner</h1>
 
 <div class="subtitle">
-  Upload planning, scout prep, JSON generation, and future asset management.
+  Local upload preparation, metadata generation, and future R2 asset management.
 </div>
 
 <div class="panel">
@@ -206,120 +197,43 @@
       <input id="title" value="Blackwater Inn — Dining Room — Heroes">
     </div>
 
-    <div>
-      <label>Image Prefix</label>
-      <input id="prefix" value="still_">
-    </div>
-
-    <div>
-      <label>Image Count</label>
-      <input id="count" type="number" value="4">
-    </div>
-
-    <div>
-      <label>Extension</label>
-      <select id="extension">
-        <option value="png">png</option>
-        <option value="jpg">jpg</option>
-        <option value="jpeg">jpeg</option>
-        <option value="webp">webp</option>
-      </select>
-    </div>
-
   </div>
-
-  <label>Tags / Search Terms</label>
-
-  <input
-    id="tags"
-    value="restaurant, new england, wood interior, waterfront"
-  >
-
-  <button onclick="generate()">
-    Generate
-  </button>
 
 </div>
 
 <div class="panel">
 
   <div class="output-title">
-    Upload Queue
+    Local Upload Queue
   </div>
 
-  <div class="upload-zone">
+  <div
+    class="upload-zone"
+    id="uploadZone"
+  >
     Drag & Drop Scout Photos Here
     <br><br>
-    Future:
-    auto-tagging • duplicate detection • R2 upload • metadata extraction
+    No uploads yet — local preview only
   </div>
 
-  <div class="queue-grid">
+  <div
+    class="preview-grid"
+    id="previewGrid"
+  ></div>
 
-    <div class="queue-card">
-      <div class="queue-title">
-        still_1.png
-      </div>
+</div>
 
-      <div class="queue-meta">
-        Pending upload<br>
-        Dining Room Heroes<br>
-        14.2 MB
-      </div>
+<div class="panel">
 
-      <div class="status pending">
-        Pending
-      </div>
-    </div>
-
-    <div class="queue-card">
-      <div class="queue-title">
-        still_2.png
-      </div>
-
-      <div class="queue-meta">
-        Uploaded to R2<br>
-        Metadata generated<br>
-        Tagged: waterfront
-      </div>
-
-      <div class="status complete">
-        Complete
-      </div>
-    </div>
-
-    <div class="queue-card">
-      <div class="queue-title">
-        still_3.png
-      </div>
-
-      <div class="queue-meta">
-        Upload interrupted<br>
-        Retry required
-      </div>
-
-      <div class="status failed">
-        Failed
-      </div>
-    </div>
-
+  <div class="output-title">
+    Generated Asset JSON
   </div>
 
-</div>
+  <textarea
+    id="jsonOutput"
+    readonly
+  ></textarea>
 
-<div class="panel">
-  <div class="output-title">R2 Folder Path</div>
-  <textarea id="r2Path" readonly></textarea>
-</div>
-
-<div class="panel">
-  <div class="output-title">Expected Filenames</div>
-  <textarea id="filenames" readonly></textarea>
-</div>
-
-<div class="panel">
-  <div class="output-title">Starter JSON</div>
-  <textarea id="jsonOutput" readonly></textarea>
 </div>
 
 <script>
@@ -327,7 +241,19 @@
   const PUBLIC_BASE =
     "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts";
 
+  const uploadZone =
+    document.getElementById("uploadZone");
+
+  const previewGrid =
+    document.getElementById("previewGrid");
+
+  const jsonOutput =
+    document.getElementById("jsonOutput");
+
+  let localFiles = [];
+
   function slugify(value) {
+
     return value
       .toLowerCase()
       .trim()
@@ -336,10 +262,92 @@
       .replace(/^-+|-+$/g, "");
   }
 
-  function generate() {
+  uploadZone.addEventListener("dragover", event => {
 
-    const type =
-      document.getElementById("type").value;
+    event.preventDefault();
+
+    uploadZone.classList.add("dragover");
+  });
+
+  uploadZone.addEventListener("dragleave", () => {
+
+    uploadZone.classList.remove("dragover");
+  });
+
+  uploadZone.addEventListener("drop", event => {
+
+    event.preventDefault();
+
+    uploadZone.classList.remove("dragover");
+
+    const files =
+      [...event.dataTransfer.files]
+
+      .filter(file =>
+        file.type.startsWith("image/")
+      );
+
+    localFiles = files;
+
+    renderPreviews();
+
+    generateJson();
+  });
+
+  function renderPreviews() {
+
+    previewGrid.innerHTML = "";
+
+    localFiles.forEach((file, index) => {
+
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "preview-card";
+
+      const img =
+        document.createElement("img");
+
+      const reader =
+        new FileReader();
+
+      reader.onload = e => {
+
+        img.src = e.target.result;
+      };
+
+      reader.readAsDataURL(file);
+
+      const info =
+        document.createElement("div");
+
+      info.className =
+        "preview-info";
+
+      info.innerHTML = `
+        <div class="preview-name">
+          ${file.name}
+        </div>
+
+        <div class="preview-meta">
+          ${(file.size / 1024 / 1024).toFixed(2)} MB
+          <br>
+          ${file.type}
+          <br>
+          #${index + 1}
+        </div>
+      `;
+
+      card.appendChild(img);
+
+      card.appendChild(info);
+
+      previewGrid.appendChild(card);
+    });
+  }
+
+  function generateJson() {
 
     const projectId =
       slugify(
@@ -361,52 +369,29 @@
     const title =
       document.getElementById("title").value.trim();
 
-    const prefix =
-      document.getElementById("prefix").value.trim();
-
-    const count =
-      parseInt(
-        document.getElementById("count").value,
-        10
-      );
-
-    const extension =
-      document.getElementById("extension").value;
-
-    const tags =
-      document.getElementById("tags").value
-      .split(",")
-      .map(tag => tag.trim())
-      .filter(Boolean);
-
     const root =
-      type === "lookbook"
-        ? `lookbooks/${projectId}/${folderPath}`
-        : `${projectId}/${folderPath}`;
+      `${projectId}/${folderPath}`;
 
-    const fullPath =
-      `80scouts/${root}/`;
+    const images =
+      localFiles.map((file, index) => ({
 
-    const urls = [];
+        assetId:
+          `${galleryId}-${String(index + 1).padStart(3, "0")}`,
 
-    for (let i = 1; i <= count; i++) {
+        url:
+          `${PUBLIC_BASE}/${root}/${file.name}`,
 
-      urls.push(
-        `${PUBLIC_BASE}/${root}/${prefix}${i}.${extension}`
-      );
-    }
+        filename:
+          file.name,
 
-    document.getElementById("r2Path").value =
-      fullPath;
+        tags: [],
 
-    document.getElementById("filenames").value =
-      urls
-      .map((url, index) =>
-        `${prefix}${index + 1}.${extension}`
-      )
-      .join("\n");
+        caption: "",
 
-    const starterJson = {
+        source: "r2"
+      }));
+
+    const output = {
 
       id: galleryId,
 
@@ -414,7 +399,8 @@
 
       subtitle: projectId,
 
-      cover: urls[0] || "",
+      cover:
+        images[0]?.url || "",
 
       library: {
         locationId: "",
@@ -422,54 +408,21 @@
         town: "",
         state: "",
         country: "USA",
-        tags: tags,
+        tags: [],
         categories: [],
         looks: [],
-        searchTerms: tags,
+        searchTerms: [],
         archivedProjects: []
       },
 
-      admin: {
-        address: "",
-        primaryContact: {
-          name: "",
-          role: "",
-          phone: "",
-          email: ""
-        },
-        additionalContacts: [],
-        price: "",
-        availability: "",
-        parking: "",
-        power: "",
-        bathrooms: "",
-        permitNotes: "",
-        unionNotes: "",
-        notes: ""
-      },
+      admin: {},
 
-      images: urls.map((url, index) => ({
-        assetId:
-          `${galleryId}-${String(index + 1).padStart(3, "0")}`,
-
-        url: url,
-
-        filename:
-          `${prefix}${index + 1}.${extension}`,
-
-        tags: [],
-
-        caption: "",
-
-        source: "r2"
-      }))
+      images: images
     };
 
-    document.getElementById("jsonOutput").value =
-      JSON.stringify(starterJson, null, 2);
+    jsonOutput.value =
+      JSON.stringify(output, null, 2);
   }
-
-  generate();
 
 </script>
 
