@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
+
     body {
       margin: 0;
       background: #111;
@@ -201,6 +202,45 @@
       font-size: 12px;
     }
 
+    .upload-controls {
+      margin-top: 16px;
+    }
+
+    .progress-wrap {
+      margin-top: 8px;
+      height: 8px;
+      background: #222;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #71d685;
+      transition: width 0.2s;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: #222;
+      color: #aaa;
+    }
+
+    .status.uploading {
+      background: #4d3a12;
+      color: #f4cb68;
+    }
+
+    .status.complete {
+      background: #18351d;
+      color: #71d685;
+    }
+
   </style>
 </head>
 
@@ -215,6 +255,7 @@
 </div>
 
 <div class="panel">
+
   <div class="grid">
 
     <div>
@@ -262,7 +303,15 @@
   <div class="upload-zone" id="uploadZone">
     Drag & Drop Scout Photos Here
     <br><br>
-    No uploads yet — local preview only
+    Upload architecture phase
+  </div>
+
+  <div class="upload-controls">
+
+    <button onclick="simulateUpload()">
+      Simulate Upload Queue
+    </button>
+
   </div>
 
   <div class="preview-grid" id="previewGrid"></div>
@@ -307,65 +356,7 @@
 
   let selectedCoverIndex = 0;
 
-  const TAG_KEYWORDS = {
-
-    restaurant: [
-      "restaurant",
-      "dining",
-      "kitchen",
-      "bar",
-      "cafe",
-      "diner"
-    ],
-
-    waterfront: [
-      "water",
-      "dock",
-      "marina",
-      "harbor",
-      "ocean",
-      "beach"
-    ],
-
-    residential: [
-      "house",
-      "home",
-      "bedroom",
-      "living",
-      "apartment"
-    ],
-
-    office: [
-      "office",
-      "conference",
-      "cubicle",
-      "desk"
-    ],
-
-    street: [
-      "street",
-      "road",
-      "alley",
-      "parking",
-      "garage"
-    ],
-
-    night: [
-      "night",
-      "dark",
-      "evening"
-    ],
-
-    exterior: [
-      "ext",
-      "exterior"
-    ],
-
-    interior: [
-      "int",
-      "interior"
-    ]
-  };
+  let uploadProgress = {};
 
   function slugify(value) {
 
@@ -375,29 +366,6 @@
       .replace(/&/g, "and")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
-  }
-
-  function extractTags(text) {
-
-    const lower =
-      text.toLowerCase();
-
-    const foundTags =
-      new Set();
-
-    Object.entries(TAG_KEYWORDS)
-      .forEach(([tag, keywords]) => {
-
-        keywords.forEach(keyword => {
-
-          if (lower.includes(keyword)) {
-
-            foundTags.add(tag);
-          }
-        });
-      });
-
-    return [...foundTags];
   }
 
   function saveSession() {
@@ -430,9 +398,6 @@
       STORAGE_KEY,
       JSON.stringify(session)
     );
-
-    saveBanner.innerHTML =
-      "Workspace auto-saved locally.";
   }
 
   function restoreSession() {
@@ -496,6 +461,8 @@
 
     localFiles = files;
 
+    uploadProgress = {};
+
     selectedCoverIndex = 0;
 
     renderPreviews();
@@ -508,6 +475,16 @@
     previewGrid.innerHTML = "";
 
     localFiles.forEach((file, index) => {
+
+      const progress =
+        uploadProgress[index] || 0;
+
+      const status =
+        progress >= 100
+          ? "complete"
+          : progress > 0
+          ? "uploading"
+          : "";
 
       const card =
         document.createElement("div");
@@ -538,13 +515,8 @@
       info.className =
         "preview-info";
 
-      const dimensionsId =
-        `dimensions-${index}`;
-
-      const autoTags =
-        extractTags(file.name);
-
       info.innerHTML = `
+
         <div class="order-badge">
           Position #${index + 1}
         </div>
@@ -553,17 +525,21 @@
           ${file.name}
         </div>
 
-        <div class="preview-meta">
-          ${(file.size / 1024 / 1024).toFixed(2)} MB
-          <br>
-          ${file.type}
-          <br>
-          <span id="${dimensionsId}">
-            Loading dimensions...
-          </span>
-          <br><br>
-          Auto Tags:
-          ${autoTags.join(", ") || "none"}
+        <div class="status ${status}">
+          ${
+            progress >= 100
+              ? "Complete"
+              : progress > 0
+              ? "Uploading"
+              : "Ready"
+          }
+        </div>
+
+        <div class="progress-wrap">
+          <div
+            class="progress-bar"
+            style="width:${progress}%"
+          ></div>
         </div>
 
         <div class="move-row">
@@ -582,7 +558,11 @@
           class="cover-btn ${index === selectedCoverIndex ? "active" : ""}"
           onclick="setCover(${index})"
         >
-          ${index === selectedCoverIndex ? "Cover Image" : "Set As Cover"}
+          ${
+            index === selectedCoverIndex
+              ? "Cover Image"
+              : "Set As Cover"
+          }
         </button>
 
         <button
@@ -591,6 +571,7 @@
         >
           Remove
         </button>
+
       `;
 
       card.appendChild(img);
@@ -598,17 +579,30 @@
       card.appendChild(info);
 
       previewGrid.appendChild(card);
+    });
+  }
 
-      img.onload = () => {
+  function simulateUpload() {
 
-        const orientation =
-          img.naturalWidth > img.naturalHeight
-            ? "Landscape"
-            : "Portrait";
+    localFiles.forEach((file, index) => {
 
-        document.getElementById(dimensionsId).innerHTML =
-          `${img.naturalWidth} × ${img.naturalHeight} • ${orientation}`;
-      };
+      uploadProgress[index] = 0;
+
+      const interval = setInterval(() => {
+
+        uploadProgress[index] +=
+          Math.random() * 18;
+
+        if (uploadProgress[index] >= 100) {
+
+          uploadProgress[index] = 100;
+
+          clearInterval(interval);
+        }
+
+        renderPreviews();
+
+      }, 180);
     });
   }
 
@@ -618,13 +612,6 @@
 
     [localFiles[index - 1], localFiles[index]] =
     [localFiles[index], localFiles[index - 1]];
-
-    if (selectedCoverIndex === index) {
-      selectedCoverIndex = index - 1;
-    }
-    else if (selectedCoverIndex === index - 1) {
-      selectedCoverIndex = index;
-    }
 
     renderPreviews();
 
@@ -638,13 +625,6 @@
     [localFiles[index + 1], localFiles[index]] =
     [localFiles[index], localFiles[index + 1]];
 
-    if (selectedCoverIndex === index) {
-      selectedCoverIndex = index + 1;
-    }
-    else if (selectedCoverIndex === index + 1) {
-      selectedCoverIndex = index;
-    }
-
     renderPreviews();
 
     generateJson();
@@ -653,10 +633,6 @@
   function removeImage(index) {
 
     localFiles.splice(index, 1);
-
-    if (selectedCoverIndex >= localFiles.length) {
-      selectedCoverIndex = 0;
-    }
 
     renderPreviews();
 
@@ -679,15 +655,12 @@
         document.getElementById("projectId").value
       );
 
-    const folderPathRaw =
-      document.getElementById("folderPath").value;
-
     const folderPath =
-      folderPathRaw
-        .split("/")
-        .map(slugify)
-        .filter(Boolean)
-        .join("/");
+      document.getElementById("folderPath").value
+      .split("/")
+      .map(slugify)
+      .filter(Boolean)
+      .join("/");
 
     const galleryId =
       slugify(
@@ -699,20 +672,6 @@
 
     const root =
       `${projectId}/${folderPath}`;
-
-    const folderTags =
-      extractTags(folderPathRaw);
-
-    const imageTags =
-      localFiles.flatMap(file =>
-        extractTags(file.name)
-      );
-
-    const combinedTags =
-      [...new Set([
-        ...folderTags,
-        ...imageTags
-      ])];
 
     const images =
       localFiles.map((file, index) => ({
@@ -726,8 +685,7 @@
         filename:
           file.name,
 
-        tags:
-          extractTags(file.name),
+        tags: [],
 
         caption: "",
 
@@ -745,32 +703,7 @@
       cover:
         images[selectedCoverIndex]?.url || "",
 
-      library: {
-
-        locationId: "",
-
-        locationName: "",
-
-        town: "",
-
-        state: "",
-
-        country: "USA",
-
-        tags:
-          combinedTags,
-
-        categories:
-          combinedTags,
-
-        looks:
-          combinedTags,
-
-        searchTerms:
-          combinedTags,
-
-        archivedProjects: []
-      },
+      library: {},
 
       admin: {},
 
