@@ -62,14 +62,14 @@
     }
 
     button {
-      margin-top: 18px;
+      margin-top: 8px;
       background: #2a2a2a;
       color: white;
       border: 1px solid #444;
       border-radius: 6px;
-      padding: 12px 16px;
+      padding: 8px 10px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 12px;
     }
 
     button:hover {
@@ -158,35 +158,42 @@
 
     .remove-btn {
       width: 100%;
-      margin-top: 10px;
       background: #3b1717;
       border: 1px solid #5c2222;
       color: #f07a7a;
-      padding: 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .remove-btn:hover {
-      background: #512020;
     }
 
     .cover-btn {
       width: 100%;
-      margin-top: 8px;
       background: #18351d;
       border: 1px solid #2d5a33;
       color: #71d685;
-      padding: 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
     }
 
     .cover-btn.active {
       background: #2d5a33;
       color: white;
+    }
+
+    .move-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .move-btn {
+      flex: 1;
+    }
+
+    .order-badge {
+      display: inline-block;
+      margin-bottom: 8px;
+      background: #222;
+      border: 1px solid #444;
+      color: #aaa;
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 999px;
     }
 
   </style>
@@ -378,6 +385,10 @@
         `dimensions-${index}`;
 
       info.innerHTML = `
+        <div class="order-badge">
+          Position #${index + 1}
+        </div>
+
         <div class="preview-name">
           ${file.name}
         </div>
@@ -390,8 +401,24 @@
           <span id="${dimensionsId}">
             Loading dimensions...
           </span>
-          <br>
-          Position #${index + 1}
+        </div>
+
+        <div class="move-row">
+
+          <button
+            class="move-btn"
+            onclick="moveLeft(${index})"
+          >
+            ← Left
+          </button>
+
+          <button
+            class="move-btn"
+            onclick="moveRight(${index})"
+          >
+            Right →
+          </button>
+
         </div>
 
         <button
@@ -426,6 +453,44 @@
           `${img.naturalWidth} × ${img.naturalHeight} • ${orientation}`;
       };
     });
+  }
+
+  function moveLeft(index) {
+
+    if (index === 0) return;
+
+    [localFiles[index - 1], localFiles[index]] =
+    [localFiles[index], localFiles[index - 1]];
+
+    if (selectedCoverIndex === index) {
+      selectedCoverIndex = index - 1;
+    }
+    else if (selectedCoverIndex === index - 1) {
+      selectedCoverIndex = index;
+    }
+
+    renderPreviews();
+
+    generateJson();
+  }
+
+  function moveRight(index) {
+
+    if (index >= localFiles.length - 1) return;
+
+    [localFiles[index + 1], localFiles[index]] =
+    [localFiles[index], localFiles[index + 1]];
+
+    if (selectedCoverIndex === index) {
+      selectedCoverIndex = index + 1;
+    }
+    else if (selectedCoverIndex === index + 1) {
+      selectedCoverIndex = index;
+    }
+
+    renderPreviews();
+
+    generateJson();
   }
 
   function removeImage(index) {
