@@ -6,7 +6,6 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-
     body {
       margin: 0;
       background: #111;
@@ -195,7 +194,6 @@
       padding: 4px 8px;
       border-radius: 999px;
     }
-
   </style>
 </head>
 
@@ -210,7 +208,6 @@
 </div>
 
 <div class="panel">
-
   <div class="grid">
 
     <div>
@@ -242,33 +239,23 @@
     </div>
 
   </div>
-
 </div>
 
 <div class="panel">
-
   <div class="output-title">
     Local Upload Queue
   </div>
 
-  <div
-    class="upload-zone"
-    id="uploadZone"
-  >
+  <div class="upload-zone" id="uploadZone">
     Drag & Drop Scout Photos Here
     <br><br>
     No uploads yet — local preview only
   </div>
 
-  <div
-    class="preview-grid"
-    id="previewGrid"
-  ></div>
-
+  <div class="preview-grid" id="previewGrid"></div>
 </div>
 
 <div class="panel">
-
   <div class="output-title">
     Generated Asset JSON
   </div>
@@ -277,15 +264,10 @@
     Copy JSON
   </button>
 
-  <textarea
-    id="jsonOutput"
-    readonly
-  ></textarea>
-
+  <textarea id="jsonOutput" readonly></textarea>
 </div>
 
 <script>
-
   const PUBLIC_BASE =
     "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts";
 
@@ -299,11 +281,61 @@
     document.getElementById("jsonOutput");
 
   let localFiles = [];
-
   let selectedCoverIndex = 0;
 
-  function slugify(value) {
+  const TAG_KEYWORDS = {
+    restaurant: [
+      "restaurant",
+      "dining",
+      "kitchen",
+      "bar",
+      "cafe",
+      "diner"
+    ],
+    waterfront: [
+      "water",
+      "dock",
+      "marina",
+      "harbor",
+      "ocean",
+      "beach"
+    ],
+    residential: [
+      "house",
+      "home",
+      "bedroom",
+      "living",
+      "apartment"
+    ],
+    office: [
+      "office",
+      "conference",
+      "cubicle",
+      "desk"
+    ],
+    street: [
+      "street",
+      "road",
+      "alley",
+      "parking",
+      "garage"
+    ],
+    night: [
+      "night",
+      "dark",
+      "evening"
+    ],
+    exterior: [
+      "ext",
+      "exterior"
+    ],
+    interior: [
+      "int",
+      "interior"
+    ]
+  };
 
+  function slugify(value) {
     return value
       .toLowerCase()
       .trim()
@@ -312,46 +344,55 @@
       .replace(/^-+|-+$/g, "");
   }
 
+  function extractTags(text) {
+    const lower =
+      text.toLowerCase();
+
+    const foundTags =
+      new Set();
+
+    Object.entries(TAG_KEYWORDS)
+      .forEach(([tag, keywords]) => {
+        keywords.forEach(keyword => {
+          if (lower.includes(keyword)) {
+            foundTags.add(tag);
+          }
+        });
+      });
+
+    return [...foundTags];
+  }
+
   uploadZone.addEventListener("dragover", event => {
-
     event.preventDefault();
-
     uploadZone.classList.add("dragover");
   });
 
   uploadZone.addEventListener("dragleave", () => {
-
     uploadZone.classList.remove("dragover");
   });
 
   uploadZone.addEventListener("drop", event => {
-
     event.preventDefault();
-
     uploadZone.classList.remove("dragover");
 
     const files =
       [...event.dataTransfer.files]
-
-      .filter(file =>
-        file.type.startsWith("image/")
-      );
+        .filter(file =>
+          file.type.startsWith("image/")
+        );
 
     localFiles = files;
-
     selectedCoverIndex = 0;
 
     renderPreviews();
-
     generateJson();
   });
 
   function renderPreviews() {
-
     previewGrid.innerHTML = "";
 
     localFiles.forEach((file, index) => {
-
       const card =
         document.createElement("div");
 
@@ -369,7 +410,6 @@
         new FileReader();
 
       reader.onload = e => {
-
         img.src = e.target.result;
       };
 
@@ -383,6 +423,9 @@
 
       const dimensionsId =
         `dimensions-${index}`;
+
+      const autoTags =
+        extractTags(file.name);
 
       info.innerHTML = `
         <div class="order-badge">
@@ -401,24 +444,19 @@
           <span id="${dimensionsId}">
             Loading dimensions...
           </span>
+          <br><br>
+          Auto Tags:
+          ${autoTags.join(", ") || "none"}
         </div>
 
         <div class="move-row">
-
-          <button
-            class="move-btn"
-            onclick="moveLeft(${index})"
-          >
+          <button class="move-btn" onclick="moveLeft(${index})">
             ← Left
           </button>
 
-          <button
-            class="move-btn"
-            onclick="moveRight(${index})"
-          >
+          <button class="move-btn" onclick="moveRight(${index})">
             Right →
           </button>
-
         </div>
 
         <button
@@ -428,22 +466,16 @@
           ${index === selectedCoverIndex ? "Cover Image" : "Set As Cover"}
         </button>
 
-        <button
-          class="remove-btn"
-          onclick="removeImage(${index})"
-        >
+        <button class="remove-btn" onclick="removeImage(${index})">
           Remove
         </button>
       `;
 
       card.appendChild(img);
-
       card.appendChild(info);
-
       previewGrid.appendChild(card);
 
       img.onload = () => {
-
         const orientation =
           img.naturalWidth > img.naturalHeight
             ? "Landscape"
@@ -456,7 +488,6 @@
   }
 
   function moveLeft(index) {
-
     if (index === 0) return;
 
     [localFiles[index - 1], localFiles[index]] =
@@ -470,12 +501,10 @@
     }
 
     renderPreviews();
-
     generateJson();
   }
 
   function moveRight(index) {
-
     if (index >= localFiles.length - 1) return;
 
     [localFiles[index + 1], localFiles[index]] =
@@ -489,12 +518,10 @@
     }
 
     renderPreviews();
-
     generateJson();
   }
 
   function removeImage(index) {
-
     localFiles.splice(index, 1);
 
     if (selectedCoverIndex >= localFiles.length) {
@@ -502,32 +529,31 @@
     }
 
     renderPreviews();
-
     generateJson();
   }
 
   function setCover(index) {
-
     selectedCoverIndex = index;
 
     renderPreviews();
-
     generateJson();
   }
 
   function generateJson() {
-
     const projectId =
       slugify(
         document.getElementById("projectId").value
       );
 
+    const folderPathRaw =
+      document.getElementById("folderPath").value;
+
     const folderPath =
-      document.getElementById("folderPath").value
-      .split("/")
-      .map(slugify)
-      .filter(Boolean)
-      .join("/");
+      folderPathRaw
+        .split("/")
+        .map(slugify)
+        .filter(Boolean)
+        .join("/");
 
     const galleryId =
       slugify(
@@ -540,9 +566,22 @@
     const root =
       `${projectId}/${folderPath}`;
 
+    const folderTags =
+      extractTags(folderPathRaw);
+
+    const imageTags =
+      localFiles.flatMap(file =>
+        extractTags(file.name)
+      );
+
+    const combinedTags =
+      [...new Set([
+        ...folderTags,
+        ...imageTags
+      ])];
+
     const images =
       localFiles.map((file, index) => ({
-
         assetId:
           `${galleryId}-${String(index + 1).padStart(3, "0")}`,
 
@@ -552,7 +591,8 @@
         filename:
           file.name,
 
-        tags: [],
+        tags:
+          extractTags(file.name),
 
         caption: "",
 
@@ -560,13 +600,9 @@
       }));
 
     const output = {
-
       id: galleryId,
-
       title: title,
-
       subtitle: projectId,
-
       cover:
         images[selectedCoverIndex]?.url || "",
 
@@ -576,15 +612,14 @@
         town: "",
         state: "",
         country: "USA",
-        tags: [],
-        categories: [],
-        looks: [],
-        searchTerms: [],
+        tags: combinedTags,
+        categories: combinedTags,
+        looks: combinedTags,
+        searchTerms: combinedTags,
         archivedProjects: []
       },
 
       admin: {},
-
       images: images
     };
 
@@ -593,14 +628,12 @@
   }
 
   function copyJson() {
-
     navigator.clipboard.writeText(
       jsonOutput.value
     );
 
     alert("JSON copied.");
   }
-
 </script>
 
 </body>
