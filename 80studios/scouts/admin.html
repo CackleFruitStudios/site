@@ -194,6 +194,13 @@
       padding: 4px 8px;
       border-radius: 999px;
     }
+
+    .save-banner {
+      margin-top: 12px;
+      color: #71d685;
+      font-size: 12px;
+    }
+
   </style>
 </head>
 
@@ -239,9 +246,15 @@
     </div>
 
   </div>
+
+  <div class="save-banner" id="saveBanner">
+    Workspace auto-saves locally.
+  </div>
+
 </div>
 
 <div class="panel">
+
   <div class="output-title">
     Local Upload Queue
   </div>
@@ -253,9 +266,11 @@
   </div>
 
   <div class="preview-grid" id="previewGrid"></div>
+
 </div>
 
 <div class="panel">
+
   <div class="output-title">
     Generated Asset JSON
   </div>
@@ -265,11 +280,16 @@
   </button>
 
   <textarea id="jsonOutput" readonly></textarea>
+
 </div>
 
 <script>
+
   const PUBLIC_BASE =
     "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts";
+
+  const STORAGE_KEY =
+    "scout-admin-session";
 
   const uploadZone =
     document.getElementById("uploadZone");
@@ -280,10 +300,15 @@
   const jsonOutput =
     document.getElementById("jsonOutput");
 
+  const saveBanner =
+    document.getElementById("saveBanner");
+
   let localFiles = [];
+
   let selectedCoverIndex = 0;
 
   const TAG_KEYWORDS = {
+
     restaurant: [
       "restaurant",
       "dining",
@@ -292,6 +317,7 @@
       "cafe",
       "diner"
     ],
+
     waterfront: [
       "water",
       "dock",
@@ -300,6 +326,7 @@
       "ocean",
       "beach"
     ],
+
     residential: [
       "house",
       "home",
@@ -307,12 +334,14 @@
       "living",
       "apartment"
     ],
+
     office: [
       "office",
       "conference",
       "cubicle",
       "desk"
     ],
+
     street: [
       "street",
       "road",
@@ -320,15 +349,18 @@
       "parking",
       "garage"
     ],
+
     night: [
       "night",
       "dark",
       "evening"
     ],
+
     exterior: [
       "ext",
       "exterior"
     ],
+
     interior: [
       "int",
       "interior"
@@ -336,6 +368,7 @@
   };
 
   function slugify(value) {
+
     return value
       .toLowerCase()
       .trim()
@@ -345,6 +378,7 @@
   }
 
   function extractTags(text) {
+
     const lower =
       text.toLowerCase();
 
@@ -353,8 +387,11 @@
 
     Object.entries(TAG_KEYWORDS)
       .forEach(([tag, keywords]) => {
+
         keywords.forEach(keyword => {
+
           if (lower.includes(keyword)) {
+
             foundTags.add(tag);
           }
         });
@@ -363,36 +400,115 @@
     return [...foundTags];
   }
 
+  function saveSession() {
+
+    const session = {
+
+      projectId:
+        document.getElementById("projectId").value,
+
+      folderPath:
+        document.getElementById("folderPath").value,
+
+      galleryId:
+        document.getElementById("galleryId").value,
+
+      title:
+        document.getElementById("title").value,
+
+      type:
+        document.getElementById("type").value,
+
+      selectedCoverIndex:
+        selectedCoverIndex,
+
+      json:
+        jsonOutput.value
+    };
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(session)
+    );
+
+    saveBanner.innerHTML =
+      "Workspace auto-saved locally.";
+  }
+
+  function restoreSession() {
+
+    const raw =
+      localStorage.getItem(STORAGE_KEY);
+
+    if (!raw) return;
+
+    const session =
+      JSON.parse(raw);
+
+    document.getElementById("projectId").value =
+      session.projectId || "";
+
+    document.getElementById("folderPath").value =
+      session.folderPath || "";
+
+    document.getElementById("galleryId").value =
+      session.galleryId || "";
+
+    document.getElementById("title").value =
+      session.title || "";
+
+    document.getElementById("type").value =
+      session.type || "scout";
+
+    selectedCoverIndex =
+      session.selectedCoverIndex || 0;
+
+    jsonOutput.value =
+      session.json || "";
+
+    saveBanner.innerHTML =
+      "Previous workspace restored.";
+  }
+
   uploadZone.addEventListener("dragover", event => {
+
     event.preventDefault();
+
     uploadZone.classList.add("dragover");
   });
 
   uploadZone.addEventListener("dragleave", () => {
+
     uploadZone.classList.remove("dragover");
   });
 
   uploadZone.addEventListener("drop", event => {
+
     event.preventDefault();
+
     uploadZone.classList.remove("dragover");
 
     const files =
       [...event.dataTransfer.files]
-        .filter(file =>
-          file.type.startsWith("image/")
-        );
+      .filter(file =>
+        file.type.startsWith("image/")
+      );
 
     localFiles = files;
+
     selectedCoverIndex = 0;
 
     renderPreviews();
+
     generateJson();
   });
 
   function renderPreviews() {
+
     previewGrid.innerHTML = "";
 
     localFiles.forEach((file, index) => {
+
       const card =
         document.createElement("div");
 
@@ -410,6 +526,7 @@
         new FileReader();
 
       reader.onload = e => {
+
         img.src = e.target.result;
       };
 
@@ -450,6 +567,7 @@
         </div>
 
         <div class="move-row">
+
           <button class="move-btn" onclick="moveLeft(${index})">
             ← Left
           </button>
@@ -457,6 +575,7 @@
           <button class="move-btn" onclick="moveRight(${index})">
             Right →
           </button>
+
         </div>
 
         <button
@@ -466,16 +585,22 @@
           ${index === selectedCoverIndex ? "Cover Image" : "Set As Cover"}
         </button>
 
-        <button class="remove-btn" onclick="removeImage(${index})">
+        <button
+          class="remove-btn"
+          onclick="removeImage(${index})"
+        >
           Remove
         </button>
       `;
 
       card.appendChild(img);
+
       card.appendChild(info);
+
       previewGrid.appendChild(card);
 
       img.onload = () => {
+
         const orientation =
           img.naturalWidth > img.naturalHeight
             ? "Landscape"
@@ -488,6 +613,7 @@
   }
 
   function moveLeft(index) {
+
     if (index === 0) return;
 
     [localFiles[index - 1], localFiles[index]] =
@@ -501,10 +627,12 @@
     }
 
     renderPreviews();
+
     generateJson();
   }
 
   function moveRight(index) {
+
     if (index >= localFiles.length - 1) return;
 
     [localFiles[index + 1], localFiles[index]] =
@@ -518,10 +646,12 @@
     }
 
     renderPreviews();
+
     generateJson();
   }
 
   function removeImage(index) {
+
     localFiles.splice(index, 1);
 
     if (selectedCoverIndex >= localFiles.length) {
@@ -529,17 +659,21 @@
     }
 
     renderPreviews();
+
     generateJson();
   }
 
   function setCover(index) {
+
     selectedCoverIndex = index;
 
     renderPreviews();
+
     generateJson();
   }
 
   function generateJson() {
+
     const projectId =
       slugify(
         document.getElementById("projectId").value
@@ -582,6 +716,7 @@
 
     const images =
       localFiles.map((file, index) => ({
+
         assetId:
           `${galleryId}-${String(index + 1).padStart(3, "0")}`,
 
@@ -600,40 +735,65 @@
       }));
 
     const output = {
+
       id: galleryId,
+
       title: title,
+
       subtitle: projectId,
+
       cover:
         images[selectedCoverIndex]?.url || "",
 
       library: {
+
         locationId: "",
+
         locationName: "",
+
         town: "",
+
         state: "",
+
         country: "USA",
-        tags: combinedTags,
-        categories: combinedTags,
-        looks: combinedTags,
-        searchTerms: combinedTags,
+
+        tags:
+          combinedTags,
+
+        categories:
+          combinedTags,
+
+        looks:
+          combinedTags,
+
+        searchTerms:
+          combinedTags,
+
         archivedProjects: []
       },
 
       admin: {},
+
       images: images
     };
 
     jsonOutput.value =
       JSON.stringify(output, null, 2);
+
+    saveSession();
   }
 
   function copyJson() {
+
     navigator.clipboard.writeText(
       jsonOutput.value
     );
 
     alert("JSON copied.");
   }
+
+  restoreSession();
+
 </script>
 
 </body>
