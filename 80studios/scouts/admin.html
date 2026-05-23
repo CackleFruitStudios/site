@@ -312,6 +312,10 @@ Street parking nearby.
       Download JSON
     </button>
 
+    <button onclick="copyProjectsBlock()">
+      Copy Projects Block
+    </button>
+
   </div>
 
   <textarea id="jsonOutput"></textarea>
@@ -595,7 +599,7 @@ Street parking nearby.
     }
   }
 
-  function generateJson() {
+  function buildOutput() {
 
     const galleryId =
       slugify(
@@ -610,7 +614,7 @@ Street parking nearby.
         document.getElementById("projectId").value
       );
 
-    const output = {
+    return {
 
       id: galleryId,
 
@@ -646,9 +650,16 @@ Street parking nearby.
 
       images: uploadedImages
     };
+  }
+
+  function generateJson() {
 
     jsonOutput.value =
-      JSON.stringify(output, null, 2);
+      JSON.stringify(
+        buildOutput(),
+        null,
+        2
+      );
   }
 
   function moveLeft(index) {
@@ -728,6 +739,27 @@ Street parking nearby.
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
+  }
+
+  function copyProjectsBlock() {
+
+    const output =
+      buildOutput();
+
+    const block =
+`{
+  "id": "${output.id}",
+  "title": "${output.title}",
+  "cover": "${output.cover}",
+  "town": "${output.library.town}",
+  "state": "${output.library.state}",
+  "tags": ${JSON.stringify(output.library.tags)},
+  "galleryFile": "${output.id}.json"
+}`;
+
+    navigator.clipboard.writeText(block);
+
+    alert("Projects block copied.");
   }
 
 </script>
