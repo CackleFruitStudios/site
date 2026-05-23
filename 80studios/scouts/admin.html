@@ -245,7 +245,36 @@
       <input id="title" value="Blackwater Inn — Dining Room — Heroes">
     </div>
 
+    <div>
+      <label>Location Name</label>
+      <input id="locationName" value="Blackwater Inn">
+    </div>
+
+    <div>
+      <label>Town / City</label>
+      <input id="town" value="Providence">
+    </div>
+
+    <div>
+      <label>State</label>
+      <input id="state" value="RI">
+    </div>
+
+    <div>
+      <label>Gallery Tags (comma separated)</label>
+      <input id="galleryTags" value="restaurant,dining room,period,goodfellas">
+    </div>
+
   </div>
+
+  <label>Scout Notes</label>
+
+  <textarea id="notes">
+Great dark wood textures.
+Strong mafia / period feel.
+Excellent practical lighting.
+Street parking nearby.
+  </textarea>
 
 </div>
 
@@ -317,6 +346,14 @@
       .trim()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
+  }
+
+  function parseTags(value) {
+
+    return value
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(Boolean);
   }
 
   uploadZone.addEventListener("dragover", event => {
@@ -584,9 +621,28 @@
       cover:
         uploadedImages[selectedCoverIndex]?.url || "",
 
-      library: {},
+      library: {
 
-      admin: {},
+        locationName:
+          document.getElementById("locationName").value,
+
+        town:
+          document.getElementById("town").value,
+
+        state:
+          document.getElementById("state").value,
+
+        tags:
+          parseTags(
+            document.getElementById("galleryTags").value
+          )
+      },
+
+      admin: {
+
+        notes:
+          document.getElementById("notes").value
+      },
 
       images: uploadedImages
     };
