@@ -72,9 +72,9 @@
       color: white;
       border: 1px solid #444;
       border-radius: 6px;
-      padding: 8px 10px;
+      padding: 10px 12px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 13px;
     }
 
     button:hover {
@@ -113,6 +113,29 @@
       background: #141414;
     }
 
+    .upload-zone.dragover {
+      border-color: #71d685;
+      background: #172018;
+    }
+
+    .mobile-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+
+    .hint {
+      color: #888;
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
     .preview-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -139,6 +162,19 @@
       background: #222;
     }
 
+    .heic-preview {
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #222;
+      color: #aaa;
+      font-size: 13px;
+      text-align: center;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
     .preview-info {
       padding: 10px;
     }
@@ -147,6 +183,12 @@
       font-size: 12px;
       margin-bottom: 6px;
       word-break: break-word;
+    }
+
+    .preview-meta {
+      color: #888;
+      font-size: 11px;
+      line-height: 1.4;
     }
 
     .progress-wrap {
@@ -189,6 +231,11 @@
       color: #ff8f8f;
     }
 
+    .status.heic {
+      background: #1b2740;
+      color: #9fc5ff;
+    }
+
     .remove-btn {
       width: 100%;
       background: #3b1717;
@@ -211,6 +258,38 @@
 
     .move-btn {
       flex: 1;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .upload-zone {
+        padding: 28px 18px;
+      }
+
+      button {
+        width: 100%;
+        min-height: 44px;
+        font-size: 14px;
+      }
+
+      .mobile-actions button {
+        width: 100%;
+      }
+
+      .preview-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
     }
 
   </style>
@@ -308,11 +387,30 @@
 
   <div class="upload-zone" id="uploadZone">
     Drag & Drop Scout Photos Here
+    <div class="hint">
+      HEIC / HEIF files are accepted. Browser preview may not display, but upload will still work.
+    </div>
   </div>
 
-  <button onclick="uploadAll()">
-    Upload All To R2
-  </button>
+  <div class="mobile-actions">
+
+    <button onclick="document.getElementById('fileInput').click()">
+      Choose Photos / Camera Roll
+    </button>
+
+    <button onclick="uploadAll()">
+      Upload All To R2
+    </button>
+
+  </div>
+
+  <input
+    class="hidden-file-input"
+    id="fileInput"
+    type="file"
+    multiple
+    accept="image/*,.heic,.heif"
+  >
 
   <div class="preview-grid" id="previewGrid"></div>
 
@@ -338,6 +436,10 @@
       Copy Projects Block
     </button>
 
+    <button onclick="downloadBundle()">
+      Download Bundle
+    </button>
+
   </div>
 
   <textarea id="jsonOutput"></textarea>
@@ -357,6 +459,9 @@
 
   const jsonOutput =
     document.getElementById("jsonOutput");
+
+  const fileInput =
+    document.getElementById("fileInput");
 
   let localFiles = [];
 
@@ -390,6 +495,32 @@
       .split(",")
       .map(tag => tag.trim())
       .filter(Boolean);
+  }
+
+  function isHeicFile(file) {
+
+    const name =
+      file.name.toLowerCase();
+
+    return (
+      name.endsWith(".heic") ||
+      name.endsWith(".heif") ||
+      file.type === "image/heic" ||
+      file.type === "image/heif"
+    );
+  }
+
+  function getContentType(file) {
+
+    if (file.type) {
+      return file.type;
+    }
+
+    if (isHeicFile(file)) {
+      return "image/heic";
+    }
+
+    return "application/octet-stream";
   }
 
   function autoGenerate() {
@@ -495,6 +626,34 @@
     }
   }
 
+  function addFiles(files) {
+
+    const incoming =
+      [...files]
+      .filter(file =>
+        file.type.startsWith("image/") ||
+        isHeicFile(file)
+      );
+
+    localFiles =
+      [
+        ...localFiles,
+        ...incoming
+      ];
+
+    uploadedImages = [];
+
+    uploadProgress = {};
+
+    uploadStatus = {};
+
+    selectedCoverIndex = 0;
+
+    renderPreviews();
+
+    autoGenerate();
+  }
+
   [
     "projectName",
     "locationName",
@@ -513,29 +672,29 @@
   uploadZone.addEventListener("dragover", event => {
 
     event.preventDefault();
+
+    uploadZone.classList.add("dragover");
+  });
+
+  uploadZone.addEventListener("dragleave", () => {
+
+    uploadZone.classList.remove("dragover");
   });
 
   uploadZone.addEventListener("drop", event => {
 
     event.preventDefault();
 
-    localFiles =
-      [...event.dataTransfer.files]
-      .filter(file =>
-        file.type.startsWith("image/")
-      );
+    uploadZone.classList.remove("dragover");
 
-    uploadedImages = [];
+    addFiles(event.dataTransfer.files);
+  });
 
-    uploadProgress = {};
+  fileInput.addEventListener("change", event => {
 
-    uploadStatus = {};
+    addFiles(event.target.files);
 
-    selectedCoverIndex = 0;
-
-    renderPreviews();
-
-    autoGenerate();
+    fileInput.value = "";
   });
 
   function renderPreviews() {
@@ -554,24 +713,47 @@
         card.classList.add("cover-selected");
       }
 
-      const img =
-        document.createElement("img");
+      if (isHeicFile(file)) {
 
-      const reader =
-        new FileReader();
+        const heicBox =
+          document.createElement("div");
 
-      reader.onload = e => {
+        heicBox.className =
+          "heic-preview";
 
-        img.src = e.target.result;
-      };
+        heicBox.innerHTML =
+          "HEIC / HEIF<br>Preview may not display";
 
-      reader.readAsDataURL(file);
+        card.appendChild(heicBox);
+
+      } else {
+
+        const img =
+          document.createElement("img");
+
+        const reader =
+          new FileReader();
+
+        reader.onload = e => {
+
+          img.src = e.target.result;
+        };
+
+        reader.readAsDataURL(file);
+
+        card.appendChild(img);
+      }
 
       const progress =
         uploadProgress[index] || 0;
 
       const statusType =
         uploadStatus[index] || "ready";
+
+      const heicStatus =
+        isHeicFile(file)
+          ? `<div class="status heic">HEIC</div>`
+          : "";
 
       const info =
         document.createElement("div");
@@ -584,6 +766,14 @@
         <div class="preview-name">
           ${file.name}
         </div>
+
+        <div class="preview-meta">
+          ${(file.size / 1024 / 1024).toFixed(2)} MB
+          <br>
+          ${getContentType(file)}
+        </div>
+
+        ${heicStatus}
 
         <div class="status ${statusType}">
           ${
@@ -632,8 +822,6 @@
 
       `;
 
-      card.appendChild(img);
-
       card.appendChild(info);
 
       previewGrid.appendChild(card);
@@ -660,6 +848,9 @@
         const file =
           localFiles[index];
 
+        const contentType =
+          getContentType(file);
+
         uploadStatus[index] = "uploading";
 
         uploadProgress[index] = 5;
@@ -681,7 +872,7 @@
 
               folder: root,
 
-              contentType: file.type
+              contentType: contentType
             })
           });
 
@@ -698,7 +889,7 @@
             method: "PUT",
 
             headers: {
-              "Content-Type": file.type
+              "Content-Type": contentType
             },
 
             body: file
@@ -730,7 +921,10 @@
 
           caption: "",
 
-          source: "r2"
+          source: "r2",
+
+          contentType:
+            contentType
         });
 
         renderPreviews();
@@ -879,13 +1073,10 @@
     alert("JSON copied.");
   }
 
-  function downloadJson() {
-
-    const galleryId =
-      document.getElementById("galleryId").value || "gallery";
+  function downloadTextFile(filename, content) {
 
     const blob = new Blob(
-      [jsonOutput.value],
+      [content],
       {
         type: "application/json"
       }
@@ -900,7 +1091,7 @@
     link.href = url;
 
     link.download =
-      `${galleryId}.json`;
+      filename;
 
     document.body.appendChild(link);
 
@@ -911,13 +1102,23 @@
     URL.revokeObjectURL(url);
   }
 
-  function copyProjectsBlock() {
+  function downloadJson() {
+
+    const galleryId =
+      document.getElementById("galleryId").value || "gallery";
+
+    downloadTextFile(
+      `${galleryId}.json`,
+      jsonOutput.value
+    );
+  }
+
+  function buildProjectsBlock() {
 
     const output =
       buildOutput();
 
-    const block =
-`{
+    return `{
   "id": "${output.id}",
   "title": "${output.title}",
   "cover": "${output.cover}",
@@ -926,10 +1127,35 @@
   "tags": ${JSON.stringify(output.library.tags)},
   "galleryFile": "${output.id}.json"
 }`;
+  }
 
-    navigator.clipboard.writeText(block);
+  function copyProjectsBlock() {
+
+    navigator.clipboard.writeText(
+      buildProjectsBlock()
+    );
 
     alert("Projects block copied.");
+  }
+
+  function downloadBundle() {
+
+    const galleryId =
+      document.getElementById("galleryId").value || "gallery";
+
+    downloadTextFile(
+      `${galleryId}.json`,
+      jsonOutput.value
+    );
+
+    setTimeout(() => {
+
+      downloadTextFile(
+        `${galleryId}-publish-block.json`,
+        buildProjectsBlock()
+      );
+
+    }, 500);
   }
 
   loadSession();
