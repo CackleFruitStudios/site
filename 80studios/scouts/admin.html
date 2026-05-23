@@ -56,7 +56,7 @@
     }
 
     textarea {
-      min-height: 160px;
+      min-height: 200px;
       font-family: monospace;
       white-space: pre;
     }
@@ -106,12 +106,6 @@
       text-align: center;
       color: #888;
       background: #141414;
-      transition: 0.2s;
-    }
-
-    .upload-zone.dragover {
-      border-color: #888;
-      background: #1d1d1d;
     }
 
     .preview-grid {
@@ -150,62 +144,6 @@
       word-break: break-word;
     }
 
-    .preview-meta {
-      color: #888;
-      font-size: 11px;
-      line-height: 1.4;
-    }
-
-    .remove-btn {
-      width: 100%;
-      background: #3b1717;
-      border: 1px solid #5c2222;
-      color: #f07a7a;
-    }
-
-    .cover-btn {
-      width: 100%;
-      background: #18351d;
-      border: 1px solid #2d5a33;
-      color: #71d685;
-    }
-
-    .cover-btn.active {
-      background: #2d5a33;
-      color: white;
-    }
-
-    .move-row {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-    }
-
-    .move-btn {
-      flex: 1;
-    }
-
-    .order-badge {
-      display: inline-block;
-      margin-bottom: 8px;
-      background: #222;
-      border: 1px solid #444;
-      color: #aaa;
-      font-size: 10px;
-      padding: 4px 8px;
-      border-radius: 999px;
-    }
-
-    .save-banner {
-      margin-top: 12px;
-      color: #71d685;
-      font-size: 12px;
-    }
-
-    .upload-controls {
-      margin-top: 16px;
-    }
-
     .progress-wrap {
       margin-top: 8px;
       height: 8px;
@@ -241,6 +179,30 @@
       color: #71d685;
     }
 
+    .remove-btn {
+      width: 100%;
+      background: #3b1717;
+      border: 1px solid #5c2222;
+      color: #f07a7a;
+    }
+
+    .cover-btn {
+      width: 100%;
+      background: #18351d;
+      border: 1px solid #2d5a33;
+      color: #71d685;
+    }
+
+    .move-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .move-btn {
+      flex: 1;
+    }
+
   </style>
 </head>
 
@@ -251,20 +213,12 @@
 <h1>Admin Planner</h1>
 
 <div class="subtitle">
-  Local upload preparation, metadata generation, and future R2 asset management.
+  REAL Cloudflare R2 Upload System
 </div>
 
 <div class="panel">
 
   <div class="grid">
-
-    <div>
-      <label>Type</label>
-      <select id="type">
-        <option value="scout">Scout Gallery</option>
-        <option value="lookbook">Lookbook</option>
-      </select>
-    </div>
 
     <div>
       <label>Project ID</label>
@@ -288,31 +242,21 @@
 
   </div>
 
-  <div class="save-banner" id="saveBanner">
-    Workspace auto-saves locally.
-  </div>
-
 </div>
 
 <div class="panel">
 
   <div class="output-title">
-    Local Upload Queue
+    Upload Queue
   </div>
 
   <div class="upload-zone" id="uploadZone">
     Drag & Drop Scout Photos Here
-    <br><br>
-    Upload architecture phase
   </div>
 
-  <div class="upload-controls">
-
-    <button onclick="simulateUpload()">
-      Simulate Upload Queue
-    </button>
-
-  </div>
+  <button onclick="uploadAll()">
+    Upload All To R2
+  </button>
 
   <div class="preview-grid" id="previewGrid"></div>
 
@@ -321,24 +265,18 @@
 <div class="panel">
 
   <div class="output-title">
-    Generated Asset JSON
+    Generated Gallery JSON
   </div>
 
   <button onclick="copyJson()">
     Copy JSON
   </button>
 
-  <textarea id="jsonOutput" readonly></textarea>
+  <textarea id="jsonOutput"></textarea>
 
 </div>
 
 <script>
-
-  const PUBLIC_BASE =
-    "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/80scouts";
-
-  const STORAGE_KEY =
-    "scout-admin-session";
 
   const uploadZone =
     document.getElementById("uploadZone");
@@ -349,125 +287,43 @@
   const jsonOutput =
     document.getElementById("jsonOutput");
 
-  const saveBanner =
-    document.getElementById("saveBanner");
-
   let localFiles = [];
 
-  let selectedCoverIndex = 0;
+  let uploadedImages = [];
 
   let uploadProgress = {};
+
+  let selectedCoverIndex = 0;
 
   function slugify(value) {
 
     return value
       .toLowerCase()
       .trim()
-      .replace(/&/g, "and")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
-  }
-
-  function saveSession() {
-
-    const session = {
-
-      projectId:
-        document.getElementById("projectId").value,
-
-      folderPath:
-        document.getElementById("folderPath").value,
-
-      galleryId:
-        document.getElementById("galleryId").value,
-
-      title:
-        document.getElementById("title").value,
-
-      type:
-        document.getElementById("type").value,
-
-      selectedCoverIndex:
-        selectedCoverIndex,
-
-      json:
-        jsonOutput.value
-    };
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(session)
-    );
-  }
-
-  function restoreSession() {
-
-    const raw =
-      localStorage.getItem(STORAGE_KEY);
-
-    if (!raw) return;
-
-    const session =
-      JSON.parse(raw);
-
-    document.getElementById("projectId").value =
-      session.projectId || "";
-
-    document.getElementById("folderPath").value =
-      session.folderPath || "";
-
-    document.getElementById("galleryId").value =
-      session.galleryId || "";
-
-    document.getElementById("title").value =
-      session.title || "";
-
-    document.getElementById("type").value =
-      session.type || "scout";
-
-    selectedCoverIndex =
-      session.selectedCoverIndex || 0;
-
-    jsonOutput.value =
-      session.json || "";
-
-    saveBanner.innerHTML =
-      "Previous workspace restored.";
   }
 
   uploadZone.addEventListener("dragover", event => {
 
     event.preventDefault();
-
-    uploadZone.classList.add("dragover");
-  });
-
-  uploadZone.addEventListener("dragleave", () => {
-
-    uploadZone.classList.remove("dragover");
   });
 
   uploadZone.addEventListener("drop", event => {
 
     event.preventDefault();
 
-    uploadZone.classList.remove("dragover");
-
-    const files =
+    localFiles =
       [...event.dataTransfer.files]
       .filter(file =>
         file.type.startsWith("image/")
       );
 
-    localFiles = files;
+    uploadedImages = [];
 
     uploadProgress = {};
 
-    selectedCoverIndex = 0;
-
     renderPreviews();
-
-    generateJson();
   });
 
   function renderPreviews() {
@@ -475,16 +331,6 @@
     previewGrid.innerHTML = "";
 
     localFiles.forEach((file, index) => {
-
-      const progress =
-        uploadProgress[index] || 0;
-
-      const status =
-        progress >= 100
-          ? "complete"
-          : progress > 0
-          ? "uploading"
-          : "";
 
       const card =
         document.createElement("div");
@@ -509,6 +355,16 @@
 
       reader.readAsDataURL(file);
 
+      const progress =
+        uploadProgress[index] || 0;
+
+      const status =
+        progress >= 100
+          ? "complete"
+          : progress > 0
+          ? "uploading"
+          : "";
+
       const info =
         document.createElement("div");
 
@@ -516,10 +372,6 @@
         "preview-info";
 
       info.innerHTML = `
-
-        <div class="order-badge">
-          Position #${index + 1}
-        </div>
 
         <div class="preview-name">
           ${file.name}
@@ -545,24 +397,20 @@
         <div class="move-row">
 
           <button class="move-btn" onclick="moveLeft(${index})">
-            ← Left
+            ←
           </button>
 
           <button class="move-btn" onclick="moveRight(${index})">
-            Right →
+            →
           </button>
 
         </div>
 
         <button
-          class="cover-btn ${index === selectedCoverIndex ? "active" : ""}"
+          class="cover-btn"
           onclick="setCover(${index})"
         >
-          ${
-            index === selectedCoverIndex
-              ? "Cover Image"
-              : "Set As Cover"
-          }
+          Cover
         </button>
 
         <button
@@ -582,28 +430,131 @@
     });
   }
 
-  function simulateUpload() {
+  async function uploadAll() {
 
-    localFiles.forEach((file, index) => {
+    uploadedImages = [];
 
-      uploadProgress[index] = 0;
+    const projectId =
+      slugify(
+        document.getElementById("projectId").value
+      );
 
-      const interval = setInterval(() => {
+    const folderPath =
+      document.getElementById("folderPath").value
+      .split("/")
+      .map(slugify)
+      .join("/");
 
-        uploadProgress[index] +=
-          Math.random() * 18;
+    const root =
+      `${projectId}/${folderPath}`;
 
-        if (uploadProgress[index] >= 100) {
+    for (let index = 0; index < localFiles.length; index++) {
 
-          uploadProgress[index] = 100;
+      const file =
+        localFiles[index];
 
-          clearInterval(interval);
-        }
+      uploadProgress[index] = 5;
 
-        renderPreviews();
+      renderPreviews();
 
-      }, 180);
-    });
+      const presignResponse =
+        await fetch("/api/r2-presign", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+
+            filename: file.name,
+
+            folder: root,
+
+            contentType: file.type
+          })
+        });
+
+      const presignData =
+        await presignResponse.json();
+
+      uploadProgress[index] = 20;
+
+      renderPreviews();
+
+      await fetch(presignData.uploadUrl, {
+
+        method: "PUT",
+
+        headers: {
+          "Content-Type": file.type
+        },
+
+        body: file
+      });
+
+      uploadProgress[index] = 100;
+
+      renderPreviews();
+
+      uploadedImages.push({
+
+        assetId:
+          `${slugify(file.name)}-${index + 1}`,
+
+        filename:
+          file.name,
+
+        url:
+          presignData.publicUrl,
+
+        tags: [],
+
+        caption: "",
+
+        source: "r2"
+      });
+
+      generateJson();
+    }
+  }
+
+  function generateJson() {
+
+    const galleryId =
+      slugify(
+        document.getElementById("galleryId").value
+      );
+
+    const title =
+      document.getElementById("title").value;
+
+    const projectId =
+      slugify(
+        document.getElementById("projectId").value
+      );
+
+    const output = {
+
+      id: galleryId,
+
+      title: title,
+
+      subtitle: projectId,
+
+      cover:
+        uploadedImages[selectedCoverIndex]?.url || "",
+
+      library: {},
+
+      admin: {},
+
+      images: uploadedImages
+    };
+
+    jsonOutput.value =
+      JSON.stringify(output, null, 2);
   }
 
   function moveLeft(index) {
@@ -614,8 +565,6 @@
     [localFiles[index], localFiles[index - 1]];
 
     renderPreviews();
-
-    generateJson();
   }
 
   function moveRight(index) {
@@ -626,8 +575,6 @@
     [localFiles[index], localFiles[index + 1]];
 
     renderPreviews();
-
-    generateJson();
   }
 
   function removeImage(index) {
@@ -635,8 +582,6 @@
     localFiles.splice(index, 1);
 
     renderPreviews();
-
-    generateJson();
   }
 
   function setCover(index) {
@@ -648,74 +593,6 @@
     generateJson();
   }
 
-  function generateJson() {
-
-    const projectId =
-      slugify(
-        document.getElementById("projectId").value
-      );
-
-    const folderPath =
-      document.getElementById("folderPath").value
-      .split("/")
-      .map(slugify)
-      .filter(Boolean)
-      .join("/");
-
-    const galleryId =
-      slugify(
-        document.getElementById("galleryId").value
-      );
-
-    const title =
-      document.getElementById("title").value.trim();
-
-    const root =
-      `${projectId}/${folderPath}`;
-
-    const images =
-      localFiles.map((file, index) => ({
-
-        assetId:
-          `${galleryId}-${String(index + 1).padStart(3, "0")}`,
-
-        url:
-          `${PUBLIC_BASE}/${root}/${file.name}`,
-
-        filename:
-          file.name,
-
-        tags: [],
-
-        caption: "",
-
-        source: "r2"
-      }));
-
-    const output = {
-
-      id: galleryId,
-
-      title: title,
-
-      subtitle: projectId,
-
-      cover:
-        images[selectedCoverIndex]?.url || "",
-
-      library: {},
-
-      admin: {},
-
-      images: images
-    };
-
-    jsonOutput.value =
-      JSON.stringify(output, null, 2);
-
-    saveSession();
-  }
-
   function copyJson() {
 
     navigator.clipboard.writeText(
@@ -724,8 +601,6 @@
 
     alert("JSON copied.");
   }
-
-  restoreSession();
 
 </script>
 
