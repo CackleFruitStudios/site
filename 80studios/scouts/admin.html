@@ -298,8 +298,8 @@
     </div>
 
     <div>
-      <label>Gallery Path *</label>
-      <input id="galleryPath" placeholder="Salernos/EXT Salernos/Heroes">
+      <label>Optional Folder Path</label>
+      <input id="galleryPath" placeholder="Leave blank unless authorized / you know what you're doing">
     </div>
 
     <div>
@@ -537,13 +537,10 @@
     const locationName =
       document.getElementById("locationName").value.trim();
 
-    const galleryPath =
-      document.getElementById("galleryPath").value.trim();
-
-    if (!projectName || !locationName || !galleryPath) {
+    if (!projectName || !locationName) {
 
       showWarning(
-        "Project Name, Location Name, and Gallery Path are required before uploading."
+        "Project Name and Location Name are required before uploading."
       );
 
       return false;
@@ -562,17 +559,25 @@
     const locationName =
       document.getElementById("locationName").value;
 
-    const galleryPath =
-      document.getElementById("galleryPath").value;
+    const galleryPathRaw =
+      document.getElementById("galleryPath").value.trim();
+
+    const defaultPath =
+      locationName
+        ? `${slugify(locationName)}/heroes`
+        : "";
+
+    const activePath =
+      galleryPathRaw || defaultPath;
 
     const pathSegments =
-      galleryPath
+      activePath
       .split("/")
       .map(segment => slugify(segment))
       .filter(Boolean);
 
     const finalSegment =
-      pathSegments[pathSegments.length - 1] || "gallery";
+      pathSegments[pathSegments.length - 1] || "heroes";
 
     document.getElementById("projectId").value =
       slugify(projectName);
@@ -874,7 +879,9 @@
       document.getElementById("folderPath").value;
 
     const root =
-      `${projectId}/${folderPath}`;
+      [projectId, folderPath]
+      .filter(Boolean)
+      .join("/");
 
     for (let index = 0; index < localFiles.length; index++) {
 
@@ -999,14 +1006,19 @@
         document.getElementById("galleryTags").value
       );
 
+    const folderTags =
+      document
+        .getElementById("folderPath")
+        .value
+        .split("/")
+        .map(tag => tag.trim())
+        .filter(Boolean);
+
     const autoTags =
       [
         city,
         state,
-        ...document
-          .getElementById("galleryPath")
-          .value
-          .split("/")
+        ...folderTags
       ]
       .map(tag => tag.trim())
       .filter(Boolean);
