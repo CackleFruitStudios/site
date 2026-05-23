@@ -55,6 +55,11 @@
       font-size: 14px;
     }
 
+    input[readonly] {
+      color: #aaa;
+      background: #151515;
+    }
+
     textarea {
       min-height: 220px;
       font-family: monospace;
@@ -226,55 +231,72 @@
   <div class="grid">
 
     <div>
-      <label>Project ID</label>
-      <input id="projectId" value="harbor-noir">
-    </div>
-
-    <div>
-      <label>Folder Path</label>
-      <input id="folderPath" value="blackwater-inn/int-blackwater-inn/dining-room/heroes">
-    </div>
-
-    <div>
-      <label>Gallery ID</label>
-      <input id="galleryId" value="blackwater-dining-room-heroes">
-    </div>
-
-    <div>
-      <label>Display Title</label>
-      <input id="title" value="Blackwater Inn — Dining Room — Heroes">
+      <label>Project Name</label>
+      <input id="projectName" placeholder="Good Fellas">
     </div>
 
     <div>
       <label>Location Name</label>
-      <input id="locationName" value="Blackwater Inn">
+      <input id="locationName" placeholder="Salerno's Restaurant">
+    </div>
+
+    <div>
+      <label>Gallery Path</label>
+      <input id="galleryPath" placeholder="Salernos/EXT Salernos/Heroes">
     </div>
 
     <div>
       <label>Town / City</label>
-      <input id="town" value="Providence">
+      <input id="town" placeholder="Queens">
     </div>
 
     <div>
       <label>State</label>
-      <input id="state" value="RI">
+      <input id="state" placeholder="NY">
     </div>
 
     <div>
-      <label>Gallery Tags (comma separated)</label>
-      <input id="galleryTags" value="restaurant,dining room,period,goodfellas">
+      <label>Optional Tags</label>
+      <input id="galleryTags" placeholder="period,mob,restaurant">
     </div>
 
   </div>
 
   <label>Scout Notes</label>
 
-  <textarea id="notes">
-Great dark wood textures.
-Strong mafia / period feel.
-Excellent practical lighting.
-Street parking nearby.
-  </textarea>
+  <textarea id="notes"></textarea>
+
+</div>
+
+<div class="panel">
+
+  <div class="output-title">
+    Auto Generated
+  </div>
+
+  <div class="grid">
+
+    <div>
+      <label>Project ID</label>
+      <input id="projectId" readonly>
+    </div>
+
+    <div>
+      <label>Folder Path</label>
+      <input id="folderPath" readonly>
+    </div>
+
+    <div>
+      <label>Gallery ID</label>
+      <input id="galleryId" readonly>
+    </div>
+
+    <div>
+      <label>Display Title</label>
+      <input id="title" readonly>
+    </div>
+
+  </div>
 
 </div>
 
@@ -324,6 +346,9 @@ Street parking nearby.
 
 <script>
 
+  const STORAGE_KEY =
+    "scout-admin-session";
+
   const uploadZone =
     document.getElementById("uploadZone");
 
@@ -352,6 +377,13 @@ Street parking nearby.
       .replace(/^-+|-+$/g, "");
   }
 
+  function displayTitleFromSlug(value) {
+
+    return value
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
   function parseTags(value) {
 
     return value
@@ -359,6 +391,124 @@ Street parking nearby.
       .map(tag => tag.trim())
       .filter(Boolean);
   }
+
+  function autoGenerate() {
+
+    const projectName =
+      document.getElementById("projectName").value;
+
+    const locationName =
+      document.getElementById("locationName").value;
+
+    const galleryPath =
+      document.getElementById("galleryPath").value;
+
+    const pathSegments =
+      galleryPath
+      .split("/")
+      .map(segment => slugify(segment))
+      .filter(Boolean);
+
+    const finalSegment =
+      pathSegments[pathSegments.length - 1] || "gallery";
+
+    document.getElementById("projectId").value =
+      slugify(projectName);
+
+    document.getElementById("folderPath").value =
+      pathSegments.join("/");
+
+    document.getElementById("galleryId").value =
+      `${slugify(locationName)}-${finalSegment}`;
+
+    document.getElementById("title").value =
+      locationName
+        ? `${locationName} — ${displayTitleFromSlug(finalSegment)}`
+        : "";
+
+    saveSession();
+
+    if (uploadedImages.length > 0) {
+      generateJson();
+    }
+  }
+
+  function saveSession() {
+
+    const data = {
+
+      projectName:
+        document.getElementById("projectName").value,
+
+      locationName:
+        document.getElementById("locationName").value,
+
+      galleryPath:
+        document.getElementById("galleryPath").value,
+
+      town:
+        document.getElementById("town").value,
+
+      state:
+        document.getElementById("state").value,
+
+      galleryTags:
+        document.getElementById("galleryTags").value,
+
+      notes:
+        document.getElementById("notes").value
+    };
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(data)
+    );
+  }
+
+  function loadSession() {
+
+    const saved =
+      localStorage.getItem(STORAGE_KEY);
+
+    if (!saved) return;
+
+    try {
+
+      const data =
+        JSON.parse(saved);
+
+      Object.entries(data).forEach(([key, value]) => {
+
+        const element =
+          document.getElementById(key);
+
+        if (element) {
+          element.value = value;
+        }
+      });
+
+      autoGenerate();
+
+    } catch (error) {
+
+      console.error(error);
+    }
+  }
+
+  [
+    "projectName",
+    "locationName",
+    "galleryPath",
+    "town",
+    "state",
+    "galleryTags",
+    "notes"
+  ].forEach(id => {
+
+    document
+      .getElementById(id)
+      .addEventListener("input", autoGenerate);
+  });
 
   uploadZone.addEventListener("dragover", event => {
 
@@ -381,7 +531,11 @@ Street parking nearby.
 
     uploadStatus = {};
 
+    selectedCoverIndex = 0;
+
     renderPreviews();
+
+    autoGenerate();
   });
 
   function renderPreviews() {
@@ -491,15 +645,10 @@ Street parking nearby.
     uploadedImages = [];
 
     const projectId =
-      slugify(
-        document.getElementById("projectId").value
-      );
+      document.getElementById("projectId").value;
 
     const folderPath =
-      document.getElementById("folderPath").value
-      .split("/")
-      .map(slugify)
-      .join("/");
+      document.getElementById("folderPath").value;
 
     const root =
       `${projectId}/${folderPath}`;
@@ -602,17 +751,42 @@ Street parking nearby.
   function buildOutput() {
 
     const galleryId =
-      slugify(
-        document.getElementById("galleryId").value
-      );
+      document.getElementById("galleryId").value;
 
     const title =
       document.getElementById("title").value;
 
     const projectId =
-      slugify(
-        document.getElementById("projectId").value
+      document.getElementById("projectId").value;
+
+    const city =
+      document.getElementById("town").value;
+
+    const state =
+      document.getElementById("state").value;
+
+    const manualTags =
+      parseTags(
+        document.getElementById("galleryTags").value
       );
+
+    const autoTags =
+      [
+        city,
+        state,
+        ...document
+          .getElementById("galleryPath")
+          .value
+          .split("/")
+      ]
+      .map(tag => tag.trim())
+      .filter(Boolean);
+
+    const tags =
+      [...new Set([
+        ...manualTags,
+        ...autoTags
+      ])];
 
     return {
 
@@ -631,15 +805,13 @@ Street parking nearby.
           document.getElementById("locationName").value,
 
         town:
-          document.getElementById("town").value,
+          city,
 
         state:
-          document.getElementById("state").value,
+          state,
 
         tags:
-          parseTags(
-            document.getElementById("galleryTags").value
-          )
+          tags
       },
 
       admin: {
@@ -710,9 +882,7 @@ Street parking nearby.
   function downloadJson() {
 
     const galleryId =
-      slugify(
-        document.getElementById("galleryId").value
-      ) || "gallery";
+      document.getElementById("galleryId").value || "gallery";
 
     const blob = new Blob(
       [jsonOutput.value],
@@ -761,6 +931,8 @@ Street parking nearby.
 
     alert("Projects block copied.");
   }
+
+  loadSession();
 
 </script>
 
