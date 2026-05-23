@@ -136,6 +136,16 @@
       line-height: 1.4;
     }
 
+    .warning {
+      margin-top: 12px;
+      background: #3b1717;
+      border: 1px solid #5c2222;
+      color: #ffb0b0;
+      padding: 10px;
+      border-radius: 6px;
+      display: none;
+    }
+
     .preview-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -260,38 +270,6 @@
       flex: 1;
     }
 
-    @media (max-width: 600px) {
-      body {
-        padding: 12px;
-      }
-
-      h1 {
-        font-size: 24px;
-      }
-
-      .panel {
-        padding: 14px;
-      }
-
-      .upload-zone {
-        padding: 28px 18px;
-      }
-
-      button {
-        width: 100%;
-        min-height: 44px;
-        font-size: 14px;
-      }
-
-      .mobile-actions button {
-        width: 100%;
-      }
-
-      .preview-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      }
-    }
-
   </style>
 </head>
 
@@ -310,17 +288,17 @@
   <div class="grid">
 
     <div>
-      <label>Project Name</label>
+      <label>Project Name *</label>
       <input id="projectName" placeholder="Good Fellas">
     </div>
 
     <div>
-      <label>Location Name</label>
+      <label>Location Name *</label>
       <input id="locationName" placeholder="Salerno's Restaurant">
     </div>
 
     <div>
-      <label>Gallery Path</label>
+      <label>Gallery Path *</label>
       <input id="galleryPath" placeholder="Salernos/EXT Salernos/Heroes">
     </div>
 
@@ -344,6 +322,8 @@
   <label>Scout Notes</label>
 
   <textarea id="notes"></textarea>
+
+  <div class="warning" id="warningBox"></div>
 
 </div>
 
@@ -388,7 +368,8 @@
   <div class="upload-zone" id="uploadZone">
     Drag & Drop Scout Photos Here
     <div class="hint">
-      HEIC / HEIF files are accepted. Browser preview may not display, but upload will still work.
+      HEIC / HEIF mobile photos supported.
+      Some browsers may not preview them before upload.
     </div>
   </div>
 
@@ -463,6 +444,9 @@
   const fileInput =
     document.getElementById("fileInput");
 
+  const warningBox =
+    document.getElementById("warningBox");
+
   let localFiles = [];
 
   let uploadedImages = [];
@@ -475,11 +459,19 @@
 
   function slugify(value) {
 
-    return value
+    return (value || "")
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
+  }
+
+  function uniqueAssetId(file, index) {
+
+    const timestamp =
+      Date.now();
+
+    return `${slugify(file.name)}-${timestamp}-${index}`;
   }
 
   function displayTitleFromSlug(value) {
@@ -521,6 +513,45 @@
     }
 
     return "application/octet-stream";
+  }
+
+  function showWarning(message) {
+
+    warningBox.style.display = "block";
+
+    warningBox.innerText = message;
+  }
+
+  function clearWarning() {
+
+    warningBox.style.display = "none";
+
+    warningBox.innerText = "";
+  }
+
+  function validateRequiredFields() {
+
+    const projectName =
+      document.getElementById("projectName").value.trim();
+
+    const locationName =
+      document.getElementById("locationName").value.trim();
+
+    const galleryPath =
+      document.getElementById("galleryPath").value.trim();
+
+    if (!projectName || !locationName || !galleryPath) {
+
+      showWarning(
+        "Project Name, Location Name, and Gallery Path are required before uploading."
+      );
+
+      return false;
+    }
+
+    clearWarning();
+
+    return true;
   }
 
   function autoGenerate() {
@@ -830,6 +861,10 @@
 
   async function uploadAll() {
 
+    if (!validateRequiredFields()) {
+      return;
+    }
+
     uploadedImages = [];
 
     const projectId =
@@ -909,7 +944,7 @@
         uploadedImages.push({
 
           assetId:
-            `${slugify(file.name)}-${index + 1}`,
+            uniqueAssetId(file, index),
 
           filename:
             file.name,
