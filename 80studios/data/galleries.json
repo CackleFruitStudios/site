@@ -1,0 +1,27 @@
+{
+  "galleries": [
+    {
+      "id": "canal-street-nw-entrance-heroes",
+      "projectId": "subway-entrances",
+      "path": "canal-street-nw-entrance/heroes",
+      "title": "Canal Street NW Entrance — Heroes",
+      "cover": "",
+      "library": {
+        "locationName": "Canal Street NW Entrance",
+        "town": "New York",
+        "state": "NY",
+        "country": "USA",
+        "tags": [
+          "subway",
+          "entrance",
+          "nyc",
+          "heroes"
+        ]
+      },
+      "admin": {
+        "notes": ""
+      },
+      "images": []
+    }
+  ]
+}
