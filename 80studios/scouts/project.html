@@ -101,6 +101,20 @@
       background: #222;
     }
 
+    .folder-icon {
+      width: 100%;
+      height: 120px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: #202020;
+      border: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      color: #777;
+    }
+
     .meta {
       color: #888;
       font-size: 12px;
@@ -158,6 +172,7 @@
 <div class="top-nav">
   <a href="/scouts/">Projects</a>
   <a href="/scouts/library.html">Library</a>
+  <a href="/scouts/admin.html">Admin</a>
 </div>
 
 <div class="breadcrumb">
@@ -182,17 +197,17 @@
 
   <div class="admin-grid">
 
-    <div class="admin-card">
+    <a class="admin-card" href="/scouts/admin.html">
       Upload Queue
       <div class="coming-soon">
-        Coming Soon
+        Create gallery uploads
       </div>
-    </div>
+    </a>
 
     <div class="admin-card">
       Folder Organizer
       <div class="coming-soon">
-        Coming Soon
+        Future path manager
       </div>
     </div>
 
@@ -230,117 +245,231 @@
 
 <script>
 
-  const DATA_URL = "/data/projects.json";
+  const PROJECTS_URL =
+    "/data/projects.json";
+
+  const GALLERIES_URL =
+    "/data/galleries.json";
 
   const params =
     new URLSearchParams(window.location.search);
 
   const projectId =
     params.get("project") ||
-    "on-the-vineyard";
+    "subway-entrances";
 
   const projectTitleEl =
     document.getElementById("project-title");
 
+  const projectSubtitleEl =
+    document.getElementById("project-subtitle");
+
   const contentEl =
     document.getElementById("content");
 
-  function getImageUrl(image) {
-    if (typeof image === "string") {
-      return image;
-    }
+  function titleFromSlug(value) {
 
-    return image?.url || "";
+    return value
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  function getFirstImageUrl(images) {
-    if (!images || images.length === 0) {
+  function getProjectFallbackName(id) {
+
+    return titleFromSlug(id || "Project");
+  }
+
+  function getFirstSegment(path) {
+
+    return (path || "")
+      .split("/")
+      .filter(Boolean)[0] || "";
+  }
+
+  function getRemainingPath(path) {
+
+    const parts =
+      (path || "")
+      .split("/")
+      .filter(Boolean);
+
+    return parts.slice(1).join("/");
+  }
+
+  function getGalleryCover(gallery) {
+
+    return (
+      gallery.cover ||
+      gallery.images?.[0]?.url ||
+      ""
+    );
+  }
+
+  function buildRootFolders(galleries) {
+
+    const folders = {};
+
+    galleries.forEach(gallery => {
+
+      const firstSegment =
+        getFirstSegment(gallery.path);
+
+      if (!firstSegment) return;
+
+      if (!folders[firstSegment]) {
+
+        folders[firstSegment] = {
+          id: firstSegment,
+          name: titleFromSlug(firstSegment),
+          count: 0,
+          galleryCount: 0,
+          cover: ""
+        };
+      }
+
+      folders[firstSegment].count += 1;
+
+      const remainingPath =
+        getRemainingPath(gallery.path);
+
+      if (!remainingPath || !remainingPath.includes("/")) {
+        folders[firstSegment].galleryCount += 1;
+      }
+
+      if (!folders[firstSegment].cover) {
+        folders[firstSegment].cover =
+          getGalleryCover(gallery);
+      }
+    });
+
+    return Object.values(folders)
+      .sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+  }
+
+  function renderFolders(folders) {
+
+    if (!folders.length) {
+      return `
+        <p class="message">
+          No folders found for this project yet.
+        </p>
+      `;
+    }
+
+    return folders.map(folder => `
+
+      <a
+        class="card"
+        href="/scouts/folder.html?project=${projectId}&path=${folder.id}"
+      >
+
+        ${
+          folder.cover
+            ? `<img src="${folder.cover}" class="thumb">`
+            : `<div class="folder-icon">📁</div>`
+        }
+
+        <div>
+          ${folder.name}
+        </div>
+
+        <div class="meta">
+          ${folder.count} galleries or nested items
+        </div>
+
+      </a>
+
+    `).join("");
+  }
+
+  function renderRootGalleries(galleries) {
+
+    const rootGalleries =
+      galleries.filter(gallery => {
+
+        const parts =
+          (gallery.path || "")
+          .split("/")
+          .filter(Boolean);
+
+        return parts.length <= 1;
+      });
+
+    if (!rootGalleries.length) {
       return "";
     }
 
-    return getImageUrl(images[0]);
+    return `
+      <div class="section-title">
+        Root Galleries
+      </div>
+
+      ${
+        rootGalleries.map(gallery => `
+
+          <a
+            class="card"
+            href="/scouts/gallery.html?gallery=${gallery.id}"
+          >
+
+            ${
+              getGalleryCover(gallery)
+                ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
+                : ""
+            }
+
+            <div>
+              ${gallery.title}
+            </div>
+
+            <div class="meta">
+              ${(gallery.images || []).length} photos
+            </div>
+
+          </a>
+
+        `).join("")
+      }
+    `;
   }
 
-  function renderFolders(
-    folders,
-    currentPath = ""
-  ) {
+  Promise.all([
+    fetch(PROJECTS_URL).then(response => response.json()),
+    fetch(GALLERIES_URL).then(response => response.json())
+  ])
 
-    let html = "";
-
-    folders.forEach(folder => {
-
-      const folderPath =
-        currentPath
-          ? `${currentPath}/${folder.id}`
-          : folder.id;
-
-      const thumb =
-        folder.cover ||
-        "";
-
-      html += `
-        <a
-          class="card"
-          href="/scouts/folder.html?path=${projectId}/${folderPath}"
-        >
-
-          ${thumb
-            ? `<img src="${thumb}" class="thumb">`
-            : ""
-          }
-
-          <div>
-            ${folder.name}
-          </div>
-
-          <div class="meta">
-            ${(folder.folders || []).length} folders
-            •
-            ${(folder.galleries || []).length} galleries
-          </div>
-
-        </a>
-      `;
-    });
-
-    return html;
-  }
-
-  fetch(DATA_URL)
-
-    .then(response => response.json())
-
-    .then(data => {
+    .then(([projectsData, galleriesData]) => {
 
       const project =
-        (data.projects || []).find(
+        (projectsData.projects || []).find(
           p => p.id === projectId
         );
 
-      if (!project) {
-
-        projectTitleEl.textContent =
-          "Project Not Found";
-
-        contentEl.innerHTML = `
-          <p class="message">
-            Check the project URL.
-          </p>
-        `;
-
-        return;
-      }
+      const projectGalleries =
+        (galleriesData.galleries || []).filter(
+          gallery => gallery.projectId === projectId
+        );
 
       projectTitleEl.textContent =
-        project.name;
+        project?.name ||
+        getProjectFallbackName(projectId);
+
+      projectSubtitleEl.textContent =
+        `${projectGalleries.length} galleries`;
+
+      const folders =
+        buildRootFolders(projectGalleries);
 
       contentEl.innerHTML = `
         <div class="section-title">
           Root Folders
         </div>
 
-        ${renderFolders(project.folders || [])}
+        ${renderFolders(folders)}
+
+        ${renderRootGalleries(projectGalleries)}
       `;
     })
 
@@ -353,7 +482,7 @@
 
       contentEl.innerHTML = `
         <p class="message">
-          There was a problem loading projects.json.
+          There was a problem loading project or gallery data.
         </p>
       `;
     });
