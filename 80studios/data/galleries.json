@@ -3,18 +3,16 @@
     {
       "id": "canal-street-nw-entrance-heroes",
       "projectId": "subway-entrances",
-      "path": "canal-streets-nw-entrance/heroes",
-      "title": "Canal Street's NW Entrance — Heroes",
-      "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-streets-nw-entrance/heroes/1779640650447-goodfellas_sogdiana.jpg",
+      "path": "canal-street-nw-entrance/heroes",
+      "title": "Canal Street NW Entrance — Heroes",
+      "cover": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-street-nw-entrance/heroes/1779736297920-Goodfellas-East-60th-Street.jpg",
       "library": {
-        "locationName": "Canal Street's NW Entrance",
-        "town": "New York",
-        "state": "NY",
+        "locationName": "Canal Street NW Entrance",
+        "town": "",
+        "state": "",
         "country": "USA",
         "tags": [
-          "subway",
-          "entrance",
-          "nyc",
+          "canal-street-nw-entrance",
           "heroes"
         ]
       },
@@ -23,36 +21,27 @@
       },
       "images": [
         {
-          "assetId": "goodfellas-sogdiana-jpg-1779640650595-0",
-          "filename": "goodfellas_sogdiana.jpg",
-          "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-streets-nw-entrance/heroes/1779640650447-goodfellas_sogdiana.jpg",
+          "assetId": "goodfellas-east-60th-street-jpg-1779736298435-0",
+          "filename": "Goodfellas-East-60th-Street.jpg",
+          "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-street-nw-entrance/heroes/1779736297920-Goodfellas-East-60th-Street.jpg",
           "tags": [],
           "caption": "",
           "source": "r2",
           "contentType": "image/jpeg"
         },
         {
-          "assetId": "screenshot-2026-05-19-at-5-00-11-pm-png-1779640651364-1",
-          "filename": "Screenshot 2026-05-19 at 5.00.11 PM.png",
-          "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-streets-nw-entrance/heroes/1779640650914-Screenshot-2026-05-19-at-5.00.11-PM.png",
-          "tags": [],
-          "caption": "",
-          "source": "r2",
-          "contentType": "image/png"
-        },
-        {
-          "assetId": "screenshot-2026-05-19-at-4-57-32-pm-png-1779640651936-2",
+          "assetId": "screenshot-2026-05-19-at-4-57-32-pm-png-1779736299257-1",
           "filename": "Screenshot 2026-05-19 at 4.57.32 PM.png",
-          "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-streets-nw-entrance/heroes/1779640651608-Screenshot-2026-05-19-at-4.57.32-PM.png",
+          "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-street-nw-entrance/heroes/1779736298551-Screenshot-2026-05-19-at-4.57.32-PM.png",
           "tags": [],
           "caption": "",
           "source": "r2",
           "contentType": "image/png"
         },
         {
-          "assetId": "goodfellas-east-60th-street-jpg-1779640652250-3",
-          "filename": "Goodfellas-East-60th-Street.jpg",
-          "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-streets-nw-entrance/heroes/1779640652161-Goodfellas-East-60th-Street.jpg",
+          "assetId": "goodfellas-salernos-restaurant-jpg-1779736300019-2",
+          "filename": "Goodfellas-Salernos-Restaurant.jpg",
+          "url": "https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/subway-entrances/canal-street-nw-entrance/heroes/1779736299349-Goodfellas-Salernos-Restaurant.jpg",
           "tags": [],
           "caption": "",
           "source": "r2",
