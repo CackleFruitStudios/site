@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
+
     body {
       margin: 0;
       background: #111;
@@ -15,22 +16,35 @@
     }
 
     h1 {
-      font-size: 24px;
-      margin-bottom: 10px;
+      font-size: 28px;
+      margin-bottom: 8px;
     }
 
-    h2 a {
+    h2 {
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    a {
       color: white;
       text-decoration: none;
     }
 
-    h2 a:hover {
-      color: #fff;
+    a:hover {
       text-decoration: underline;
     }
 
+    .subtitle {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 24px;
+      max-width: 760px;
+      line-height: 1.5;
+    }
+
     .top-nav {
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
 
     .top-nav a {
@@ -46,64 +60,94 @@
       text-decoration: underline;
     }
 
-    .project {
-      margin-top: 24px;
+    .portal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-bottom: 34px;
     }
 
-    .folder {
-      margin-top: 12px;
-      padding-left: 12px;
-      border-left: 1px solid #333;
-    }
-
-    .card {
+    .portal-card {
       display: block;
       background: #1c1c1c;
-      color: white;
-      text-decoration: none;
-      padding: 15px;
-      margin-top: 10px;
-      border-radius: 6px;
       border: 1px solid #333;
+      border-radius: 8px;
+      padding: 18px;
+      color: white;
     }
 
-    .card:hover {
+    .portal-card:hover {
       background: #252525;
+      text-decoration: none;
+    }
+
+    .portal-label {
+      color: #aaa;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .portal-description {
+      color: #999;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .section-title {
+      color: #aaa;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 28px;
+      margin-bottom: 10px;
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .project-card {
+      display: block;
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+      color: white;
+    }
+
+    .project-card:hover {
+      background: #252525;
+      text-decoration: none;
     }
 
     .thumb {
       width: 100%;
-      height: 180px;
+      height: 170px;
       object-fit: cover;
-      border-radius: 4px;
-      margin-bottom: 10px;
+      display: block;
       background: #222;
     }
 
-    .folder h3 {
-      cursor: pointer;
-      color: #ddd;
-    }
-
-    .folder h3::before {
-      content: "▾ ";
-      color: #777;
-    }
-
-    .folder.collapsed h3::before {
-      content: "▸ ";
-    }
-
-    .folder.collapsed > .folder,
-    .folder.collapsed > .card {
-      display: none;
+    .project-info {
+      padding: 14px;
     }
 
     .meta {
       color: #aaa;
       font-size: 12px;
       margin-top: 4px;
+      line-height: 1.4;
     }
+
+    .message {
+      color: #aaa;
+      margin-top: 14px;
+    }
+
   </style>
 </head>
 
@@ -111,9 +155,68 @@
 
 <h1>80 Studios Scouts</h1>
 
+<div class="subtitle">
+  Location scouting upload, gallery, and project management system for 80 Studios.
+</div>
+
 <div class="top-nav">
   <a href="/scouts/">Projects</a>
   <a href="/scouts/library.html">Library</a>
+  <a href="/scouts/admin.html">Upload Admin</a>
+</div>
+
+<div class="section-title">
+  Portals
+</div>
+
+<div class="portal-grid">
+
+  <a class="portal-card" href="/scouts/admin-portal.html">
+    <div class="portal-label">
+      Admin Portal
+    </div>
+
+    <h2>
+      Full Access Dashboard
+    </h2>
+
+    <div class="portal-description">
+      For full project, gallery, upload, library, and future user management.
+    </div>
+  </a>
+
+  <a class="portal-card" href="/scouts/scout-portal.html">
+    <div class="portal-label">
+      Scout Portal
+    </div>
+
+    <h2>
+      Field Upload Workflow
+    </h2>
+
+    <div class="portal-description">
+      For registered scouts to create projects, upload galleries, and manage their own work.
+    </div>
+  </a>
+
+  <a class="portal-card" href="/scouts/library.html">
+    <div class="portal-label">
+      Library
+    </div>
+
+    <h2>
+      Location Archive
+    </h2>
+
+    <div class="portal-description">
+      Cross-project location library. Master access will eventually search all uploaded scout content.
+    </div>
+  </a>
+
+</div>
+
+<div class="section-title">
+  Current Projects
 </div>
 
 <div id="content">
@@ -122,137 +225,133 @@
 
 <script>
 
-  const DATA_URL = "/data/projects.json";
+  const PROJECTS_URL =
+    "/data/projects.json";
 
-  const content = document.getElementById("content");
+  const GALLERIES_URL =
+    "/data/galleries.json";
 
-  function getImageUrl(image) {
-    if (typeof image === "string") {
-      return image;
-    }
+  const content =
+    document.getElementById("content");
 
-    return image?.url || "";
+  function titleFromSlug(value) {
+
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  function getFirstImageUrl(images) {
-    if (!images || images.length === 0) {
-      return "";
-    }
+  function getGalleryCover(gallery) {
 
-    return getImageUrl(images[0]);
+    return (
+      gallery.cover ||
+      gallery.images?.[0]?.url ||
+      ""
+    );
   }
 
-  function renderFolders(folders) {
+  function getProjectCover(project, galleries) {
 
-    let html = "";
-
-    folders.forEach(folder => {
-
-      html += `
-        <div class="folder">
-          <h3>${folder.name}</h3>
-      `;
-
-      (folder.galleries || []).forEach(gallery => {
-
-        const thumb =
-          gallery.cover ||
-          getFirstImageUrl(gallery.images) ||
-          "";
-
-        html += `
-          <a
-            class="card"
-            href="/scouts/gallery.html?gallery=${gallery.id}"
-          >
-
-            ${thumb
-              ? `<img src="${thumb}" class="thumb">`
-              : ""
-            }
-
-            <div>
-              ${gallery.title}
-            </div>
-
-            <div class="meta">
-              ${gallery.subtitle || ""}
-              •
-              ${(gallery.images || []).length} photos
-            </div>
-
-          </a>
-        `;
-      });
-
-      if (
-        folder.folders &&
-        folder.folders.length > 0
-      ) {
-        html += renderFolders(folder.folders);
-      }
-
-      html += `</div>`;
-    });
-
-    return html;
+    return (
+      project.cover ||
+      getGalleryCover(galleries[0]) ||
+      ""
+    );
   }
 
-  fetch(DATA_URL)
+  function getProjectGalleryCount(projectId, galleries) {
 
-    .then(response => response.json())
+    return galleries.filter(
+      gallery => gallery.projectId === projectId
+    ).length;
+  }
 
-    .then(data => {
+  Promise.all([
+    fetch(PROJECTS_URL).then(response => response.json()),
+    fetch(GALLERIES_URL).then(response => response.json())
+  ])
 
-      let html = "";
+    .then(([projectsData, galleriesData]) => {
 
-      (data.projects || []).forEach(project => {
+      const projects =
+        projectsData.projects || [];
 
-        html += `
-          <div class="project">
+      const galleries =
+        galleriesData.galleries || [];
 
-            <h2>
-              <a
-                href="/scouts/project.html?project=${project.id}"
-              >
-                ${project.name}
-              </a>
-            </h2>
-        `;
+      if (!projects.length) {
 
-        html += renderFolders(
-          project.folders || []
-        );
-
-        html += `
+        content.innerHTML = `
+          <div class="message">
+            No projects found.
           </div>
         `;
-      });
 
-      content.innerHTML =
-        html || "No projects found.";
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="project-grid">
+
+          ${projects.map(project => {
+
+            const projectGalleries =
+              galleries.filter(
+                gallery => gallery.projectId === project.id
+              );
+
+            const cover =
+              getProjectCover(project, projectGalleries);
+
+            return `
+
+              <a
+                class="project-card"
+                href="/scouts/project.html?project=${project.id}"
+              >
+
+                ${
+                  cover
+                    ? `<img src="${cover}" class="thumb">`
+                    : ""
+                }
+
+                <div class="project-info">
+
+                  <h2>
+                    ${project.name || titleFromSlug(project.id)}
+                  </h2>
+
+                  <div class="meta">
+                    ${getProjectGalleryCount(project.id, galleries)} galleries
+                    ${
+                      project.library?.projectType
+                        ? `• ${project.library.projectType}`
+                        : ""
+                    }
+                  </div>
+
+                </div>
+
+              </a>
+
+            `;
+          }).join("")}
+
+        </div>
+      `;
     })
 
     .catch(error => {
 
-      content.innerHTML =
-        "Could not load project data.";
-
       console.error(error);
+
+      content.innerHTML = `
+        <div class="message">
+          Could not load project or gallery data.
+        </div>
+      `;
     });
-
-  document.addEventListener(
-    "click",
-    function(event) {
-
-      if (event.target.tagName === "H3") {
-
-        event.target.parentElement.classList.toggle(
-          "collapsed"
-        );
-      }
-    }
-  );
 
 </script>
 
