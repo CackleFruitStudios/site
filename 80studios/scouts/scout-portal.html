@@ -30,6 +30,12 @@
       margin-bottom: 8px;
     }
 
+    h2 {
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
     .subtitle {
       color: #888;
       font-size: 14px;
@@ -64,7 +70,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
     }
 
@@ -82,16 +88,80 @@
       text-decoration: none;
     }
 
-    .card h2 {
-      font-size: 18px;
-      margin-top: 0;
-      margin-bottom: 10px;
-    }
-
     .meta {
       color: #999;
       font-size: 13px;
       line-height: 1.5;
+    }
+
+    .stat-card {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .stat-number {
+      font-size: 34px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      color: #999;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .list {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .row {
+      display: block;
+      padding: 14px 16px;
+      border-bottom: 1px solid #2d2d2d;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .row:hover {
+      background: #222;
+      text-decoration: none;
+    }
+
+    .row-title {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .row-meta {
+      color: #888;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .empty {
+      color: #888;
+      font-size: 13px;
+      padding: 14px 16px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #18351d;
+      color: #71d685;
+      margin-left: 6px;
+      vertical-align: middle;
     }
 
   </style>
@@ -101,13 +171,59 @@
 
 <h1>Scout Portal</h1>
 
-<div class="subtitle">
+<div class="subtitle" id="scout-subtitle">
   Mobile-friendly field workflow for scout uploads, gallery creation, and project management.
 </div>
 
 <div class="top-nav">
   <a href="/scouts/">Scouts Home</a>
   <a href="/scouts/admin.html">Upload Admin</a>
+  <a href="/scouts/client-gallery.html">Client Gallery</a>
+</div>
+
+<div class="section-title">
+  Current Scout
+</div>
+
+<div class="list">
+  <div class="row">
+    <div class="row-title" id="current-scout-name">
+      Loading Scout...
+      <span class="badge">Scout</span>
+    </div>
+
+    <div class="row-meta" id="current-scout-email">
+      Loading account...
+    </div>
+  </div>
+</div>
+
+<div class="section-title">
+  My Snapshot
+</div>
+
+<div class="grid">
+
+  <div class="stat-card">
+    <div class="stat-number" id="my-project-count">–</div>
+    <div class="stat-label">My Projects</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-number" id="my-gallery-count">–</div>
+    <div class="stat-label">My Galleries</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-number" id="my-photo-count">–</div>
+    <div class="stat-label">My Photos</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-number" id="my-share-count">–</div>
+    <div class="stat-label">Shared Links</div>
+  </div>
+
 </div>
 
 <div class="section-title">
@@ -124,55 +240,274 @@
     </div>
   </a>
 
-  <a class="card" href="#">
-    <h2>My Projects</h2>
-
-    <div class="meta">
-      Future scout-specific project list and management view.
-    </div>
-  </a>
-
-  <a class="card" href="#">
+  <a class="card" href="#my-galleries">
     <h2>My Galleries</h2>
 
     <div class="meta">
-      Future scout gallery manager with editing and organization tools.
+      Review galleries currently assigned to this scout account.
+    </div>
+  </a>
+
+  <a class="card" href="#shared-links">
+    <h2>Client Links</h2>
+
+    <div class="meta">
+      Open client-safe gallery links when share tokens are available.
     </div>
   </a>
 
 </div>
 
-<div class="section-title">
-  Field Tools
+<div class="section-title" id="my-galleries">
+  My Galleries
 </div>
 
-<div class="grid">
-
-  <a class="card" href="#">
-    <h2>Recent Uploads</h2>
-
-    <div class="meta">
-      Quickly access recently uploaded scout galleries from the field.
-    </div>
-  </a>
-
-  <a class="card" href="#">
-    <h2>Shared Client Galleries</h2>
-
-    <div class="meta">
-      Future client-ready shared gallery links and delivery system.
-    </div>
-  </a>
-
-  <a class="card" href="#">
-    <h2>Scout Notes</h2>
-
-    <div class="meta">
-      Future internal-only notes and field observations.
-    </div>
-  </a>
-
+<div class="list" id="galleries-list">
+  <div class="empty">Loading galleries...</div>
 </div>
+
+<div class="section-title" id="shared-links">
+  Client Links
+</div>
+
+<div class="list" id="share-list">
+  <div class="empty">Loading share links...</div>
+</div>
+
+<script>
+
+  const CURRENT_SCOUT_ID =
+    "matthew-chilsen";
+
+  const USERS_URL =
+    "/data/users.json";
+
+  const PROJECTS_URL =
+    "/data/projects.json";
+
+  const GALLERIES_URL =
+    "/data/galleries.json";
+
+  const currentScoutNameEl =
+    document.getElementById("current-scout-name");
+
+  const currentScoutEmailEl =
+    document.getElementById("current-scout-email");
+
+  const myProjectCountEl =
+    document.getElementById("my-project-count");
+
+  const myGalleryCountEl =
+    document.getElementById("my-gallery-count");
+
+  const myPhotoCountEl =
+    document.getElementById("my-photo-count");
+
+  const myShareCountEl =
+    document.getElementById("my-share-count");
+
+  const galleriesListEl =
+    document.getElementById("galleries-list");
+
+  const shareListEl =
+    document.getElementById("share-list");
+
+  function titleFromSlug(value) {
+
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function galleryPhotoCount(gallery) {
+
+    return (gallery.images || []).length;
+  }
+
+  function uniqueProjectCount(galleries) {
+
+    const ids =
+      galleries
+        .map(gallery => gallery.projectId)
+        .filter(Boolean);
+
+    return new Set(ids).size;
+  }
+
+  function renderCurrentScout(user) {
+
+    if (!user) {
+
+      currentScoutNameEl.innerHTML =
+        `Unknown Scout <span class="badge">Scout</span>`;
+
+      currentScoutEmailEl.textContent =
+        CURRENT_SCOUT_ID;
+
+      return;
+    }
+
+    currentScoutNameEl.innerHTML =
+      `${user.name} <span class="badge">Scout</span>`;
+
+    currentScoutEmailEl.textContent =
+      user.email || "";
+  }
+
+  function renderGalleries(galleries) {
+
+    if (!galleries.length) {
+
+      galleriesListEl.innerHTML =
+        `<div class="empty">No galleries assigned to this scout yet.</div>`;
+
+      return;
+    }
+
+    galleriesListEl.innerHTML =
+      galleries
+        .slice()
+        .reverse()
+        .map(gallery => `
+
+          <a
+            class="row"
+            href="/scouts/gallery.html?gallery=${gallery.id}"
+          >
+
+            <div class="row-title">
+              ${gallery.title || gallery.id}
+            </div>
+
+            <div class="row-meta">
+              ${galleryPhotoCount(gallery)} photos
+              • ${titleFromSlug(gallery.projectId || "")}
+              • ${gallery.path || "No path"}
+            </div>
+
+          </a>
+
+        `).join("");
+  }
+
+  function renderShareLinks(galleries) {
+
+    const shared =
+      galleries.filter(
+        gallery => gallery.shareToken
+      );
+
+    if (!shared.length) {
+
+      shareListEl.innerHTML =
+        `<div class="empty">No client share links available yet.</div>`;
+
+      return;
+    }
+
+    shareListEl.innerHTML =
+      shared
+        .slice()
+        .reverse()
+        .map(gallery => `
+
+          <a
+            class="row"
+            href="/scouts/client-gallery.html?share=${gallery.shareToken}"
+          >
+
+            <div class="row-title">
+              ${gallery.title || gallery.id}
+            </div>
+
+            <div class="row-meta">
+              Client-safe gallery link
+              • ${galleryPhotoCount(gallery)} photos
+            </div>
+
+          </a>
+
+        `).join("");
+  }
+
+  Promise.all([
+    fetch(USERS_URL).then(response => response.json()),
+    fetch(PROJECTS_URL).then(response => response.json()),
+    fetch(GALLERIES_URL).then(response => response.json())
+  ])
+
+    .then(([usersData, projectsData, galleriesData]) => {
+
+      const users =
+        usersData.users || [];
+
+      const galleries =
+        galleriesData.galleries || [];
+
+      const currentUser =
+        users.find(
+          user => user.id === CURRENT_SCOUT_ID
+        );
+
+      const myGalleries =
+        galleries.filter(
+          gallery => gallery.ownerId === CURRENT_SCOUT_ID
+        );
+
+      const myPhotoCount =
+        myGalleries.reduce(
+          (total, gallery) =>
+            total + galleryPhotoCount(gallery),
+          0
+        );
+
+      const myShareCount =
+        myGalleries.filter(
+          gallery => gallery.shareToken
+        ).length;
+
+      renderCurrentScout(currentUser);
+
+      myProjectCountEl.textContent =
+        uniqueProjectCount(myGalleries);
+
+      myGalleryCountEl.textContent =
+        myGalleries.length;
+
+      myPhotoCountEl.textContent =
+        myPhotoCount;
+
+      myShareCountEl.textContent =
+        myShareCount;
+
+      renderGalleries(myGalleries);
+
+      renderShareLinks(myGalleries);
+    })
+
+    .catch(error => {
+
+      console.error(error);
+
+      currentScoutNameEl.innerHTML =
+        `Could Not Load Scout <span class="badge">Scout</span>`;
+
+      currentScoutEmailEl.textContent =
+        "Data load error";
+
+      galleriesListEl.innerHTML =
+        `<div class="empty">Could not load galleries.</div>`;
+
+      shareListEl.innerHTML =
+        `<div class="empty">Could not load share links.</div>`;
+
+      myProjectCountEl.textContent = "!";
+      myGalleryCountEl.textContent = "!";
+      myPhotoCountEl.textContent = "!";
+      myShareCountEl.textContent = "!";
+    });
+
+</script>
 
 </body>
 </html>
