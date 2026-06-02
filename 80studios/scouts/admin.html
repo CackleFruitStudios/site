@@ -1043,10 +1043,15 @@
 
       visibility: "private",
 
-      shareToken:
-        Math.random()
-          .toString(36)
-          .substring(2, 12),
+           shareToken:
+        window.scoutShareToken ||
+        (
+          window.scoutShareToken =
+            `${galleryId}-${Date.now()}`
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "")
+        ),
 
       title: title,
 
