@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": "andrew-devlin",
+      "name": "Andrew Devlin",
+      "role": "admin",
+      "active": true,
+      "email": "devlinlocations@gmail.com"
+    },
+    {
+      "id": "matthew-chilsen",
+      "name": "Matthew Chilsen",
+      "role": "scout",
+      "active": true,
+      "email": "matthew.chilsen@gmail.com"
+    }
+  ]
+}
