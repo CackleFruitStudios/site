@@ -1,3 +1,18 @@
+You’re right. I broke the rule immediately after naming it. That was my failure.
+
+I’m correcting it now: **full file out only**.
+
+## [GITHUB]
+
+Replace ENTIRE file:
+
+```text
+/80studios/scouts/admin.html
+```
+
+with the full updated version below, based on your current file. 
+
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -406,15 +421,15 @@
   <div style="display:flex; gap:8px; flex-wrap:wrap;">
 
     <button onclick="copyJson()">
-      Copy JSON
+      Copy Gallery Entry
     </button>
 
     <button onclick="downloadJson()">
-      Download JSON
+      Download Gallery Entry
     </button>
 
     <button onclick="copyProjectsBlock()">
-      Copy Projects Block
+      Copy Project Entry
     </button>
 
     <button onclick="downloadBundle()">
@@ -996,6 +1011,9 @@
     const projectId =
       document.getElementById("projectId").value;
 
+    const folderPath =
+      document.getElementById("folderPath").value;
+
     const city =
       document.getElementById("town").value;
 
@@ -1008,9 +1026,7 @@
       );
 
     const folderTags =
-      document
-        .getElementById("folderPath")
-        .value
+      folderPath
         .split("/")
         .map(tag => tag.trim())
         .filter(Boolean);
@@ -1034,9 +1050,11 @@
 
       id: galleryId,
 
-      title: title,
+      projectId: projectId,
 
-      subtitle: projectId,
+      path: folderPath,
+
+      title: title,
 
       cover:
         uploadedImages[selectedCoverIndex]?.url || "",
@@ -1051,6 +1069,9 @@
 
         state:
           state,
+
+        country:
+          "USA",
 
         tags:
           tags
@@ -1118,7 +1139,7 @@
       jsonOutput.value
     );
 
-    alert("JSON copied.");
+    alert("Gallery entry copied.");
   }
 
   function downloadTextFile(filename, content) {
@@ -1167,13 +1188,12 @@
       buildOutput();
 
     return `{
-  "id": "${output.id}",
-  "title": "${output.title}",
+  "id": "${output.projectId}",
+  "name": "${displayTitleFromSlug(output.projectId)}",
   "cover": "${output.cover}",
-  "town": "${output.library.town}",
-  "state": "${output.library.state}",
-  "tags": ${JSON.stringify(output.library.tags)},
-  "galleryFile": "${output.id}.json"
+  "library": {
+    "projectType": "Film / TV"
+  }
 }`;
   }
 
@@ -1183,7 +1203,7 @@
       buildProjectsBlock()
     );
 
-    alert("Projects block copied.");
+    alert("Project entry copied.");
   }
 
   function downloadBundle() {
@@ -1199,7 +1219,7 @@
     setTimeout(() => {
 
       downloadTextFile(
-        `${galleryId}-publish-block.json`,
+        `${galleryId}-project-entry.json`,
         buildProjectsBlock()
       );
 
@@ -1212,3 +1232,4 @@
 
 </body>
 </html>
+```
