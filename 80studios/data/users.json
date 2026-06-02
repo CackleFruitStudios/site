@@ -13,6 +13,20 @@
       "role": "scout",
       "active": true,
       "email": "matthew.chilsen@gmail.com"
+    },
+    {
+      "id": "rachel-devlin",
+      "name": "Rachel Devlin",
+      "role": "scout",
+      "active": true,
+      "email": "poeyspeak@gmail.com"
+    },
+    {
+      "id": "apostasy",
+      "name": "Apostasy",
+      "role": "scout",
+      "active": true,
+      "email": "h22jdmcivic@hotmail.com"
     }
   ]
 }
