@@ -1,5 +1,3 @@
-// force vercel deploy
-
 export default async function handler(req, res) {
 
   if (req.method !== "POST") {
@@ -9,12 +7,29 @@ export default async function handler(req, res) {
     });
   }
 
-  console.log(
-    "gallery-save called"
-  );
+  try {
 
-  return res.status(200).json({
-    success: true,
-    message: "gallery-save endpoint online"
-  });
+    const gallery = req.body;
+
+    if (!gallery) {
+
+      return res.status(400).json({
+        success: false,
+        error: "No gallery data received"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Gallery received",
+      gallery
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 }
