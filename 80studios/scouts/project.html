@@ -274,9 +274,29 @@
       .replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  function getProjectFallbackName(id) {
+  function getProjectId(project) {
 
-    return titleFromSlug(id || "Project");
+    return project.id || project.projectId || project.project_id || "";
+  }
+
+  function getGalleryProjectId(gallery) {
+
+    return gallery.projectId || gallery.project_id || "";
+  }
+
+  function getGalleryPath(gallery) {
+
+    return gallery.path || "";
+  }
+
+  function getGalleryCover(gallery) {
+
+    return (
+      gallery.cover ||
+      gallery.url ||
+      gallery.imageUrl ||
+      ""
+    );
   }
 
   function getFirstSegment(path) {
@@ -296,15 +316,6 @@
     return parts.slice(1).join("/");
   }
 
-  function getGalleryCover(gallery) {
-
-    return (
-      gallery.cover ||
-      gallery.images?.[0]?.url ||
-      ""
-    );
-  }
-
   function buildRootFolders(galleries) {
 
     const folders = {};
@@ -312,7 +323,7 @@
     galleries.forEach(gallery => {
 
       const firstSegment =
-        getFirstSegment(gallery.path);
+        getFirstSegment(getGalleryPath(gallery));
 
       if (!firstSegment) return;
 
@@ -322,19 +333,11 @@
           id: firstSegment,
           name: titleFromSlug(firstSegment),
           count: 0,
-          galleryCount: 0,
           cover: ""
         };
       }
 
       folders[firstSegment].count += 1;
-
-      const remainingPath =
-        getRemainingPath(gallery.path);
-
-      if (!remainingPath || !remainingPath.includes("/")) {
-        folders[firstSegment].galleryCount += 1;
-      }
 
       if (!folders[firstSegment].cover) {
         folders[firstSegment].cover =
@@ -390,9 +393,9 @@
       galleries.filter(gallery => {
 
         const parts =
-          (gallery.path || "")
-          .split("/")
-          .filter(Boolean);
+          getGalleryPath(gallery)
+            .split("/")
+            .filter(Boolean);
 
         return parts.length <= 1;
       });
@@ -421,7 +424,7 @@
             }
 
             <div>
-              ${gallery.title}
+              ${gallery.title || gallery.id}
             </div>
 
             <div class="meta">
@@ -442,20 +445,26 @@
 
     .then(([projectsData, galleriesData]) => {
 
+      const projects =
+        projectsData.projects || [];
+
+      const galleries =
+        galleriesData.galleries || [];
+
       const project =
-        (projectsData.projects || []).find(
-          p => p.id === projectId
+        projects.find(
+          item => getProjectId(item) === projectId
         );
 
       const projectGalleries =
-        (galleriesData.galleries || []).filter(
-          gallery => gallery.projectId === projectId
+        galleries.filter(
+          gallery => getGalleryProjectId(gallery) === projectId
         );
 
       projectTitleEl.textContent =
         project?.title ||
         project?.name ||
-        getProjectFallbackName(projectId);
+        titleFromSlug(projectId);
 
       projectSubtitleEl.textContent =
         `${projectGalleries.length} galleries`;
