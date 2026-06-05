@@ -246,17 +246,17 @@
 <script>
 
   const PROJECTS_URL =
-    "/data/projects.json";
+    "/api/project-list";
 
   const GALLERIES_URL =
-    "/data/galleries.json";
+    "/api/gallery-list";
 
   const params =
     new URLSearchParams(window.location.search);
 
   const projectId =
     params.get("project") ||
-    "subway-entrances";
+    "test-project-gf";
 
   const projectTitleEl =
     document.getElementById("project-title");
@@ -269,7 +269,7 @@
 
   function titleFromSlug(value) {
 
-    return value
+    return (value || "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, char => char.toUpperCase());
   }
@@ -425,7 +425,7 @@
             </div>
 
             <div class="meta">
-              ${(gallery.images || []).length} photos
+              ${gallery.imageCount || 0} photos
             </div>
 
           </a>
@@ -453,6 +453,7 @@
         );
 
       projectTitleEl.textContent =
+        project?.title ||
         project?.name ||
         getProjectFallbackName(projectId);
 
