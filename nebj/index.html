@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>New England's Best Jerky</title>
+
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff8ec;
+    color: #2a1a10;
+}
+
+header {
+    width: 100%;
+    padding: 24px 7%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    border-bottom: 1px solid #f0dcc2;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: .5px;
+}
+
+nav a {
+    color: #2a1a10;
+    text-decoration: none;
+    margin-left: 24px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.hero {
+    min-height: 82vh;
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    align-items: center;
+    gap: 50px;
+    padding: 70px 7%;
+}
+
+.hero-text .eyebrow {
+    color: #b45309;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 18px;
+}
+
+h1 {
+    font-size: 58px;
+    line-height: 1.02;
+    margin-bottom: 24px;
+}
+
+.hero-text p {
+    font-size: 19px;
+    line-height: 1.7;
+    color: #5b4030;
+    max-width: 620px;
+    margin-bottom: 32px;
+}
+
+.buttons {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.button {
+    display: inline-block;
+    padding: 15px 26px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 800;
+    border: 2px solid #b45309;
+}
+
+.button.primary {
+    background: #b45309;
+    color: #fff;
+}
+
+.button.secondary {
+    color: #b45309;
+    background: #fff8ec;
+}
+
+.image-card {
+    background: #ffffff;
+    border: 1px solid #f0dcc2;
+    border-radius: 28px;
+    padding: 24px;
+    box-shadow: 0 24px 60px rgba(120, 72, 28, .16);
+}
+
+.image-placeholder {
+    aspect-ratio: 4 / 3;
+    border-radius: 22px;
+    background:
+        linear-gradient(135deg, #ffe2b8, #f7b267);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #7c3f12;
+    font-weight: 800;
+    padding: 30px;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    padding: 0 7% 70px;
+}
+
+.feature {
+    background: #ffffff;
+    border: 1px solid #f0dcc2;
+    border-radius: 20px;
+    padding: 26px;
+}
+
+.feature h2 {
+    font-size: 20px;
+    margin-bottom: 12px;
+}
+
+.feature p {
+    color: #6b4a36;
+    line-height: 1.6;
+}
+
+footer {
+    text-align: center;
+    padding: 28px;
+    background: #2a1a10;
+    color: #f9e8d2;
+    font-size: 13px;
+}
+
+@media (max-width: 800px) {
+
+    header {
+        display: block;
+        text-align: center;
+    }
+
+    nav {
+        margin-top: 16px;
+    }
+
+    nav a {
+        margin: 0 10px;
+    }
+
+    .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding-top: 50px;
+    }
+
+    h1 {
+        font-size: 40px;
+    }
+
+    .hero-text p {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .buttons {
+        justify-content: center;
+    }
+
+    .features {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">NEBJ</div>
+
+    <nav>
+        <a href="#">Shop</a>
+        <a href="#">Flavors</a>
+        <a href="#">Where to Buy</a>
+        <a href="#">Contact</a>
+    </nav>
+</header>
+
+<section class="hero">
+
+    <div class="hero-text">
+        <div class="eyebrow">New England's Best Jerky</div>
+
+        <h1>Small batch jerky with big New England flavor.</h1>
+
+        <p>
+            New England's Best Jerky is coming back online with a fresh new home.
+            Our full store is being rebuilt, but the flavor, quality, and loyal
+            customer following are still right where we left them.
+        </p>
+
+        <div class="buttons">
+            <a href="#" class="button primary">Coming Soon</a>
+            <a href="#" class="button secondary">Follow for Updates</a>
+        </div>
+    </div>
+
+    <div class="image-card">
+        <div class="image-placeholder">
+            Add product image here<br>
+            images/jerky-hero.jpg
+        </div>
+    </div>
+
+</section>
+
+<section class="features">
+
+    <div class="feature">
+        <h2>Small Batch</h2>
+        <p>Made with care, tested by real customers, and built on years of loyal support.</p>
+    </div>
+
+    <div class="feature">
+        <h2>Bold Flavors</h2>
+        <p>Classic, spicy, sweet, smoky, and seasonal flavor drops are on the way.</p>
+    </div>
+
+    <div class="feature">
+        <h2>Back Soon</h2>
+        <p>The online store is being rebuilt. Check back soon for availability and updates.</p>
+    </div>
+
+</section>
+
+<footer>
+    © 2026 New England's Best Jerky. All rights reserved.
+</footer>
+
+</body>
+</html>
