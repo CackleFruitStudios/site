@@ -92,15 +92,6 @@
       background: #252525;
     }
 
-    .thumb {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      background: #222;
-    }
-
     .folder-icon {
       width: 100%;
       height: 120px;
@@ -244,15 +235,11 @@
 </div>
 
 <script>
+  const PROJECTS_URL = "/api/project-list";
+  const GALLERIES_URL = "/api/gallery-list";
+  const FOLDERS_URL = "/api/folder-list";
 
-  const PROJECTS_URL =
-    "/api/project-list";
-
-  const GALLERIES_URL =
-    "/api/gallery-list";
-
-  const params =
-    new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search);
 
   const projectId =
     params.get("project") ||
@@ -268,91 +255,36 @@
     document.getElementById("content");
 
   function titleFromSlug(value) {
-
     return (value || "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, char => char.toUpperCase());
   }
 
   function getProjectId(project) {
-
     return project.id || project.projectId || project.project_id || "";
   }
 
   function getGalleryProjectId(gallery) {
-
     return gallery.projectId || gallery.project_id || "";
   }
 
-  function getGalleryPath(gallery) {
-
-    return gallery.path || "";
+  function getFolderTitle(folder) {
+    return folder.title || folder.name || titleFromSlug(folder.slug || folder.id);
   }
 
-  function getGalleryCover(gallery) {
+  function getFolderMeta(folder) {
+    if (folder.slug) {
+      return folder.slug;
+    }
 
-    return (
-      gallery.cover ||
-      gallery.url ||
-      gallery.imageUrl ||
-      ""
-    );
-  }
+    if (folder.id) {
+      return folder.id;
+    }
 
-  function getFirstSegment(path) {
-
-    return (path || "")
-      .split("/")
-      .filter(Boolean)[0] || "";
-  }
-
-  function getRemainingPath(path) {
-
-    const parts =
-      (path || "")
-      .split("/")
-      .filter(Boolean);
-
-    return parts.slice(1).join("/");
-  }
-
-  function buildRootFolders(galleries) {
-
-    const folders = {};
-
-    galleries.forEach(gallery => {
-
-      const firstSegment =
-        getFirstSegment(getGalleryPath(gallery));
-
-      if (!firstSegment) return;
-
-      if (!folders[firstSegment]) {
-
-        folders[firstSegment] = {
-          id: firstSegment,
-          name: titleFromSlug(firstSegment),
-          count: 0,
-          cover: ""
-        };
-      }
-
-      folders[firstSegment].count += 1;
-
-      if (!folders[firstSegment].cover) {
-        folders[firstSegment].cover =
-          getGalleryCover(gallery);
-      }
-    });
-
-    return Object.values(folders)
-      .sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
+    return "Folder";
   }
 
   function renderFolders(folders) {
-
     if (!folders.length) {
       return `
         <p class="message">
@@ -362,94 +294,39 @@
     }
 
     return folders.map(folder => `
-
       <a
         class="card"
-        href="/scouts/folder.html?project=${projectId}&path=${folder.id}"
+        href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folder.id)}"
       >
-
-        ${
-          folder.cover
-            ? `<img src="${folder.cover}" class="thumb">`
-            : `<div class="folder-icon">📁</div>`
-        }
+        <div class="folder-icon">📁</div>
 
         <div>
-          ${folder.name}
+          ${getFolderTitle(folder)}
         </div>
 
         <div class="meta">
-          ${folder.count} galleries or nested items
+          ${getFolderMeta(folder)}
         </div>
-
       </a>
-
     `).join("");
-  }
-
-  function renderRootGalleries(galleries) {
-
-    const rootGalleries =
-      galleries.filter(gallery => {
-
-        const parts =
-          getGalleryPath(gallery)
-            .split("/")
-            .filter(Boolean);
-
-        return parts.length <= 1;
-      });
-
-    if (!rootGalleries.length) {
-      return "";
-    }
-
-    return `
-      <div class="section-title">
-        Root Galleries
-      </div>
-
-      ${
-        rootGalleries.map(gallery => `
-
-          <a
-            class="card"
-            href="/scouts/gallery.html?gallery=${gallery.id}"
-          >
-
-            ${
-              getGalleryCover(gallery)
-                ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
-                : ""
-            }
-
-            <div>
-              ${gallery.title || gallery.id}
-            </div>
-
-            <div class="meta">
-              ${gallery.imageCount || 0} photos
-            </div>
-
-          </a>
-
-        `).join("")
-      }
-    `;
   }
 
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(GALLERIES_URL).then(response => response.json())
+    fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+    fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json())
   ])
 
-    .then(([projectsData, galleriesData]) => {
+    .then(([projectsData, galleriesData, foldersData]) => {
 
       const projects =
         projectsData.projects || [];
 
       const galleries =
         galleriesData.galleries || [];
+
+      const folders =
+        foldersData.folders || [];
 
       const project =
         projects.find(
@@ -467,19 +344,14 @@
         titleFromSlug(projectId);
 
       projectSubtitleEl.textContent =
-        `${projectGalleries.length} galleries`;
-
-      const folders =
-        buildRootFolders(projectGalleries);
+        `${folders.length} folders · ${projectGalleries.length} galleries`;
 
       contentEl.innerHTML = `
         <div class="section-title">
-          Root Folders
+          Folders
         </div>
 
         ${renderFolders(folders)}
-
-        ${renderRootGalleries(projectGalleries)}
       `;
     })
 
@@ -492,11 +364,10 @@
 
       contentEl.innerHTML = `
         <p class="message">
-          There was a problem loading project or gallery data.
+          There was a problem loading project folder data.
         </p>
       `;
     });
-
 </script>
 
 </body>
