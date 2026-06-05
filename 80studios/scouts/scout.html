@@ -6,108 +6,23 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-    body {
-      margin: 0;
-      background: #111;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .top-nav {
-      margin-bottom: 18px;
-    }
-
-    .top-nav a {
-      display: inline-block;
-      color: #999;
-      font-size: 14px;
-      margin-right: 14px;
-    }
-
-    .top-nav a:hover {
-      color: #fff;
-      text-decoration: underline;
-    }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 6px;
-    }
-
-    .subtitle {
-      color: #888;
-      margin-bottom: 26px;
-      font-size: 14px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 10px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      background: #1c1c1c;
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 16px;
-    }
-
-    .stat-number {
-      font-size: 28px;
-      margin-bottom: 4px;
-    }
-
-    .stat-label {
-      color: #999;
-      font-size: 13px;
-    }
-
-    .section-title {
-      color: #aaa;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 28px;
-      margin-bottom: 10px;
-    }
-
-    .card {
-      display: block;
-      background: #1c1c1c;
-      color: white;
-      padding: 15px;
-      margin-top: 10px;
-      border-radius: 6px;
-      border: 1px solid #333;
-    }
-
-    .card:hover {
-      background: #252525;
-    }
-
-    .meta {
-      color: #888;
-      font-size: 12px;
-      margin-top: 4px;
-    }
-
-    .message {
-      color: #888;
-    }
-
-    hr {
-      border: none;
-      border-top: 1px solid #333;
-      margin: 12px 0;
-    }
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
+    a { color: inherit; text-decoration: none; }
+    .top-nav { margin-bottom: 18px; }
+    .top-nav a { display: inline-block; color: #999; font-size: 14px; margin-right: 14px; }
+    .top-nav a:hover { color: #fff; text-decoration: underline; }
+    h1 { font-size: 28px; margin-bottom: 6px; }
+    .subtitle { color: #888; margin-bottom: 26px; font-size: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 30px; }
+    .stat-card { background: #1c1c1c; border: 1px solid #333; border-radius: 6px; padding: 16px; }
+    .stat-number { font-size: 28px; margin-bottom: 4px; }
+    .stat-label { color: #999; font-size: 13px; }
+    .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 28px; margin-bottom: 10px; }
+    .card { display: block; background: #1c1c1c; color: white; padding: 15px; margin-top: 10px; border-radius: 6px; border: 1px solid #333; }
+    .card:hover { background: #252525; }
+    .meta { color: #888; font-size: 12px; margin-top: 4px; }
+    .message { color: #888; }
+    hr { border: none; border-top: 1px solid #333; margin: 12px 0; }
   </style>
 </head>
 
@@ -135,6 +50,11 @@
   </div>
 
   <div class="stat-card">
+    <div class="stat-number" id="folder-count">-</div>
+    <div class="stat-label">Folders</div>
+  </div>
+
+  <div class="stat-card">
     <div class="stat-number" id="gallery-count">-</div>
     <div class="stat-label">Galleries</div>
   </div>
@@ -146,24 +66,34 @@
 </div>
 
 <div class="section-title">
-  Assigned Galleries
+  Recent Galleries
 </div>
 
 <div id="gallery-list">
-  <p class="message">Loading assigned galleries...</p>
+  <p class="message">Loading recent galleries...</p>
 </div>
 
 <script>
   const PROJECTS_URL = "/api/project-list";
   const GALLERIES_URL = "/api/gallery-list";
+  const FOLDERS_URL = "/api/folder-list";
 
   const projectCountEl = document.getElementById("project-count");
+  const folderCountEl = document.getElementById("folder-count");
   const galleryCountEl = document.getElementById("gallery-count");
   const imageCountEl = document.getElementById("image-count");
   const galleryListEl = document.getElementById("gallery-list");
 
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
+  }
+
   function getGalleryProjectId(gallery) {
     return gallery.projectId || gallery.project_id || "";
+  }
+
+  function getGalleryFolderId(gallery) {
+    return gallery.folderId || gallery.folder_id || "";
   }
 
   function getImageCount(gallery) {
@@ -174,58 +104,99 @@
     return `${count} ${count === 1 ? "photo" : "photos"}`;
   }
 
+  function getLocationLine(gallery) {
+    const parts = [
+      gallery.locationName || gallery.location_name || "",
+      gallery.town || "",
+      gallery.state || "",
+      gallery.country || ""
+    ].filter(Boolean);
+
+    return parts.join(" · ");
+  }
+
+  function sortByCreatedAtDesc(a, b) {
+    return new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0);
+  }
+
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
     fetch(GALLERIES_URL).then(response => response.json())
   ])
-
     .then(([projectsData, galleriesData]) => {
       const projects = projectsData.projects || [];
       const galleries = galleriesData.galleries || [];
 
-      const totalImages = galleries.reduce(
-        (total, gallery) => total + Number(getImageCount(gallery)),
-        0
+      const folderRequests = projects.map(project =>
+        fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(getProjectId(project))}`)
+          .then(response => response.json())
+          .then(data => data.folders || [])
       );
 
-      projectCountEl.textContent = projects.length;
-      galleryCountEl.textContent = galleries.length;
-      imageCountEl.textContent = totalImages;
+      Promise.all(folderRequests)
+        .then(folderGroups => {
+          const folders = folderGroups.flat();
 
-      if (!galleries.length) {
-        galleryListEl.innerHTML = `
-          <p class="message">
-            No assigned galleries found.
-          </p>
-        `;
+          const totalImages = galleries.reduce(
+            (total, gallery) => total + Number(getImageCount(gallery)),
+            0
+          );
 
-        return;
-      }
+          projectCountEl.textContent = projects.length;
+          folderCountEl.textContent = folders.length;
+          galleryCountEl.textContent = galleries.length;
+          imageCountEl.textContent = totalImages;
 
-      galleryListEl.innerHTML = galleries.map(gallery => `
-        <a
-          class="card"
-          href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}"
-        >
-          <div>
-            ${gallery.title || gallery.name || gallery.id}
-          </div>
+          if (!galleries.length) {
+            galleryListEl.innerHTML = `
+              <p class="message">
+                No recent galleries found.
+              </p>
+            `;
+            return;
+          }
 
-          <div class="meta">
-            Project: ${getGalleryProjectId(gallery)}
-          </div>
+          const recentGalleries = [...galleries]
+            .sort(sortByCreatedAtDesc)
+            .slice(0, 10);
 
-          <div class="meta">
-            ${photoLabel(getImageCount(gallery))}
-          </div>
-        </a>
-      `).join("");
+          galleryListEl.innerHTML = recentGalleries.map(gallery => {
+            const locationLine = getLocationLine(gallery);
+
+            return `
+              <a class="card" href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}">
+                <div>
+                  ${gallery.title || gallery.name || gallery.id}
+                </div>
+
+                ${locationLine ? `
+                  <div class="meta">
+                    ${locationLine}
+                  </div>
+                ` : ""}
+
+                <div class="meta">
+                  Project: ${getGalleryProjectId(gallery)}
+                </div>
+
+                <div class="meta">
+                  Folder: ${getGalleryFolderId(gallery)}
+                </div>
+
+                <div class="meta">
+                  ${photoLabel(getImageCount(gallery))}
+                </div>
+              </a>
+            `;
+          }).join("");
+        });
     })
 
     .catch(error => {
       console.error(error);
 
       projectCountEl.textContent = "!";
+      folderCountEl.textContent = "!";
       galleryCountEl.textContent = "!";
       imageCountEl.textContent = "!";
 
