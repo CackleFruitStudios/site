@@ -7,138 +7,27 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-    body {
-      margin: 0;
-      background: #111;
-      color: white;
-      font-family: Arial, sans-serif;
-    }
-
-    .header {
-      padding: 20px;
-      text-align: center;
-    }
-
-    .back-link {
-      display: inline-block;
-      color: #888;
-      text-decoration: none;
-      font-size: 13px;
-      margin-bottom: 12px;
-    }
-
-    .back-link:hover {
-      color: #fff;
-    }
-
-    .breadcrumb {
-      color: #999;
-      font-size: 13px;
-      margin-bottom: 10px;
-      line-height: 1.4;
-    }
-
-    .breadcrumb a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .breadcrumb a:hover {
-      color: #fff;
-      text-decoration: underline;
-    }
-
-    .breadcrumb span {
-      color: #aaa;
-    }
-
-    .header h1 {
-      font-size: 24px;
-      margin: 0 0 8px 0;
-    }
-
-    .header p {
-      margin: 0;
-      color: #aaa;
-      font-size: 14px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 5px;
-      padding: 5px;
-    }
-
-    .grid img {
-      width: 100%;
-      height: auto;
-      display: block;
-      cursor: pointer;
-      background: #222;
-    }
-
-    .lightbox {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.94);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-
-    .lightbox img {
-      max-width: 95%;
-      max-height: 95%;
-    }
-
-    .counter {
-      position: fixed;
-      bottom: 16px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      color: #aaa;
-      font-size: 14px;
-    }
-
-    .nav-button {
-      position: fixed;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 42px;
-      color: white;
-      background: rgba(0,0,0,0.45);
-      border: none;
-      padding: 12px 18px;
-      cursor: pointer;
-      z-index: 101;
-    }
-
-    .nav-button:hover {
-      background: rgba(255,255,255,0.12);
-    }
-
-    .nav-prev {
-      left: 20px;
-    }
-
-    .nav-next {
-      right: 20px;
-    }
-
-    hr {
-      border: none;
-      border-top: 1px solid #333;
-      margin: 10px 0;
-    }
-
-    .message {
-      padding: 30px;
-      text-align: center;
-      color: #aaa;
-    }
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; }
+    .header { padding: 20px; text-align: center; }
+    .back-link { display: inline-block; color: #888; text-decoration: none; font-size: 13px; margin-bottom: 12px; }
+    .back-link:hover { color: #fff; }
+    .breadcrumb { color: #999; font-size: 13px; margin-bottom: 10px; line-height: 1.4; }
+    .breadcrumb a { color: inherit; text-decoration: none; }
+    .breadcrumb a:hover { color: #fff; text-decoration: underline; }
+    .breadcrumb span { color: #aaa; }
+    .header h1 { font-size: 24px; margin: 0 0 8px 0; }
+    .header p { margin: 0; color: #aaa; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 5px; padding: 5px; }
+    .grid img { width: 100%; height: auto; display: block; cursor: pointer; background: #222; }
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); display: none; justify-content: center; align-items: center; z-index: 100; }
+    .lightbox img { max-width: 95%; max-height: 95%; }
+    .counter { position: fixed; bottom: 16px; left: 0; right: 0; text-align: center; color: #aaa; font-size: 14px; }
+    .nav-button { position: fixed; top: 50%; transform: translateY(-50%); font-size: 42px; color: white; background: rgba(0,0,0,0.45); border: none; padding: 12px 18px; cursor: pointer; z-index: 101; }
+    .nav-button:hover { background: rgba(255,255,255,0.12); }
+    .nav-prev { left: 20px; }
+    .nav-next { right: 20px; }
+    hr { border: none; border-top: 1px solid #333; margin: 10px 0; }
+    .message { padding: 30px; text-align: center; color: #aaa; }
   </style>
 </head>
 
@@ -170,22 +59,13 @@
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
 
-  <button
-    class="nav-button nav-prev"
-    onclick="prevImage(event)"
-  >
+  <button class="nav-button nav-prev" onclick="prevImage(event)">
     ‹
   </button>
 
-  <img
-    id="lightbox-img"
-    onclick="event.stopPropagation()"
-  >
+  <img id="lightbox-img" onclick="event.stopPropagation()">
 
-  <button
-    class="nav-button nav-next"
-    onclick="nextImage(event)"
-  >
+  <button class="nav-button nav-next" onclick="nextImage(event)">
     ›
   </button>
 
@@ -194,44 +74,40 @@
 </div>
 
 <script>
+  const PROJECTS_URL = "/api/project-list";
+  const FOLDERS_URL = "/api/folder-list";
   const GALLERIES_URL = "/api/gallery-list";
   const IMAGES_URL = "/api/image-list";
 
-  const params =
-    new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search);
 
-  const galleryId =
-    params.get("gallery") ||
-    "d1-api-test-gallery";
+  const galleryId = params.get("gallery") || "d1-api-test-gallery";
 
-  const titleEl =
-    document.getElementById("gallery-title");
-
-  const subtitleEl =
-    document.getElementById("gallery-subtitle");
-
-  const breadcrumbEl =
-    document.getElementById("breadcrumb");
-
-  const gridEl =
-    document.getElementById("gallery-grid");
-
-  const lightbox =
-    document.getElementById("lightbox");
-
-  const lightboxImg =
-    document.getElementById("lightbox-img");
-
-  const counterEl =
-    document.getElementById("counter");
+  const titleEl = document.getElementById("gallery-title");
+  const subtitleEl = document.getElementById("gallery-subtitle");
+  const breadcrumbEl = document.getElementById("breadcrumb");
+  const gridEl = document.getElementById("gallery-grid");
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightbox-img");
+  const counterEl = document.getElementById("counter");
 
   let currentImages = [];
   let currentIndex = 0;
 
   function titleFromSlug(value) {
-    return (value || "")
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, char => char.toUpperCase());
+    return (value || "").replace(/-/g, " ").replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
+  }
+
+  function getProjectTitle(project, projectId) {
+    return project?.title || project?.name || titleFromSlug(projectId);
+  }
+
+  function getFolderTitle(folder, folderId) {
+    return folder?.title || folder?.name || titleFromSlug(folder?.slug || folderId);
   }
 
   function getGalleryProjectId(gallery) {
@@ -247,24 +123,18 @@
   }
 
   function getImageAlt(image, gallery) {
-    return (
-      image.caption ||
-      image.filename ||
-      gallery.title ||
-      "Scout Image"
-    );
+    return image.caption || image.filename || gallery.title || "Scout Image";
+  }
+
+  function photoLabel(count) {
+    return `${count} ${count === 1 ? "photo" : "photos"}`;
   }
 
   function updateLightbox() {
-    if (!currentImages.length) {
-      return;
-    }
+    if (!currentImages.length) return;
 
-    lightboxImg.src =
-      getImageUrl(currentImages[currentIndex]);
-
-    counterEl.textContent =
-      `${currentIndex + 1} / ${currentImages.length}`;
+    lightboxImg.src = getImageUrl(currentImages[currentIndex]);
+    counterEl.textContent = `${currentIndex + 1} / ${currentImages.length}`;
   }
 
   function openLightbox(index) {
@@ -281,9 +151,7 @@
   function prevImage(event) {
     event.stopPropagation();
 
-    if (!currentImages.length) {
-      return;
-    }
+    if (!currentImages.length) return;
 
     currentIndex--;
 
@@ -297,9 +165,7 @@
   function nextImage(event) {
     event.stopPropagation();
 
-    if (!currentImages.length) {
-      return;
-    }
+    if (!currentImages.length) return;
 
     currentIndex++;
 
@@ -310,12 +176,9 @@
     updateLightbox();
   }
 
-  function renderBreadcrumb(gallery) {
-    const projectId =
-      getGalleryProjectId(gallery);
-
-    const folderId =
-      getGalleryFolderId(gallery);
+  function renderBreadcrumb(gallery, project, folder) {
+    const projectId = getGalleryProjectId(gallery);
+    const folderId = getGalleryFolderId(gallery);
 
     let html = `
       <a href="/scouts/">
@@ -327,7 +190,7 @@
       html += `
         /
         <a href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
-          ${titleFromSlug(projectId)}
+          ${getProjectTitle(project, projectId)}
         </a>
       `;
     }
@@ -336,7 +199,7 @@
       html += `
         /
         <a href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folderId)}">
-          ${titleFromSlug(folderId)}
+          ${getFolderTitle(folder, folderId)}
         </a>
       `;
     }
@@ -346,16 +209,13 @@
       <span>${gallery.title || gallery.name || gallery.id}</span>
     `;
 
-    breadcrumbEl.innerHTML =
-      html;
+    breadcrumbEl.innerHTML = html;
   }
 
   function renderImages(gallery, images) {
-    currentImages =
-      images.filter(image => getImageUrl(image));
+    currentImages = images.filter(image => getImageUrl(image));
 
-    subtitleEl.textContent =
-      `${currentImages.length} photos`;
+    subtitleEl.textContent = photoLabel(currentImages.length);
 
     if (!currentImages.length) {
       gridEl.innerHTML = `
@@ -368,63 +228,56 @@
     }
 
     currentImages.forEach((image, index) => {
-      const img =
-        document.createElement("img");
+      const img = document.createElement("img");
 
-      img.src =
-        getImageUrl(image);
-
-      img.alt =
-        getImageAlt(image, gallery);
-
-      img.onclick =
-        () => openLightbox(index);
+      img.src = getImageUrl(image);
+      img.alt = getImageAlt(image, gallery);
+      img.onclick = () => openLightbox(index);
 
       gridEl.appendChild(img);
     });
   }
 
   Promise.all([
+    fetch(PROJECTS_URL).then(response => response.json()),
     fetch(GALLERIES_URL).then(response => response.json()),
     fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json())
   ])
+    .then(([projectsData, galleriesData, imagesData]) => {
+      const projects = projectsData.projects || [];
+      const galleries = galleriesData.galleries || [];
+      const images = imagesData.images || [];
 
-    .then(([galleriesData, imagesData]) => {
-      const galleries =
-        galleriesData.galleries || [];
-
-      const images =
-        imagesData.images || [];
-
-      const gallery =
-        galleries.find(item => item.id === galleryId);
+      const gallery = galleries.find(item => item.id === galleryId);
 
       if (!gallery) {
-        titleEl.textContent =
-          "Gallery Not Found";
-
-        gridEl.innerHTML = `
-          <div class="message">
-            Check the gallery ID in the URL.
-          </div>
-        `;
-
+        titleEl.textContent = "Gallery Not Found";
+        gridEl.innerHTML = `<div class="message">Check the gallery ID in the URL.</div>`;
         return;
       }
 
-      renderBreadcrumb(gallery);
+      const projectId = getGalleryProjectId(gallery);
+      const folderId = getGalleryFolderId(gallery);
 
-      titleEl.textContent =
-        gallery.title || gallery.name || gallery.id;
+      const project = projects.find(item => getProjectId(item) === projectId);
 
-      renderImages(gallery, images);
+      fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`)
+        .then(response => response.json())
+        .then(foldersData => {
+          const folders = foldersData.folders || [];
+          const folder = folders.find(item => item.id === folderId);
+
+          renderBreadcrumb(gallery, project, folder);
+
+          titleEl.textContent = gallery.title || gallery.name || gallery.id;
+
+          renderImages(gallery, images);
+        });
     })
-
     .catch(error => {
       console.error(error);
 
-      titleEl.textContent =
-        "Could Not Load Gallery";
+      titleEl.textContent = "Could Not Load Gallery";
 
       gridEl.innerHTML = `
         <div class="message">
@@ -432,6 +285,14 @@
         </div>
       `;
     });
+
+  document.addEventListener("keydown", function(event) {
+    if (lightbox.style.display !== "flex") return;
+
+    if (event.key === "ArrowLeft") prevImage(event);
+    if (event.key === "ArrowRight") nextImage(event);
+    if (event.key === "Escape") closeLightbox();
+  });
 </script>
 
 </body>
