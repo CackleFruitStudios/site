@@ -6,7 +6,6 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-
     body {
       margin: 0;
       background: #111;
@@ -54,18 +53,9 @@
       line-height: 1.4;
     }
 
-    .breadcrumb a {
-      color: inherit;
-      text-decoration: none;
-    }
-
     .breadcrumb a:hover {
       color: #fff;
       text-decoration: underline;
-    }
-
-    .breadcrumb span {
-      color: #aaa;
     }
 
     h1 {
@@ -105,20 +95,6 @@
       background: #222;
     }
 
-    .folder-icon {
-      width: 100%;
-      height: 120px;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      background: #202020;
-      border: 1px solid #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 42px;
-      color: #777;
-    }
-
     .meta {
       color: #aaa;
       font-size: 12px;
@@ -134,7 +110,6 @@
       border-top: 1px solid #333;
       margin: 10px 0;
     }
-
   </style>
 </head>
 
@@ -157,20 +132,19 @@
 <div id="content"></div>
 
 <script>
+  const FOLDERS_URL = "/api/folder-list";
+  const GALLERIES_URL = "/api/gallery-list";
 
-  const GALLERIES_URL =
-    "/data/galleries.json";
-
-  const params =
-    new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search);
 
   const projectId =
     params.get("project") ||
-    "subway-entrances";
+    "test-project-gf";
 
-  const currentPath =
+  const folderId =
+    params.get("folder") ||
     params.get("path") ||
-    "canal-street-nw-entrance";
+    "folder-test-location";
 
   const folderTitleEl =
     document.getElementById("folder-title");
@@ -182,193 +156,66 @@
     document.getElementById("content");
 
   function titleFromSlug(value) {
-
-    return value
+    return (value || "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  function getGalleryCover(gallery) {
+  function getFolderTitle(folder) {
+    return folder.title || folder.name || titleFromSlug(folder.slug || folder.id);
+  }
 
+  function getGalleryProjectId(gallery) {
+    return gallery.projectId || gallery.project_id || "";
+  }
+
+  function getGalleryFolderId(gallery) {
+    return gallery.folderId || gallery.folder_id || "";
+  }
+
+  function getGalleryCover(gallery) {
     return (
       gallery.cover ||
-      gallery.images?.[0]?.url ||
+      gallery.url ||
+      gallery.imageUrl ||
+      gallery.image_url ||
       ""
     );
   }
 
-  function normalizePath(path) {
-
-    return (path || "")
-      .split("/")
-      .filter(Boolean)
-      .join("/");
+  function getImageCount(gallery) {
+    return gallery.imageCount || gallery.image_count || 0;
   }
 
-  function buildBreadcrumb() {
-
-    const parts =
-      currentPath
-      .split("/")
-      .filter(Boolean);
-
-    let html = `
-      <a href="/scouts/project.html?project=${projectId}">
+  function renderBreadcrumb(folder) {
+    breadcrumbEl.innerHTML = `
+      <a href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
         ${titleFromSlug(projectId)}
       </a>
-    `;
-
-    parts.forEach((part, index) => {
-
-      const partialPath =
-        parts.slice(0, index + 1).join("/");
-
-      const isLast =
-        index === parts.length - 1;
-
-      html += " / ";
-
-      if (isLast) {
-
-        html += `
-          <span>${titleFromSlug(part)}</span>
-        `;
-
-      } else {
-
-        html += `
-          <a href="/scouts/folder.html?project=${projectId}&path=${partialPath}">
-            ${titleFromSlug(part)}
-          </a>
-        `;
-      }
-    });
-
-    breadcrumbEl.innerHTML = html;
-  }
-
-  function getImmediateChildren(galleries) {
-
-    const folders = {};
-    const directGalleries = [];
-
-    galleries.forEach(gallery => {
-
-      const path =
-        normalizePath(gallery.path);
-
-      if (!path.startsWith(currentPath)) {
-        return;
-      }
-
-      const relative =
-        path.slice(currentPath.length)
-          .replace(/^\/+/, "");
-
-      if (!relative) {
-
-        directGalleries.push(gallery);
-
-        return;
-      }
-
-      const parts =
-        relative.split("/");
-
-      if (parts.length === 1) {
-
-        directGalleries.push(gallery);
-
-        return;
-      }
-
-      const folderName =
-        parts[0];
-
-      if (!folders[folderName]) {
-
-        folders[folderName] = {
-          id: folderName,
-          name: titleFromSlug(folderName),
-          count: 0,
-          cover: getGalleryCover(gallery)
-        };
-      }
-
-      folders[folderName].count += 1;
-    });
-
-    return {
-      folders:
-        Object.values(folders)
-          .sort((a, b) =>
-            a.name.localeCompare(b.name)
-          ),
-
-      galleries:
-        directGalleries
-    };
-  }
-
-  function renderFolders(folders) {
-
-    if (!folders.length) {
-      return "";
-    }
-
-    return `
-
-      <div class="section-title">
-        Folders
-      </div>
-
-      ${folders.map(folder => `
-
-        <a
-          class="card"
-          href="/scouts/folder.html?project=${projectId}&path=${currentPath}/${folder.id}"
-        >
-
-          ${
-            folder.cover
-              ? `<img src="${folder.cover}" class="thumb">`
-              : `<div class="folder-icon">📁</div>`
-          }
-
-          <div>
-            ${folder.name}
-          </div>
-
-          <div class="meta">
-            ${folder.count} galleries or nested items
-          </div>
-
-        </a>
-
-      `).join("")}
-
+      /
+      <span>${getFolderTitle(folder)}</span>
     `;
   }
 
   function renderGalleries(galleries) {
-
     if (!galleries.length) {
-      return "";
+      return `
+        <p class="message">
+          No galleries found in this folder yet.
+        </p>
+      `;
     }
 
     return `
-
       <div class="section-title">
         Galleries
       </div>
 
       ${galleries.map(gallery => `
-
         <a
           class="card"
-          href="/scouts/gallery.html?gallery=${gallery.id}"
+          href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}"
         >
-
           ${
             getGalleryCover(gallery)
               ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
@@ -376,80 +223,61 @@
           }
 
           <div>
-            ${gallery.title}
+            ${gallery.title || gallery.name || gallery.id}
           </div>
 
           <div class="meta">
-            ${(gallery.images || []).length} photos
+            ${getImageCount(gallery)} photos
           </div>
-
         </a>
-
       `).join("")}
-
     `;
   }
 
-  fetch(GALLERIES_URL)
+  Promise.all([
+    fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+    fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json())
+  ])
 
-    .then(response => response.json())
+    .then(([foldersData, galleriesData]) => {
+      const folders =
+        foldersData.folders || [];
 
-    .then(data => {
+      const galleries =
+        galleriesData.galleries || [];
 
-      const allGalleries =
-        data.galleries || [];
+      const folder =
+        folders.find(item => item.id === folderId);
 
-      const projectGalleries =
-        allGalleries.filter(
-          gallery =>
-            gallery.projectId === projectId
-        );
-
-      const matching =
-        projectGalleries.filter(gallery =>
-          normalizePath(gallery.path)
-            .startsWith(currentPath)
-        );
-
-      if (!matching.length) {
-
+      if (!folder) {
         folderTitleEl.textContent =
           "Folder Not Found";
 
         contentEl.innerHTML = `
           <p class="message">
-            No galleries or folders exist here yet.
+            This folder was not found in D1.
           </p>
         `;
 
         return;
       }
 
-      buildBreadcrumb();
+      const folderGalleries =
+        galleries.filter(gallery =>
+          getGalleryProjectId(gallery) === projectId &&
+          getGalleryFolderId(gallery) === folderId
+        );
 
-      const currentFolderName =
-        currentPath
-          .split("/")
-          .filter(Boolean)
-          .pop();
+      renderBreadcrumb(folder);
 
       folderTitleEl.textContent =
-        titleFromSlug(currentFolderName);
+        getFolderTitle(folder);
 
-      const results =
-        getImmediateChildren(projectGalleries);
-
-      contentEl.innerHTML = `
-
-        ${renderFolders(results.folders)}
-
-        ${renderGalleries(results.galleries)}
-
-      `;
+      contentEl.innerHTML =
+        renderGalleries(folderGalleries);
     })
 
     .catch(error => {
-
       console.error(error);
 
       folderTitleEl.textContent =
@@ -457,11 +285,10 @@
 
       contentEl.innerHTML = `
         <p class="message">
-          There was a problem loading galleries.json.
+          There was a problem loading D1 folder data.
         </p>
       `;
     });
-
 </script>
 
 </body>
