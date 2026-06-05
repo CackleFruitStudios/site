@@ -71,16 +71,19 @@ export default async function handler(req, res) {
         SELECT
           id,
           project_id AS projectId,
-          name,
-          description,
+          parent_folder_id AS parentFolderId,
+          title,
+          slug,
+          folder_type AS folderType,
           sort_order AS sortOrder,
+          created_by AS createdBy,
           created_at AS createdAt,
           updated_at AS updatedAt
         FROM folders
         WHERE project_id = ?
         ORDER BY
           sort_order ASC,
-          name ASC
+          title ASC
         `,
         [projectId]
       );
