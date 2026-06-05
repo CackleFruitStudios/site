@@ -6,7 +6,6 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-
     body {
       margin: 0;
       background: #111;
@@ -147,7 +146,6 @@
       color: #aaa;
       margin-top: 14px;
     }
-
   </style>
 </head>
 
@@ -155,12 +153,13 @@
 
 <h1>80 Studios Scouts</h1>
 
-<div class="subtitle">
+<div class="subtitle" id="subtitle">
   Location scouting upload, gallery, and project management system for 80 Studios.
 </div>
 
 <div class="top-nav">
   <a href="/scouts/">Projects</a>
+  <a href="/scouts/scout.html">Scout Dashboard</a>
   <a href="/scouts/library.html">Library</a>
   <a href="/scouts/admin.html">Upload Admin</a>
 </div>
@@ -185,7 +184,7 @@
     </div>
   </a>
 
-  <a class="portal-card" href="/scouts/scout-portal.html">
+  <a class="portal-card" href="/scouts/scout.html">
     <div class="portal-label">
       Scout Portal
     </div>
@@ -195,7 +194,7 @@
     </h2>
 
     <div class="portal-description">
-      For registered scouts to create projects, upload galleries, and manage their own work.
+      For registered scouts to view assigned projects, galleries, and scout work.
     </div>
   </a>
 
@@ -215,7 +214,7 @@
 
 </div>
 
-<div class="section-title">
+<div class="section-title" id="project-section-title">
   Current Projects
 </div>
 
@@ -224,34 +223,41 @@
 </div>
 
 <script>
+  const PROJECTS_URL = "/api/project-list";
+  const GALLERIES_URL = "/api/gallery-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
 
-  const PROJECTS_URL =
-    "/api/project-list";
+  const params = new URLSearchParams(window.location.search);
 
-  const GALLERIES_URL =
-    "/api/gallery-list";
+  const currentUserId =
+    params.get("user") || "";
+
+  const subtitleEl =
+    document.getElementById("subtitle");
+
+  const sectionTitleEl =
+    document.getElementById("project-section-title");
 
   const content =
     document.getElementById("content");
 
   function titleFromSlug(value) {
-
     return (value || "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, char => char.toUpperCase());
   }
 
   function getGalleryCover(gallery) {
-
     return (
       gallery.cover ||
-      gallery.images?.[0]?.url ||
+      gallery.url ||
+      gallery.imageUrl ||
+      gallery.image_url ||
       ""
     );
   }
 
   function getProjectCover(project, galleries) {
-
     return (
       project.cover ||
       getGalleryCover(galleries[0]) ||
@@ -260,30 +266,79 @@
   }
 
   function getProjectGalleryCount(projectId, galleries) {
-
     return galleries.filter(
       gallery => gallery.projectId === projectId
     ).length;
   }
 
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function getMemberRole(member) {
+    return member.projectRole || member.project_role || "";
+  }
+
+  function getVisibleProjects(projects, members) {
+    if (!currentUserId) {
+      return projects;
+    }
+
+    const allowedProjectIds =
+      members
+        .filter(member => getMemberUserId(member) === currentUserId)
+        .map(member => getMemberProjectId(member));
+
+    return projects.filter(project =>
+      allowedProjectIds.includes(project.id)
+    );
+  }
+
+  function getProjectRole(projectId, members) {
+    const member =
+      members.find(item =>
+        getMemberUserId(item) === currentUserId &&
+        getMemberProjectId(item) === projectId
+      );
+
+    return member ? getMemberRole(member) : "";
+  }
+
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(GALLERIES_URL).then(response => response.json())
+    fetch(GALLERIES_URL).then(response => response.json()),
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
   ])
 
-    .then(([projectsData, galleriesData]) => {
-
+    .then(([projectsData, galleriesData, membersData]) => {
       const projects =
         projectsData.projects || [];
 
       const galleries =
         galleriesData.galleries || [];
 
-      if (!projects.length) {
+      const members =
+        membersData.members || [];
 
+      const visibleProjects =
+        getVisibleProjects(projects, members);
+
+      if (currentUserId) {
+        subtitleEl.textContent =
+          `Showing assigned projects for ${currentUserId}`;
+
+        sectionTitleEl.textContent =
+          "Assigned Projects";
+      }
+
+      if (!visibleProjects.length) {
         content.innerHTML = `
           <div class="message">
-            No projects found.
+            No projects found for this view.
           </div>
         `;
 
@@ -292,9 +347,7 @@
 
       content.innerHTML = `
         <div class="project-grid">
-
-          ${projects.map(project => {
-
+          ${visibleProjects.map(project => {
             const projectGalleries =
               galleries.filter(
                 gallery => gallery.projectId === project.id
@@ -303,13 +356,19 @@
             const cover =
               getProjectCover(project, projectGalleries);
 
-            return `
+            const role =
+              getProjectRole(project.id, members);
 
+            const projectUrl =
+              currentUserId
+                ? `/scouts/project.html?project=${encodeURIComponent(project.id)}&user=${encodeURIComponent(currentUserId)}`
+                : `/scouts/project.html?project=${encodeURIComponent(project.id)}`;
+
+            return `
               <a
                 class="project-card"
-                href="/scouts/project.html?project=${project.id}"
+                href="${projectUrl}"
               >
-
                 ${
                   cover
                     ? `<img src="${cover}" class="thumb">`
@@ -317,42 +376,36 @@
                 }
 
                 <div class="project-info">
-
                   <h2>
                     ${project.title || project.name || titleFromSlug(project.id)}
                   </h2>
 
                   <div class="meta">
                     ${getProjectGalleryCount(project.id, galleries)} galleries
-                    ${
-                      project.library?.projectType
-                        ? `• ${project.library.projectType}`
-                        : ""
-                    }
                   </div>
 
+                  ${
+                    role
+                      ? `<div class="meta">Role: ${role}</div>`
+                      : ""
+                  }
                 </div>
-
               </a>
-
             `;
           }).join("")}
-
         </div>
       `;
     })
 
     .catch(error => {
-
       console.error(error);
 
       content.innerHTML = `
         <div class="message">
-          Could not load project or gallery data.
+          Could not load project, gallery, or membership data.
         </div>
       `;
     });
-
 </script>
 
 </body>
