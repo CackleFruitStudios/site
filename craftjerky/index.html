@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Crafty Jerky Club</title>
+
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #111;
+    color: #f5f5f5;
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background:
+        linear-gradient(
+            rgba(0,0,0,.75),
+            rgba(0,0,0,.85)
+        ),
+        url("https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1600&q=80");
+
+    background-size: cover;
+    background-position: center;
+}
+
+.container {
+    width: 90%;
+    max-width: 700px;
+    text-align: center;
+    padding: 40px;
+    background: rgba(20,20,20,.75);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    backdrop-filter: blur(6px);
+}
+
+.logo {
+    max-width: 320px;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.tagline {
+    font-size: 14px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #c89b5a;
+    margin-bottom: 12px;
+}
+
+h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.description {
+    font-size: 18px;
+    line-height: 1.7;
+    color: #d8d8d8;
+    margin-bottom: 35px;
+}
+
+.launch {
+    display: inline-block;
+    padding: 14px 30px;
+    border: 1px solid #c89b5a;
+    color: #c89b5a;
+    text-decoration: none;
+    border-radius: 40px;
+    transition: .3s;
+}
+
+.launch:hover {
+    background: #c89b5a;
+    color: #111;
+}
+
+.footer {
+    margin-top: 35px;
+    font-size: 12px;
+    color: #888;
+}
+
+@media (max-width: 600px) {
+
+    h1 {
+        font-size: 34px;
+    }
+
+    .description {
+        font-size: 16px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <img src="cjclogo.png" alt="Crafty Jerky Club" class="logo">
+
+    <div class="tagline">
+        Premium Subscription Experience
+    </div>
+
+    <h1>Crafty Jerky Club</h1>
+
+    <p class="description">
+        Small batch jerky. Premium cuts. Rotating monthly selections.
+        Join us as we build a subscription experience for jerky lovers who
+        appreciate quality over quantity.
+    </p>
+
+    <a href="#" class="launch">
+        Launching Soon
+    </a>
+
+    <div class="footer">
+        © 2026 Crafty Jerky Club
+    </div>
+
+</div>
+
+</body>
+</html>
