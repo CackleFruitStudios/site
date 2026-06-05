@@ -13,7 +13,7 @@
     .top-nav a:hover { color: #fff; text-decoration: underline; }
     h1 { font-size: 28px; margin-bottom: 6px; }
     .subtitle { color: #888; margin-bottom: 26px; font-size: 14px; }
-    .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 30px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 30px; }
     .stat-card { background: #1c1c1c; border: 1px solid #333; border-radius: 6px; padding: 16px; }
     .stat-number { font-size: 28px; margin-bottom: 4px; }
     .stat-label { color: #999; font-size: 13px; }
@@ -50,11 +50,6 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-number" id="folder-count">-</div>
-    <div class="stat-label">Folders</div>
-  </div>
-
-  <div class="stat-card">
     <div class="stat-number" id="gallery-count">-</div>
     <div class="stat-label">Galleries</div>
   </div>
@@ -76,17 +71,11 @@
 <script>
   const PROJECTS_URL = "/api/project-list";
   const GALLERIES_URL = "/api/gallery-list";
-  const FOLDERS_URL = "/api/folder-list";
 
   const projectCountEl = document.getElementById("project-count");
-  const folderCountEl = document.getElementById("folder-count");
   const galleryCountEl = document.getElementById("gallery-count");
   const imageCountEl = document.getElementById("image-count");
   const galleryListEl = document.getElementById("gallery-list");
-
-  function getProjectId(project) {
-    return project.id || project.projectId || project.project_id || "";
-  }
 
   function getGalleryProjectId(gallery) {
     return gallery.projectId || gallery.project_id || "";
@@ -123,80 +112,69 @@
     fetch(PROJECTS_URL).then(response => response.json()),
     fetch(GALLERIES_URL).then(response => response.json())
   ])
+
     .then(([projectsData, galleriesData]) => {
       const projects = projectsData.projects || [];
       const galleries = galleriesData.galleries || [];
 
-      const folderRequests = projects.map(project =>
-        fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(getProjectId(project))}`)
-          .then(response => response.json())
-          .then(data => data.folders || [])
+      const totalImages = galleries.reduce(
+        (total, gallery) => total + Number(getImageCount(gallery)),
+        0
       );
 
-      Promise.all(folderRequests)
-        .then(folderGroups => {
-          const folders = folderGroups.flat();
+      projectCountEl.textContent = projects.length;
+      galleryCountEl.textContent = galleries.length;
+      imageCountEl.textContent = totalImages;
 
-          const totalImages = galleries.reduce(
-            (total, gallery) => total + Number(getImageCount(gallery)),
-            0
-          );
+      if (!galleries.length) {
+        galleryListEl.innerHTML = `
+          <p class="message">
+            No recent galleries found.
+          </p>
+        `;
 
-          projectCountEl.textContent = projects.length;
-          folderCountEl.textContent = folders.length;
-          galleryCountEl.textContent = galleries.length;
-          imageCountEl.textContent = totalImages;
+        return;
+      }
 
-          if (!galleries.length) {
-            galleryListEl.innerHTML = `
-              <p class="message">
-                No recent galleries found.
-              </p>
-            `;
-            return;
-          }
+      const recentGalleries = [...galleries]
+        .sort(sortByCreatedAtDesc)
+        .slice(0, 10);
 
-          const recentGalleries = [...galleries]
-            .sort(sortByCreatedAtDesc)
-            .slice(0, 10);
+      galleryListEl.innerHTML = recentGalleries.map(gallery => {
+        const locationLine = getLocationLine(gallery);
 
-          galleryListEl.innerHTML = recentGalleries.map(gallery => {
-            const locationLine = getLocationLine(gallery);
+        return `
+          <a class="card" href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}">
+            <div>
+              ${gallery.title || gallery.name || gallery.id}
+            </div>
 
-            return `
-              <a class="card" href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}">
-                <div>
-                  ${gallery.title || gallery.name || gallery.id}
-                </div>
+            ${locationLine ? `
+              <div class="meta">
+                ${locationLine}
+              </div>
+            ` : ""}
 
-                ${locationLine ? `
-                  <div class="meta">
-                    ${locationLine}
-                  </div>
-                ` : ""}
+            <div class="meta">
+              Project: ${getGalleryProjectId(gallery)}
+            </div>
 
-                <div class="meta">
-                  Project: ${getGalleryProjectId(gallery)}
-                </div>
+            <div class="meta">
+              Folder: ${getGalleryFolderId(gallery)}
+            </div>
 
-                <div class="meta">
-                  Folder: ${getGalleryFolderId(gallery)}
-                </div>
-
-                <div class="meta">
-                  ${photoLabel(getImageCount(gallery))}
-                </div>
-              </a>
-            `;
-          }).join("");
-        });
+            <div class="meta">
+              ${photoLabel(getImageCount(gallery))}
+            </div>
+          </a>
+        `;
+      }).join("");
     })
 
     .catch(error => {
       console.error(error);
 
       projectCountEl.textContent = "!";
-      folderCountEl.textContent = "!";
       galleryCountEl.textContent = "!";
       imageCountEl.textContent = "!";
 
