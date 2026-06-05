@@ -226,10 +226,10 @@
 <script>
 
   const PROJECTS_URL =
-    "/data/projects.json";
+    "/api/project-list";
 
   const GALLERIES_URL =
-    "/data/galleries.json";
+    "/api/gallery-list";
 
   const content =
     document.getElementById("content");
@@ -319,7 +319,7 @@
                 <div class="project-info">
 
                   <h2>
-                    ${project.name || titleFromSlug(project.id)}
+                    ${project.title || project.name || titleFromSlug(project.id)}
                   </h2>
 
                   <div class="meta">
