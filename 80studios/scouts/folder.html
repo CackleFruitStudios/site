@@ -6,110 +6,23 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-    body {
-      margin: 0;
-      background: #111;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .back-link {
-      display: inline-block;
-      color: #888;
-      font-size: 13px;
-      margin-bottom: 12px;
-    }
-
-    .back-link:hover {
-      color: #fff;
-    }
-
-    .top-nav {
-      margin-bottom: 18px;
-    }
-
-    .top-nav a {
-      display: inline-block;
-      color: #999;
-      font-size: 14px;
-      margin-right: 14px;
-    }
-
-    .top-nav a:hover {
-      color: #fff;
-      text-decoration: underline;
-    }
-
-    .breadcrumb {
-      color: #999;
-      font-size: 13px;
-      margin-bottom: 14px;
-      line-height: 1.4;
-    }
-
-    .breadcrumb a:hover {
-      color: #fff;
-      text-decoration: underline;
-    }
-
-    h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-
-    .section-title {
-      color: #aaa;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 28px;
-      margin-bottom: 10px;
-    }
-
-    .card {
-      display: block;
-      background: #1c1c1c;
-      color: white;
-      padding: 15px;
-      margin-top: 10px;
-      border-radius: 6px;
-      border: 1px solid #333;
-    }
-
-    .card:hover {
-      background: #252525;
-    }
-
-    .thumb {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      background: #222;
-    }
-
-    .meta {
-      color: #aaa;
-      font-size: 12px;
-      margin-top: 4px;
-    }
-
-    .message {
-      color: #aaa;
-    }
-
-    hr {
-      border: none;
-      border-top: 1px solid #333;
-      margin: 10px 0;
-    }
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
+    a { color: inherit; text-decoration: none; }
+    .back-link { display: inline-block; color: #888; font-size: 13px; margin-bottom: 12px; }
+    .back-link:hover { color: #fff; }
+    .top-nav { margin-bottom: 18px; }
+    .top-nav a { display: inline-block; color: #999; font-size: 14px; margin-right: 14px; }
+    .top-nav a:hover { color: #fff; text-decoration: underline; }
+    .breadcrumb { color: #999; font-size: 13px; margin-bottom: 14px; line-height: 1.4; }
+    .breadcrumb a:hover { color: #fff; text-decoration: underline; }
+    h1 { font-size: 24px; margin-bottom: 20px; }
+    .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 28px; margin-bottom: 10px; }
+    .card { display: block; background: #1c1c1c; color: white; padding: 15px; margin-top: 10px; border-radius: 6px; border: 1px solid #333; }
+    .card:hover { background: #252525; }
+    .thumb { width: 100%; height: 180px; object-fit: cover; border-radius: 4px; margin-bottom: 10px; background: #222; }
+    .meta { color: #aaa; font-size: 12px; margin-top: 4px; }
+    .message { color: #aaa; }
+    hr { border: none; border-top: 1px solid #333; margin: 10px 0; }
   </style>
 </head>
 
@@ -132,33 +45,29 @@
 <div id="content"></div>
 
 <script>
+  const PROJECTS_URL = "/api/project-list";
   const FOLDERS_URL = "/api/folder-list";
   const GALLERIES_URL = "/api/gallery-list";
 
   const params = new URLSearchParams(window.location.search);
 
-  const projectId =
-    params.get("project") ||
-    "test-project-gf";
+  const projectId = params.get("project") || "test-project-gf";
+  const folderId = params.get("folder") || params.get("path") || "folder-test-location";
 
-  const folderId =
-    params.get("folder") ||
-    params.get("path") ||
-    "folder-test-location";
-
-  const folderTitleEl =
-    document.getElementById("folder-title");
-
-  const breadcrumbEl =
-    document.getElementById("breadcrumb");
-
-  const contentEl =
-    document.getElementById("content");
+  const folderTitleEl = document.getElementById("folder-title");
+  const breadcrumbEl = document.getElementById("breadcrumb");
+  const contentEl = document.getElementById("content");
 
   function titleFromSlug(value) {
-    return (value || "")
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, char => char.toUpperCase());
+    return (value || "").replace(/-/g, " ").replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
+  }
+
+  function getProjectTitle(project) {
+    return project?.title || project?.name || titleFromSlug(projectId);
   }
 
   function getFolderTitle(folder) {
@@ -174,23 +83,18 @@
   }
 
   function getGalleryCover(gallery) {
-    return (
-      gallery.cover ||
-      gallery.url ||
-      gallery.imageUrl ||
-      gallery.image_url ||
-      ""
-    );
+    return gallery.cover || gallery.url || gallery.imageUrl || gallery.image_url || "";
   }
 
   function getImageCount(gallery) {
-    return gallery.imageCount || gallery.image_count || 0;
+    const count = gallery.imageCount || gallery.image_count || 0;
+    return `${count} ${count === 1 ? "photo" : "photos"}`;
   }
 
-  function renderBreadcrumb(folder) {
+  function renderBreadcrumb(project, folder) {
     breadcrumbEl.innerHTML = `
       <a href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
-        ${titleFromSlug(projectId)}
+        ${getProjectTitle(project)}
       </a>
       /
       <span>${getFolderTitle(folder)}</span>
@@ -212,22 +116,15 @@
       </div>
 
       ${galleries.map(gallery => `
-        <a
-          class="card"
-          href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}"
-        >
-          ${
-            getGalleryCover(gallery)
-              ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
-              : ""
-          }
+        <a class="card" href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}">
+          ${getGalleryCover(gallery) ? `<img src="${getGalleryCover(gallery)}" class="thumb">` : ""}
 
           <div>
             ${gallery.title || gallery.name || gallery.id}
           </div>
 
           <div class="meta">
-            ${getImageCount(gallery)} photos
+            ${getImageCount(gallery)}
           </div>
         </a>
       `).join("")}
@@ -235,59 +132,37 @@
   }
 
   Promise.all([
+    fetch(PROJECTS_URL).then(response => response.json()),
     fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
     fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json())
   ])
+    .then(([projectsData, foldersData, galleriesData]) => {
+      const projects = projectsData.projects || [];
+      const folders = foldersData.folders || [];
+      const galleries = galleriesData.galleries || [];
 
-    .then(([foldersData, galleriesData]) => {
-      const folders =
-        foldersData.folders || [];
-
-      const galleries =
-        galleriesData.galleries || [];
-
-      const folder =
-        folders.find(item => item.id === folderId);
+      const project = projects.find(item => getProjectId(item) === projectId);
+      const folder = folders.find(item => item.id === folderId);
 
       if (!folder) {
-        folderTitleEl.textContent =
-          "Folder Not Found";
-
-        contentEl.innerHTML = `
-          <p class="message">
-            This folder was not found in D1.
-          </p>
-        `;
-
+        folderTitleEl.textContent = "Folder Not Found";
+        contentEl.innerHTML = `<p class="message">This folder was not found in D1.</p>`;
         return;
       }
 
-      const folderGalleries =
-        galleries.filter(gallery =>
-          getGalleryProjectId(gallery) === projectId &&
-          getGalleryFolderId(gallery) === folderId
-        );
+      const folderGalleries = galleries.filter(gallery =>
+        getGalleryProjectId(gallery) === projectId &&
+        getGalleryFolderId(gallery) === folderId
+      );
 
-      renderBreadcrumb(folder);
-
-      folderTitleEl.textContent =
-        getFolderTitle(folder);
-
-      contentEl.innerHTML =
-        renderGalleries(folderGalleries);
+      renderBreadcrumb(project, folder);
+      folderTitleEl.textContent = getFolderTitle(folder);
+      contentEl.innerHTML = renderGalleries(folderGalleries);
     })
-
     .catch(error => {
       console.error(error);
-
-      folderTitleEl.textContent =
-        "Could Not Load Folder";
-
-      contentEl.innerHTML = `
-        <p class="message">
-          There was a problem loading D1 folder data.
-        </p>
-      `;
+      folderTitleEl.textContent = "Could Not Load Folder";
+      contentEl.innerHTML = `<p class="message">There was a problem loading D1 folder data.</p>`;
     });
 </script>
 
