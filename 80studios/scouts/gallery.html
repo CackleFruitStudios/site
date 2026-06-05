@@ -7,7 +7,6 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-
     body {
       margin: 0;
       background: #111;
@@ -140,7 +139,6 @@
       text-align: center;
       color: #aaa;
     }
-
   </style>
 </head>
 
@@ -196,15 +194,15 @@
 </div>
 
 <script>
-
-  const GALLERIES_URL =
-    "/data/galleries.json";
+  const GALLERIES_URL = "/api/gallery-list";
+  const IMAGES_URL = "/api/image-list";
 
   const params =
     new URLSearchParams(window.location.search);
 
   const galleryId =
-    params.get("gallery");
+    params.get("gallery") ||
+    "d1-api-test-gallery";
 
   const titleEl =
     document.getElementById("gallery-title");
@@ -231,23 +229,33 @@
   let currentIndex = 0;
 
   function titleFromSlug(value) {
-
-    return value
+    return (value || "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, char => char.toUpperCase());
   }
 
+  function getGalleryProjectId(gallery) {
+    return gallery.projectId || gallery.project_id || "";
+  }
+
+  function getGalleryFolderId(gallery) {
+    return gallery.folderId || gallery.folder_id || "";
+  }
+
   function getImageUrl(image) {
+    return image.url || image.imageUrl || image.image_url || "";
+  }
 
-    if (typeof image === "string") {
-      return image;
-    }
-
-    return image.url || "";
+  function getImageAlt(image, gallery) {
+    return (
+      image.caption ||
+      image.filename ||
+      gallery.title ||
+      "Scout Image"
+    );
   }
 
   function updateLightbox() {
-
     if (!currentImages.length) {
       return;
     }
@@ -260,23 +268,17 @@
   }
 
   function openLightbox(index) {
-
     currentIndex = index;
-
     updateLightbox();
-
     lightbox.style.display = "flex";
   }
 
   function closeLightbox() {
-
     lightbox.style.display = "none";
-
     lightboxImg.src = "";
   }
 
   function prevImage(event) {
-
     event.stopPropagation();
 
     if (!currentImages.length) {
@@ -293,7 +295,6 @@
   }
 
   function nextImage(event) {
-
     event.stopPropagation();
 
     if (!currentImages.length) {
@@ -309,64 +310,96 @@
     updateLightbox();
   }
 
-  document.addEventListener("keydown", function(event) {
+  function renderBreadcrumb(gallery) {
+    const projectId =
+      getGalleryProjectId(gallery);
 
-    if (lightbox.style.display !== "flex") {
+    const folderId =
+      getGalleryFolderId(gallery);
+
+    let html = `
+      <a href="/scouts/">
+        Projects
+      </a>
+    `;
+
+    if (projectId) {
+      html += `
+        /
+        <a href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
+          ${titleFromSlug(projectId)}
+        </a>
+      `;
+    }
+
+    if (folderId) {
+      html += `
+        /
+        <a href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folderId)}">
+          ${titleFromSlug(folderId)}
+        </a>
+      `;
+    }
+
+    html += `
+      /
+      <span>${gallery.title || gallery.name || gallery.id}</span>
+    `;
+
+    breadcrumbEl.innerHTML =
+      html;
+  }
+
+  function renderImages(gallery, images) {
+    currentImages =
+      images.filter(image => getImageUrl(image));
+
+    subtitleEl.textContent =
+      `${currentImages.length} photos`;
+
+    if (!currentImages.length) {
+      gridEl.innerHTML = `
+        <div class="message">
+          No images added yet.
+        </div>
+      `;
+
       return;
     }
 
-    if (event.key === "ArrowLeft") {
-      prevImage(event);
-    }
+    currentImages.forEach((image, index) => {
+      const img =
+        document.createElement("img");
 
-    if (event.key === "ArrowRight") {
-      nextImage(event);
-    }
+      img.src =
+        getImageUrl(image);
 
-    if (event.key === "Escape") {
-      closeLightbox();
-    }
-  });
+      img.alt =
+        getImageAlt(image, gallery);
 
-  let touchStartX = 0;
-  let touchEndX = 0;
+      img.onclick =
+        () => openLightbox(index);
 
-  lightbox.addEventListener("touchstart", function(event) {
+      gridEl.appendChild(img);
+    });
+  }
 
-    touchStartX =
-      event.changedTouches[0].screenX;
-  });
+  Promise.all([
+    fetch(GALLERIES_URL).then(response => response.json()),
+    fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json())
+  ])
 
-  lightbox.addEventListener("touchend", function(event) {
-
-    touchEndX =
-      event.changedTouches[0].screenX;
-
-    if (touchEndX < touchStartX - 50) {
-      nextImage(event);
-    }
-
-    if (touchEndX > touchStartX + 50) {
-      prevImage(event);
-    }
-  });
-
-  fetch(GALLERIES_URL)
-
-    .then(response => response.json())
-
-    .then(data => {
-
+    .then(([galleriesData, imagesData]) => {
       const galleries =
-        data.galleries || [];
+        galleriesData.galleries || [];
+
+      const images =
+        imagesData.images || [];
 
       const gallery =
-        galleries.find(
-          item => item.id === galleryId
-        );
+        galleries.find(item => item.id === galleryId);
 
       if (!gallery) {
-
         titleEl.textContent =
           "Gallery Not Found";
 
@@ -379,97 +412,15 @@
         return;
       }
 
-      const pathParts =
-        (gallery.path || "")
-          .split("/")
-          .filter(Boolean);
-
-      let breadcrumbHtml = `
-        <a href="/scouts/">
-          Projects
-        </a>
-      `;
-
-      breadcrumbHtml += `
-        /
-        <a href="/scouts/project.html?project=${gallery.projectId}">
-          ${titleFromSlug(gallery.projectId)}
-        </a>
-      `;
-
-      pathParts.forEach((part, index) => {
-
-        const partial =
-          pathParts
-            .slice(0, index + 1)
-            .join("/");
-
-        breadcrumbHtml += " / ";
-
-        const isLast =
-          index === pathParts.length - 1;
-
-        if (isLast) {
-
-          breadcrumbHtml += `
-            <span>${titleFromSlug(part)}</span>
-          `;
-
-        } else {
-
-          breadcrumbHtml += `
-            <a href="/scouts/folder.html?project=${gallery.projectId}&path=${partial}">
-              ${titleFromSlug(part)}
-            </a>
-          `;
-        }
-      });
-
-      breadcrumbEl.innerHTML =
-        breadcrumbHtml;
+      renderBreadcrumb(gallery);
 
       titleEl.textContent =
-        gallery.title || "Untitled Gallery";
+        gallery.title || gallery.name || gallery.id;
 
-      subtitleEl.textContent =
-        `${(gallery.images || []).length} photos`;
-
-      currentImages =
-        gallery.images || [];
-
-      if (!currentImages.length) {
-
-        gridEl.innerHTML = `
-          <div class="message">
-            No images added yet.
-          </div>
-        `;
-
-        return;
-      }
-
-      currentImages.forEach((image, index) => {
-
-        const src =
-          getImageUrl(image);
-
-        const img =
-          document.createElement("img");
-
-        img.src = src;
-
-        img.alt =
-          gallery.title || "Scout Image";
-
-        img.onclick =
-          () => openLightbox(index);
-
-        gridEl.appendChild(img);
-      });
+      renderImages(gallery, images);
     })
 
     .catch(error => {
-
       console.error(error);
 
       titleEl.textContent =
@@ -477,11 +428,10 @@
 
       gridEl.innerHTML = `
         <div class="message">
-          There was a problem loading galleries.json.
+          There was a problem loading D1 gallery data.
         </div>
       `;
     });
-
 </script>
 
 </body>
