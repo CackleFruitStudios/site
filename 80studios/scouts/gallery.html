@@ -31,12 +31,11 @@
   </style>
 </head>
 
-  
 <body>
 
 <div class="header">
 
-  <a class="back-link" href="/scouts/">
+  <a class="back-link" id="back-link" href="/scouts/">
     ← Back to Scouts
   </a>
 
@@ -79,10 +78,15 @@
   const FOLDERS_URL = "/api/folder-list";
   const GALLERIES_URL = "/api/gallery-list";
   const IMAGES_URL = "/api/image-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
 
   const params = new URLSearchParams(window.location.search);
 
-  const galleryId = params.get("gallery") || "d1-api-test-gallery";
+  const galleryId =
+    params.get("gallery") || "d1-api-test-gallery";
+
+  const currentUserId =
+    params.get("user") || "";
 
   const titleEl = document.getElementById("gallery-title");
   const subtitleEl = document.getElementById("gallery-subtitle");
@@ -91,6 +95,7 @@
   const lightbox = document.getElementById("lightbox");
   const lightboxImg = document.getElementById("lightbox-img");
   const counterEl = document.getElementById("counter");
+  const backLinkEl = document.getElementById("back-link");
 
   let currentImages = [];
   let currentIndex = 0;
@@ -125,6 +130,36 @@
 
   function getImageAlt(image, gallery) {
     return image.caption || image.filename || gallery.title || "Scout Image";
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function userCanAccessProject(members, projectId) {
+    if (!currentUserId) {
+      return true;
+    }
+
+    return members.some(member =>
+      getMemberUserId(member) === currentUserId &&
+      getMemberProjectId(member) === projectId
+    );
+  }
+
+  function scopedUrl(url) {
+    if (!currentUserId) {
+      return url;
+    }
+
+    const separator =
+      url.includes("?") ? "&" : "?";
+
+    return `${url}${separator}user=${encodeURIComponent(currentUserId)}`;
   }
 
   function photoLabel(count) {
@@ -182,7 +217,7 @@
     const folderId = getGalleryFolderId(gallery);
 
     let html = `
-      <a href="/scouts/">
+      <a href="${scopedUrl('/scouts/')}">
         Projects
       </a>
     `;
@@ -190,7 +225,7 @@
     if (projectId) {
       html += `
         /
-        <a href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
+        <a href="${scopedUrl(`/scouts/project.html?project=${encodeURIComponent(projectId)}`)}">
           ${getProjectTitle(project, projectId)}
         </a>
       `;
@@ -199,7 +234,7 @@
     if (folderId) {
       html += `
         /
-        <a href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folderId)}">
+        <a href="${scopedUrl(`/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folderId)}`)}">
           ${getFolderTitle(folder, folderId)}
         </a>
       `;
@@ -224,7 +259,6 @@
           No images added yet.
         </div>
       `;
-
       return;
     }
 
@@ -239,17 +273,26 @@
     });
   }
 
+  if (currentUserId) {
+    backLinkEl.href =
+      `/scouts/?user=${encodeURIComponent(currentUserId)}`;
+  }
+
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
     fetch(GALLERIES_URL).then(response => response.json()),
-    fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json())
+    fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json()),
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
   ])
-    .then(([projectsData, galleriesData, imagesData]) => {
+    .then(([projectsData, galleriesData, imagesData, membersData]) => {
+
       const projects = projectsData.projects || [];
       const galleries = galleriesData.galleries || [];
       const images = imagesData.images || [];
+      const members = membersData.members || [];
 
-      const gallery = galleries.find(item => item.id === galleryId);
+      const gallery =
+        galleries.find(item => item.id === galleryId);
 
       if (!gallery) {
         titleEl.textContent = "Gallery Not Found";
@@ -257,28 +300,67 @@
         return;
       }
 
-      const projectId = getGalleryProjectId(gallery);
-      const folderId = getGalleryFolderId(gallery);
+      const projectId =
+        getGalleryProjectId(gallery);
 
-      const project = projects.find(item => getProjectId(item) === projectId);
+      if (!userCanAccessProject(members, projectId)) {
+
+        titleEl.textContent =
+          "Access Denied";
+
+        gridEl.innerHTML = `
+          <div class="message">
+            This user is not assigned to this project.
+          </div>
+        `;
+
+        return;
+      }
+
+      const folderId =
+        getGalleryFolderId(gallery);
+
+      const project =
+        projects.find(item =>
+          getProjectId(item) === projectId
+        );
 
       fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`)
         .then(response => response.json())
         .then(foldersData => {
-          const folders = foldersData.folders || [];
-          const folder = folders.find(item => item.id === folderId);
 
-          renderBreadcrumb(gallery, project, folder);
+          const folders =
+            foldersData.folders || [];
 
-          titleEl.textContent = gallery.title || gallery.name || gallery.id;
+          const folder =
+            folders.find(item =>
+              item.id === folderId
+            );
 
-          renderImages(gallery, images);
+          renderBreadcrumb(
+            gallery,
+            project,
+            folder
+          );
+
+          titleEl.textContent =
+            gallery.title ||
+            gallery.name ||
+            gallery.id;
+
+          renderImages(
+            gallery,
+            images
+          );
         });
     })
+
     .catch(error => {
+
       console.error(error);
 
-      titleEl.textContent = "Could Not Load Gallery";
+      titleEl.textContent =
+        "Could Not Load Gallery";
 
       gridEl.innerHTML = `
         <div class="message">
