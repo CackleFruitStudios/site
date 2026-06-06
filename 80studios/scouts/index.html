@@ -40,45 +40,14 @@
   Location scouting upload, gallery, and project management system for 80 Studios.
 </div>
 
-<div class="top-nav">
-  <a href="/scouts/">Projects</a>
-  <a href="/scouts/scout.html">Scout Dashboard</a>
-  <a href="/scouts/library.html">Library</a>
-  <a href="/scouts/admin.html">Upload Admin</a>
-  <button class="logout-btn" onclick="logout()">Logout</button>
-  <div class="user-badge" id="user-badge"></div>
-</div>
+<div class="top-nav" id="top-nav"></div>
 
-<div class="section-title">
-  Portals
-</div>
+<div id="portals-section">
+  <div class="section-title">
+    Portals
+  </div>
 
-<div class="portal-grid">
-
-  <a class="portal-card" href="/scouts/admin-portal.html">
-    <div class="portal-label">Admin Portal</div>
-    <h2>Full Access Dashboard</h2>
-    <div class="portal-description">
-      For full project, gallery, upload, library, and future user management.
-    </div>
-  </a>
-
-  <a class="portal-card" href="/scouts/scout.html">
-    <div class="portal-label">Scout Portal</div>
-    <h2>Field Upload Workflow</h2>
-    <div class="portal-description">
-      For registered scouts to view assigned projects, galleries, and scout work.
-    </div>
-  </a>
-
-  <a class="portal-card" href="/scouts/library.html">
-    <div class="portal-label">Library</div>
-    <h2>Location Archive</h2>
-    <div class="portal-description">
-      Cross-project location library. Master access will eventually search all uploaded scout content.
-    </div>
-  </a>
-
+  <div class="portal-grid" id="portal-grid"></div>
 </div>
 
 <div class="section-title" id="project-section-title">
@@ -118,8 +87,14 @@
   const sectionTitleEl =
     document.getElementById("project-section-title");
 
-  const userBadgeEl =
-    document.getElementById("user-badge");
+  const topNavEl =
+    document.getElementById("top-nav");
+
+  const portalGridEl =
+    document.getElementById("portal-grid");
+
+  const portalsSectionEl =
+    document.getElementById("portals-section");
 
   const content =
     document.getElementById("content");
@@ -127,6 +102,22 @@
   function logout() {
     sessionStorage.removeItem(SESSION_KEY);
     window.location.href = "/scouts/login.html";
+  }
+
+  function userIsAdmin() {
+    return currentUserRole === "admin";
+  }
+
+  function userCanUseScoutTools() {
+    return ["admin", "lm", "alm", "scout"].includes(currentUserRole);
+  }
+
+  function userCanUseAdminTools() {
+    return ["admin", "lm", "alm"].includes(currentUserRole);
+  }
+
+  function userCanUseLibrary() {
+    return ["admin", "lm", "alm", "scout"].includes(currentUserRole);
   }
 
   function titleFromSlug(value) {
@@ -159,10 +150,6 @@
     return member.projectRole || member.project_role || "";
   }
 
-  function userIsAdmin() {
-    return currentUserRole === "admin";
-  }
-
   function getVisibleProjects(projects, members) {
     if (userIsAdmin()) {
       return projects;
@@ -192,15 +179,95 @@
     return member ? getMemberRole(member) : "";
   }
 
-  if (currentUser) {
-    userBadgeEl.textContent =
-      `${currentUser.name} · ${currentUserRole}`;
+  function renderTopNav() {
+    let html = `
+      <a href="/scouts/">Projects</a>
+    `;
 
+    if (userCanUseScoutTools()) {
+      html += `
+        <a href="/scouts/scout.html">Scout Dashboard</a>
+      `;
+    }
+
+    if (userCanUseLibrary()) {
+      html += `
+        <a href="/scouts/library.html">Library</a>
+      `;
+    }
+
+    if (userCanUseAdminTools()) {
+      html += `
+        <a href="/scouts/admin.html">Upload Admin</a>
+      `;
+    }
+
+    html += `
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      <div class="user-badge">${currentUser.name} · ${currentUserRole}</div>
+    `;
+
+    topNavEl.innerHTML = html;
+  }
+
+  function renderPortals() {
+    if (currentUserRole === "client") {
+      portalsSectionEl.style.display = "none";
+      return;
+    }
+
+    let html = "";
+
+    if (userIsAdmin()) {
+      html += `
+        <a class="portal-card" href="/scouts/admin-portal.html">
+          <div class="portal-label">Admin Portal</div>
+          <h2>Full Access Dashboard</h2>
+          <div class="portal-description">
+            For full project, gallery, upload, library, and future user management.
+          </div>
+        </a>
+      `;
+    }
+
+    if (userCanUseScoutTools()) {
+      html += `
+        <a class="portal-card" href="/scouts/scout.html">
+          <div class="portal-label">Scout Portal</div>
+          <h2>Field Upload Workflow</h2>
+          <div class="portal-description">
+            For registered scouts to view assigned projects, galleries, and scout work.
+          </div>
+        </a>
+      `;
+    }
+
+    if (userCanUseLibrary()) {
+      html += `
+        <a class="portal-card" href="/scouts/library.html">
+          <div class="portal-label">Library</div>
+          <h2>Location Archive</h2>
+          <div class="portal-description">
+            Cross-project location library. Master access will eventually search all uploaded scout content.
+          </div>
+        </a>
+      `;
+    }
+
+    portalGridEl.innerHTML = html;
+  }
+
+  if (currentUser) {
     subtitleEl.textContent =
-      `Signed in as ${currentUser.name}`;
+      currentUserRole === "client"
+        ? `Client access for ${currentUser.name}`
+        : `Signed in as ${currentUser.name}`;
 
     sectionTitleEl.textContent =
       userIsAdmin() ? "Current Projects" : "Assigned Projects";
+
+    renderTopNav();
+    renderPortals();
   }
 
   Promise.all([
