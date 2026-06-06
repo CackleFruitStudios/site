@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>80 Studios Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
+    .login-box { max-width: 420px; margin: 80px auto; background: #1c1c1c; border: 1px solid #333; border-radius: 8px; padding: 24px; }
+    h1 { font-size: 26px; margin: 0 0 8px; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 22px; line-height: 1.5; }
+    label { display: block; color: #aaa; font-size: 13px; margin-top: 14px; margin-bottom: 6px; }
+    input { width: 100%; box-sizing: border-box; background: #111; border: 1px solid #333; color: white; padding: 12px; border-radius: 6px; font-size: 14px; }
+    button { width: 100%; margin-top: 18px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 6px; padding: 12px; cursor: pointer; font-size: 14px; }
+    button:hover { background: #333; }
+    .message { margin-top: 14px; color: #aaa; font-size: 13px; line-height: 1.4; }
+    .error { color: #ff8f8f; }
+  </style>
+</head>
+
+<body>
+
+<div class="login-box">
+  <h1>80 Studios Login</h1>
+
+  <div class="subtitle">
+    Sign in to access assigned scout projects and galleries.
+  </div>
+
+  <label>Email</label>
+  <input id="email" type="email" autocomplete="email">
+
+  <label>Password</label>
+  <input id="password" type="password" autocomplete="current-password">
+
+  <button onclick="login()">Login</button>
+
+  <div id="message" class="message"></div>
+</div>
+
+<script>
+  const messageEl =
+    document.getElementById("message");
+
+  async function sha256(value) {
+    const encoded =
+      new TextEncoder().encode(value);
+
+    const buffer =
+      await crypto.subtle.digest("SHA-256", encoded);
+
+    return Array.from(new Uint8Array(buffer))
+      .map(byte => byte.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  async function login() {
+    const email =
+      document.getElementById("email").value.trim().toLowerCase();
+
+    const password =
+      document.getElementById("password").value;
+
+    if (!email || !password) {
+      messageEl.textContent =
+        "Email and password are required.";
+
+      messageEl.className =
+        "message error";
+
+      return;
+    }
+
+    messageEl.textContent =
+      "Signing in...";
+
+    messageEl.className =
+      "message";
+
+    try {
+      const passwordHash =
+        await sha256(password);
+
+      const response =
+        await fetch("/api/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email,
+            passwordHash
+          })
+        });
+
+      const data =
+        await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      window.location.href =
+        `/scouts/?user=${encodeURIComponent(data.user.id)}`;
+
+    } catch (error) {
+      messageEl.textContent =
+        error.message;
+
+      messageEl.className =
+        "message error";
+    }
+  }
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      login();
+    }
+  });
+</script>
+
+</body>
+</html>
