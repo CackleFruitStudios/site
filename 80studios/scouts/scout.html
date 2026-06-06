@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
 
-  
   <style>
     body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
     a { color: inherit; text-decoration: none; }
-    .top-nav { margin-bottom: 18px; }
-    .top-nav a { display: inline-block; color: #999; font-size: 14px; margin-right: 14px; }
-    .top-nav a:hover { color: #fff; text-decoration: underline; }
+    .top-nav { margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .top-nav a, .logout-btn { display: inline-block; color: #999; font-size: 14px; background: none; border: none; padding: 0; cursor: pointer; font-family: Arial, sans-serif; }
+    .top-nav a:hover, .logout-btn:hover { color: #fff; text-decoration: underline; }
+    .user-badge { color: #777; font-size: 13px; margin-left: auto; }
     h1 { font-size: 28px; margin-bottom: 6px; }
     .subtitle { color: #888; margin-bottom: 26px; font-size: 14px; }
     .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 30px; }
@@ -34,11 +34,13 @@
   <a href="/scouts/scout.html">Scout Dashboard</a>
   <a href="/scouts/library.html">Library</a>
   <a href="/scouts/admin.html">Admin</a>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+  <div class="user-badge" id="user-badge"></div>
 </div>
 
 <h1>Scout Dashboard</h1>
 
-<div class="subtitle">
+<div class="subtitle" id="subtitle">
   Assigned scout work overview
 </div>
 
@@ -70,13 +72,53 @@
 </div>
 
 <script>
+  const SESSION_KEY = "eightyStudiosScoutUser";
+
   const PROJECTS_URL = "/api/project-list";
   const GALLERIES_URL = "/api/gallery-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
+
+  const savedUser =
+    sessionStorage.getItem(SESSION_KEY);
+
+  if (!savedUser) {
+    window.location.href = "/scouts/login.html";
+  }
+
+  const currentUser =
+    savedUser ? JSON.parse(savedUser) : null;
+
+  const currentUserId =
+    currentUser?.id || "";
+
+  const currentUserRole =
+    currentUser?.globalRole || "";
 
   const projectCountEl = document.getElementById("project-count");
   const galleryCountEl = document.getElementById("gallery-count");
   const imageCountEl = document.getElementById("image-count");
   const galleryListEl = document.getElementById("gallery-list");
+  const userBadgeEl = document.getElementById("user-badge");
+  const subtitleEl = document.getElementById("subtitle");
+
+  if (currentUser) {
+    userBadgeEl.textContent =
+      `${currentUser.name} · ${currentUserRole}`;
+
+    subtitleEl.textContent =
+      currentUserRole === "admin"
+        ? "Full scout work overview"
+        : `Assigned scout work overview for ${currentUser.name}`;
+  }
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href = "/scouts/login.html";
+  }
+
+  function userIsAdmin() {
+    return currentUserRole === "admin";
+  }
 
   function getGalleryProjectId(gallery) {
     return gallery.projectId || gallery.project_id || "";
@@ -88,6 +130,24 @@
 
   function getImageCount(gallery) {
     return gallery.imageCount || gallery.image_count || 0;
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function getVisibleProjectIds(members) {
+    if (userIsAdmin()) {
+      return null;
+    }
+
+    return members
+      .filter(member => getMemberUserId(member) === currentUserId)
+      .map(member => getMemberProjectId(member));
   }
 
   function photoLabel(count) {
@@ -111,23 +171,47 @@
 
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(GALLERIES_URL).then(response => response.json())
+    fetch(GALLERIES_URL).then(response => response.json()),
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
   ])
 
-    .then(([projectsData, galleriesData]) => {
-      const projects = projectsData.projects || [];
-      const galleries = galleriesData.galleries || [];
+    .then(([projectsData, galleriesData, membersData]) => {
+      const projects =
+        projectsData.projects || [];
 
-      const totalImages = galleries.reduce(
+      const galleries =
+        galleriesData.galleries || [];
+
+      const members =
+        membersData.members || [];
+
+      const visibleProjectIds =
+        getVisibleProjectIds(members);
+
+      const visibleProjects =
+        visibleProjectIds === null
+          ? projects
+          : projects.filter(project =>
+              visibleProjectIds.includes(project.id)
+            );
+
+      const visibleGalleries =
+        visibleProjectIds === null
+          ? galleries
+          : galleries.filter(gallery =>
+              visibleProjectIds.includes(getGalleryProjectId(gallery))
+            );
+
+      const totalImages = visibleGalleries.reduce(
         (total, gallery) => total + Number(getImageCount(gallery)),
         0
       );
 
-      projectCountEl.textContent = projects.length;
-      galleryCountEl.textContent = galleries.length;
+      projectCountEl.textContent = visibleProjects.length;
+      galleryCountEl.textContent = visibleGalleries.length;
       imageCountEl.textContent = totalImages;
 
-      if (!galleries.length) {
+      if (!visibleGalleries.length) {
         galleryListEl.innerHTML = `
           <p class="message">
             No recent galleries found.
@@ -137,7 +221,7 @@
         return;
       }
 
-      const recentGalleries = [...galleries]
+      const recentGalleries = [...visibleGalleries]
         .sort(sortByCreatedAtDesc)
         .slice(0, 10);
 
