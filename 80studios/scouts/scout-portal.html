@@ -3,12 +3,10 @@
 <head>
   <title>80 Studios — Scout Portal</title>
 
-  
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-
     body {
       margin: 0;
       background: #111;
@@ -164,7 +162,6 @@
       margin-left: 6px;
       vertical-align: middle;
     }
-
   </style>
 </head>
 
@@ -173,11 +170,12 @@
 <h1>Scout Portal</h1>
 
 <div class="subtitle" id="scout-subtitle">
-  Mobile-friendly field workflow for scout uploads, gallery creation, and project management.
+  Mobile-friendly field workflow for assigned projects, scout galleries, and client links.
 </div>
 
 <div class="top-nav">
-  <a href="/scouts/">Scouts Home</a>
+  <a id="home-link" href="/scouts/">Scouts Home</a>
+  <a id="dashboard-link" href="/scouts/scout.html">Scout Dashboard</a>
   <a href="/scouts/admin.html">Upload Admin</a>
   <a href="/scouts/client-gallery.html">Client Gallery</a>
 </div>
@@ -233,11 +231,19 @@
 
 <div class="grid">
 
-  <a class="card" href="/scouts/admin.html">
+  <a class="card" id="upload-link" href="/scouts/admin.html">
     <h2>Create Upload</h2>
 
     <div class="meta">
-      Upload new scout galleries directly into the project system.
+      Upload new scout galleries into assigned projects.
+    </div>
+  </a>
+
+  <a class="card" href="#my-projects">
+    <h2>My Projects</h2>
+
+    <div class="meta">
+      Open assigned projects and continue into folders and galleries.
     </div>
   </a>
 
@@ -245,18 +251,18 @@
     <h2>My Galleries</h2>
 
     <div class="meta">
-      Review galleries currently assigned to this scout account.
+      Review galleries available through your project assignments.
     </div>
   </a>
 
-  <a class="card" href="#shared-links">
-    <h2>Client Links</h2>
+</div>
 
-    <div class="meta">
-      Open client-safe gallery links when share tokens are available.
-    </div>
-  </a>
+<div class="section-title" id="my-projects">
+  My Projects
+</div>
 
+<div class="list" id="projects-list">
+  <div class="empty">Loading projects...</div>
 </div>
 
 <div class="section-title" id="my-galleries">
@@ -276,18 +282,18 @@
 </div>
 
 <script>
+  const PROJECTS_URL = "/api/project-list";
+  const GALLERIES_URL = "/api/gallery-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
 
-  const CURRENT_SCOUT_ID =
-    "apostasy";
+  const params =
+    new URLSearchParams(window.location.search);
 
-  const USERS_URL =
-    "/data/users.json";
+  const currentScoutId =
+    params.get("user") || "apostasy";
 
-  const PROJECTS_URL =
-    "/data/projects.json";
-
-  const GALLERIES_URL =
-    "/data/galleries.json";
+  const scoutSubtitleEl =
+    document.getElementById("scout-subtitle");
 
   const currentScoutNameEl =
     document.getElementById("current-scout-name");
@@ -307,99 +313,186 @@
   const myShareCountEl =
     document.getElementById("my-share-count");
 
+  const projectsListEl =
+    document.getElementById("projects-list");
+
   const galleriesListEl =
     document.getElementById("galleries-list");
 
   const shareListEl =
     document.getElementById("share-list");
 
-  function titleFromSlug(value) {
+  const homeLinkEl =
+    document.getElementById("home-link");
 
+  const dashboardLinkEl =
+    document.getElementById("dashboard-link");
+
+  const uploadLinkEl =
+    document.getElementById("upload-link");
+
+  function titleFromSlug(value) {
     return (value || "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  function galleryPhotoCount(gallery) {
-
-    return (gallery.images || []).length;
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
   }
 
-  function uniqueProjectCount(galleries) {
-
-    const ids =
-      galleries
-        .map(gallery => gallery.projectId)
-        .filter(Boolean);
-
-    return new Set(ids).size;
+  function getProjectTitle(project) {
+    return project?.title || project?.name || titleFromSlug(getProjectId(project));
   }
 
-  function renderCurrentScout(user) {
+  function getGalleryProjectId(gallery) {
+    return gallery.projectId || gallery.project_id || "";
+  }
 
-    if (!user) {
+  function getImageCount(gallery) {
+    return Number(gallery.imageCount || gallery.image_count || 0);
+  }
 
-      currentScoutNameEl.innerHTML =
-        `Unknown Scout <span class="badge">Scout</span>`;
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
 
-      currentScoutEmailEl.textContent =
-        CURRENT_SCOUT_ID;
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function getMemberRole(member) {
+    return member.projectRole || member.project_role || "";
+  }
+
+  function formatRole(role) {
+    const normalizedRole =
+      (role || "").toLowerCase();
+
+    const roleLabels = {
+      lm: "LM",
+      alm: "ALM",
+      scout: "Scout",
+      producer: "Producer",
+      client: "Client",
+      admin: "Admin"
+    };
+
+    return roleLabels[normalizedRole] || role;
+  }
+
+  function photoLabel(count) {
+    return `${count} ${count === 1 ? "photo" : "photos"}`;
+  }
+
+  function scopedUrl(url) {
+    const separator =
+      url.includes("?") ? "&" : "?";
+
+    return `${url}${separator}user=${encodeURIComponent(currentScoutId)}`;
+  }
+
+  function getAssignedProjectIds(members) {
+    return members
+      .filter(member => getMemberUserId(member) === currentScoutId)
+      .map(member => getMemberProjectId(member));
+  }
+
+  function getProjectRole(projectId, members) {
+    const member =
+      members.find(item =>
+        getMemberUserId(item) === currentScoutId &&
+        getMemberProjectId(item) === projectId
+      );
+
+    return member ? formatRole(getMemberRole(member)) : "";
+  }
+
+  function renderCurrentScout() {
+    currentScoutNameEl.innerHTML =
+      `${titleFromSlug(currentScoutId)} <span class="badge">Scout</span>`;
+
+    currentScoutEmailEl.textContent =
+      currentScoutId;
+
+    scoutSubtitleEl.textContent =
+      `Showing assigned projects and galleries for ${currentScoutId}`;
+  }
+
+  function renderProjects(projects, galleries, members) {
+    if (!projects.length) {
+      projectsListEl.innerHTML =
+        `<div class="empty">No projects assigned to this scout yet.</div>`;
 
       return;
     }
 
-    currentScoutNameEl.innerHTML =
-      `${user.name} <span class="badge">Scout</span>`;
+    projectsListEl.innerHTML =
+      projects.map(project => {
+        const projectId =
+          getProjectId(project);
 
-    currentScoutEmailEl.textContent =
-      user.email || "";
+        const projectGalleries =
+          galleries.filter(gallery =>
+            getGalleryProjectId(gallery) === projectId
+          );
+
+        const role =
+          getProjectRole(projectId, members);
+
+        return `
+          <a
+            class="row"
+            href="${scopedUrl(`/scouts/project.html?project=${encodeURIComponent(projectId)}`)}"
+          >
+
+            <div class="row-title">
+              ${getProjectTitle(project)}
+              ${role ? `<span class="badge">${role}</span>` : ""}
+            </div>
+
+            <div class="row-meta">
+              ${projectGalleries.length} galleries
+            </div>
+
+          </a>
+        `;
+      }).join("");
   }
 
   function renderGalleries(galleries) {
-
     if (!galleries.length) {
-
       galleriesListEl.innerHTML =
-        `<div class="empty">No galleries assigned to this scout yet.</div>`;
+        `<div class="empty">No galleries available to this scout yet.</div>`;
 
       return;
     }
 
     galleriesListEl.innerHTML =
-      galleries
-        .slice()
-        .reverse()
-        .map(gallery => `
+      galleries.map(gallery => `
+        <a
+          class="row"
+          href="${scopedUrl(`/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}`)}"
+        >
 
-          <a
-            class="row"
-            href="/scouts/gallery.html?gallery=${gallery.id}"
-          >
+          <div class="row-title">
+            ${gallery.title || gallery.name || gallery.id}
+          </div>
 
-            <div class="row-title">
-              ${gallery.title || gallery.id}
-            </div>
+          <div class="row-meta">
+            ${photoLabel(getImageCount(gallery))}
+            • ${titleFromSlug(getGalleryProjectId(gallery))}
+          </div>
 
-            <div class="row-meta">
-              ${galleryPhotoCount(gallery)} photos
-              • ${titleFromSlug(gallery.projectId || "")}
-              • ${gallery.path || "No path"}
-            </div>
-
-          </a>
-
-        `).join("");
+        </a>
+      `).join("");
   }
 
   function renderShareLinks(galleries) {
-
     const shared =
-      galleries.filter(
-        gallery => gallery.shareToken
-      );
+      galleries.filter(gallery => gallery.shareToken || gallery.share_token);
 
     if (!shared.length) {
-
       shareListEl.innerHTML =
         `<div class="empty">No client share links available yet.</div>`;
 
@@ -407,70 +500,84 @@
     }
 
     shareListEl.innerHTML =
-      shared
-        .slice()
-        .reverse()
-        .map(gallery => `
+      shared.map(gallery => {
+        const token =
+          gallery.shareToken || gallery.share_token;
 
+        return `
           <a
             class="row"
-            href="/scouts/client-gallery.html?share=${gallery.shareToken}"
+            href="/scouts/client-gallery.html?share=${encodeURIComponent(token)}"
           >
 
             <div class="row-title">
-              ${gallery.title || gallery.id}
+              ${gallery.title || gallery.name || gallery.id}
             </div>
 
             <div class="row-meta">
               Client-safe gallery link
-              • ${galleryPhotoCount(gallery)} photos
+              • ${photoLabel(getImageCount(gallery))}
             </div>
 
           </a>
-
-        `).join("");
+        `;
+      }).join("");
   }
 
+  homeLinkEl.href =
+    scopedUrl("/scouts/");
+
+  dashboardLinkEl.href =
+    scopedUrl("/scouts/scout.html");
+
+  uploadLinkEl.href =
+    scopedUrl("/scouts/admin.html");
+
+  renderCurrentScout();
+
   Promise.all([
-    fetch(USERS_URL).then(response => response.json()),
     fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(GALLERIES_URL).then(response => response.json())
+    fetch(GALLERIES_URL).then(response => response.json()),
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
   ])
 
-    .then(([usersData, projectsData, galleriesData]) => {
-
-      const users =
-        usersData.users || [];
+    .then(([projectsData, galleriesData, membersData]) => {
+      const projects =
+        projectsData.projects || [];
 
       const galleries =
         galleriesData.galleries || [];
 
-      const currentUser =
-        users.find(
-          user => user.id === CURRENT_SCOUT_ID
+      const members =
+        membersData.members || [];
+
+      const assignedProjectIds =
+        getAssignedProjectIds(members);
+
+      const myProjects =
+        projects.filter(project =>
+          assignedProjectIds.includes(getProjectId(project))
         );
 
       const myGalleries =
-        galleries.filter(
-          gallery => gallery.ownerId === CURRENT_SCOUT_ID
+        galleries.filter(gallery =>
+          assignedProjectIds.includes(getGalleryProjectId(gallery))
         );
 
       const myPhotoCount =
         myGalleries.reduce(
           (total, gallery) =>
-            total + galleryPhotoCount(gallery),
+            total + getImageCount(gallery),
           0
         );
 
       const myShareCount =
         myGalleries.filter(
-          gallery => gallery.shareToken
+          gallery => gallery.shareToken || gallery.share_token
         ).length;
 
-      renderCurrentScout(currentUser);
-
       myProjectCountEl.textContent =
-        uniqueProjectCount(myGalleries);
+        myProjects.length;
 
       myGalleryCountEl.textContent =
         myGalleries.length;
@@ -481,13 +588,22 @@
       myShareCountEl.textContent =
         myShareCount;
 
-      renderGalleries(myGalleries);
+      renderProjects(
+        myProjects,
+        myGalleries,
+        members
+      );
 
-      renderShareLinks(myGalleries);
+      renderGalleries(
+        myGalleries
+      );
+
+      renderShareLinks(
+        myGalleries
+      );
     })
 
     .catch(error => {
-
       console.error(error);
 
       currentScoutNameEl.innerHTML =
@@ -495,6 +611,9 @@
 
       currentScoutEmailEl.textContent =
         "Data load error";
+
+      projectsListEl.innerHTML =
+        `<div class="empty">Could not load projects.</div>`;
 
       galleriesListEl.innerHTML =
         `<div class="empty">Could not load galleries.</div>`;
@@ -507,7 +626,6 @@
       myPhotoCountEl.textContent = "!";
       myShareCountEl.textContent = "!";
     });
-
 </script>
 
 </body>
