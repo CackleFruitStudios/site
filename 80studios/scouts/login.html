@@ -40,8 +40,18 @@
 </div>
 
 <script>
+  const SESSION_KEY =
+    "eightyStudiosScoutUser";
+
   const messageEl =
     document.getElementById("message");
+
+  const existingUser =
+    sessionStorage.getItem(SESSION_KEY);
+
+  if (existingUser) {
+    window.location.href = "/scouts/";
+  }
 
   async function sha256(value) {
     const encoded =
@@ -101,8 +111,13 @@
         throw new Error(data.error || "Login failed");
       }
 
+      sessionStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify(data.user)
+      );
+
       window.location.href =
-        `/scouts/?user=${encodeURIComponent(data.user.id)}`;
+        "/scouts/";
 
     } catch (error) {
       messageEl.textContent =
