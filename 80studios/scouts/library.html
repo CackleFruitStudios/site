@@ -6,166 +6,33 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-    body {
-      margin: 0;
-      background: #111;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .back-link {
-      display: inline-block;
-      color: #888;
-      font-size: 13px;
-      margin-bottom: 12px;
-    }
-
-    .back-link:hover {
-      color: #fff;
-    }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 6px;
-    }
-
-    .subtitle {
-      color: #888;
-      margin-bottom: 24px;
-      font-size: 14px;
-    }
-
-    .search-wrap {
-      margin-bottom: 20px;
-    }
-
-    .search-input {
-      width: 100%;
-      box-sizing: border-box;
-      background: #1c1c1c;
-      border: 1px solid #333;
-      color: white;
-      padding: 12px 14px;
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-    }
-
-    .search-input:focus {
-      border-color: #555;
-    }
-
-    .section-title {
-      color: #aaa;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 30px;
-      margin-bottom: 10px;
-    }
-
-    .location-card {
-      background: #1c1c1c;
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 15px;
-      margin-top: 12px;
-    }
-
-    .location-header {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-    }
-
-    .thumb {
-      width: 140px;
-      height: 90px;
-      object-fit: cover;
-      border-radius: 4px;
-      background: #222;
-      flex-shrink: 0;
-    }
-
-    .location-title {
-      font-size: 20px;
-      margin-bottom: 4px;
-    }
-
-    .meta {
-      color: #aaa;
-      font-size: 12px;
-      margin-top: 4px;
-      line-height: 1.4;
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 10px;
-    }
-
-    .tag {
-      background: #282828;
-      border: 1px solid #3a3a3a;
-      border-radius: 999px;
-      padding: 4px 8px;
-      color: #aaa;
-      font-size: 12px;
-    }
-
-    .gallery-list {
-      margin-top: 14px;
-      border-top: 1px solid #333;
-      padding-top: 10px;
-    }
-
-    .gallery-link {
-      display: block;
-      padding: 8px 0;
-      color: #ddd;
-      font-size: 14px;
-    }
-
-    .gallery-link:hover {
-      color: #fff;
-      text-decoration: underline;
-    }
-
-    .message {
-      color: #aaa;
-    }
-
-    .result-count {
-      color: #777;
-      font-size: 12px;
-      margin-bottom: 10px;
-    }
-
-    hr {
-      border: none;
-      border-top: 1px solid #333;
-      margin: 12px 0;
-    }
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
+    a { color: inherit; text-decoration: none; }
+    .back-link { display: inline-block; color: #888; font-size: 13px; margin-bottom: 12px; }
+    .back-link:hover { color: #fff; }
+    h1 { font-size: 28px; margin-bottom: 6px; }
+    .subtitle { color: #888; margin-bottom: 24px; font-size: 14px; }
+    .search-wrap { margin-bottom: 20px; }
+    .search-input { width: 100%; box-sizing: border-box; background: #1c1c1c; border: 1px solid #333; color: white; padding: 12px 14px; border-radius: 6px; font-size: 14px; outline: none; }
+    .search-input:focus { border-color: #555; }
+    .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 30px; margin-bottom: 10px; }
+    .location-card { background: #1c1c1c; border: 1px solid #333; border-radius: 6px; padding: 15px; margin-top: 12px; }
+    .location-header { display: flex; gap: 14px; align-items: flex-start; }
+    .thumb { width: 140px; height: 90px; object-fit: cover; border-radius: 4px; background: #222; flex-shrink: 0; }
+    .location-title { font-size: 20px; margin-bottom: 4px; }
+    .meta { color: #aaa; font-size: 12px; margin-top: 4px; line-height: 1.4; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .tag { background: #282828; border: 1px solid #3a3a3a; border-radius: 999px; padding: 4px 8px; color: #aaa; font-size: 12px; }
+    .gallery-list { margin-top: 14px; border-top: 1px solid #333; padding-top: 10px; }
+    .gallery-link { display: block; padding: 8px 0; color: #ddd; font-size: 14px; }
+    .gallery-link:hover { color: #fff; text-decoration: underline; }
+    .message { color: #aaa; }
+    .result-count { color: #777; font-size: 12px; margin-bottom: 10px; }
+    hr { border: none; border-top: 1px solid #333; margin: 12px 0; }
 
     @media (max-width: 600px) {
-
-      .location-header {
-        display: block;
-      }
-
-      .thumb {
-        width: 100%;
-        height: 180px;
-        margin-bottom: 10px;
-      }
+      .location-header { display: block; }
+      .thumb { width: 100%; height: 180px; margin-bottom: 10px; }
     }
   </style>
 </head>
@@ -177,7 +44,7 @@
 <h1>Location Library</h1>
 
 <div class="subtitle">
-  Reusable scout archive for file pulls, past locations, tags, and cross-project reference.
+  Reusable scout archive for file pulls, past locations, and cross-project reference.
 </div>
 
 <hr>
@@ -187,7 +54,7 @@
     type="text"
     id="search"
     class="search-input"
-    placeholder="Search locations, tags, looks, categories..."
+    placeholder="Search locations, towns, states, projects, galleries..."
   >
 </div>
 
@@ -196,8 +63,8 @@
 <div id="content">Loading library...</div>
 
 <script>
-
-  const DATA_URL = "/data/projects.json";
+  const PROJECTS_URL = "/api/project-list";
+  const GALLERIES_URL = "/api/gallery-list";
 
   const contentEl =
     document.getElementById("content");
@@ -210,175 +77,173 @@
 
   let masterLibrary = {};
 
-  function getImageUrl(image) {
-    if (typeof image === "string") {
-      return image;
-    }
-
-    return image?.url || "";
+  function titleFromSlug(value) {
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  function getFirstImageUrl(images) {
-    if (!images || images.length === 0) {
-      return "";
-    }
-
-    return getImageUrl(images[0]);
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
   }
 
-  function collectGalleriesFromFolders(
-    folders,
-    projectName,
-    path = [],
-    library = {}
-  ) {
+  function getProjectTitle(project) {
+    return project.title || project.name || titleFromSlug(getProjectId(project));
+  }
 
-    folders.forEach(folder => {
+  function getGalleryProjectId(gallery) {
+    return gallery.projectId || gallery.project_id || "";
+  }
 
-      const currentPath =
-        [...path, folder.name];
+  function getGalleryFolderId(gallery) {
+    return gallery.folderId || gallery.folder_id || "";
+  }
 
-      (folder.galleries || []).forEach(gallery => {
+  function getGalleryLocationName(gallery) {
+    return (
+      gallery.locationName ||
+      gallery.location_name ||
+      gallery.title ||
+      gallery.name ||
+      gallery.id
+    );
+  }
 
-        if (!gallery.library || !gallery.library.locationId) {
-          return;
-        }
+  function getGalleryTown(gallery) {
+    return gallery.town || "";
+  }
 
-        const locationId =
-          gallery.library.locationId;
+  function getGalleryState(gallery) {
+    return gallery.state || "";
+  }
 
-        if (!library[locationId]) {
+  function getGalleryCountry(gallery) {
+    return gallery.country || "";
+  }
 
-          library[locationId] = {
-            locationId: locationId,
-            locationName:
-              gallery.library.locationName ||
-              gallery.title,
-            town:
-              gallery.library.town ||
-              "",
-            state:
-              gallery.library.state ||
-              "",
-            country:
-              gallery.library.country ||
-              "",
-            cover:
-              gallery.cover ||
-              getFirstImageUrl(gallery.images) ||
-              "",
-            tags: new Set(),
-            categories: new Set(),
-            looks: new Set(),
-            searchTerms: new Set(),
-            projects: new Set(),
-            galleries: []
-          };
-        }
+  function getGalleryCover(gallery) {
+    return gallery.cover || gallery.url || gallery.imageUrl || gallery.image_url || "";
+  }
 
-        const item =
-          library[locationId];
+  function getImageCount(gallery) {
+    return Number(gallery.imageCount || gallery.image_count || 0);
+  }
 
-        (gallery.library.tags || []).forEach(tag =>
-          item.tags.add(tag)
+  function photoLabel(count) {
+    return `${count} ${count === 1 ? "photo" : "photos"}`;
+  }
+
+  function buildLibrary(projects, galleries) {
+    const library = {};
+
+    galleries.forEach(gallery => {
+      const projectId =
+        getGalleryProjectId(gallery);
+
+      const project =
+        projects.find(item =>
+          getProjectId(item) === projectId
         );
 
-        (gallery.library.categories || []).forEach(category =>
-          item.categories.add(category)
-        );
+      const locationName =
+        getGalleryLocationName(gallery);
 
-        (gallery.library.looks || []).forEach(look =>
-          item.looks.add(look)
-        );
+      const town =
+        getGalleryTown(gallery);
 
-        (gallery.library.searchTerms || []).forEach(term =>
-          item.searchTerms.add(term)
-        );
+      const state =
+        getGalleryState(gallery);
 
-        item.projects.add(projectName);
+      const country =
+        getGalleryCountry(gallery);
 
-        item.galleries.push({
-          id: gallery.id,
-          title: gallery.title,
-          subtitle: gallery.subtitle || "",
-          path: currentPath.join(" / "),
-          imageCount: (gallery.images || []).length
-        });
+      const locationKey =
+        [
+          locationName,
+          town,
+          state,
+          country
+        ]
+          .filter(Boolean)
+          .join("|")
+          .toLowerCase();
+
+      if (!library[locationKey]) {
+        library[locationKey] = {
+          locationName,
+          town,
+          state,
+          country,
+          cover: getGalleryCover(gallery),
+          projects: new Set(),
+          galleries: []
+        };
+      }
+
+      const item =
+        library[locationKey];
+
+      if (!item.cover) {
+        item.cover =
+          getGalleryCover(gallery);
+      }
+
+      if (project) {
+        item.projects.add(getProjectTitle(project));
+      } else if (projectId) {
+        item.projects.add(titleFromSlug(projectId));
+      }
+
+      item.galleries.push({
+        id: gallery.id,
+        title: gallery.title || gallery.name || gallery.id,
+        projectId,
+        folderId: getGalleryFolderId(gallery),
+        imageCount: getImageCount(gallery)
       });
-
-      collectGalleriesFromFolders(
-        folder.folders || [],
-        projectName,
-        currentPath,
-        library
-      );
     });
 
     return library;
   }
 
-  function renderSetItems(set) {
-
-    return [...set]
-      .map(item => `<span class="tag">${item}</span>`)
-      .join("");
-  }
-
   function matchesSearch(location, query) {
-
     if (!query) return true;
 
     const searchable = [
       location.locationName,
       location.town,
       location.state,
-      ...location.tags,
-      ...location.categories,
-      ...location.looks,
-      ...location.searchTerms,
-      ...location.projects
+      location.country,
+      ...location.projects,
+      ...location.galleries.map(gallery => gallery.title),
+      ...location.galleries.map(gallery => gallery.projectId),
+      ...location.galleries.map(gallery => gallery.folderId)
     ]
-
-    .join(" ")
-    .toLowerCase();
+      .join(" ")
+      .toLowerCase();
 
     return searchable.includes(query);
   }
 
   function renderLibrary(library, query = "") {
-
     const locations =
       Object.values(library)
-
-      .filter(location =>
-        matchesSearch(
-          {
-            ...location,
-            tags: [...location.tags],
-            categories: [...location.categories],
-            looks: [...location.looks],
-            searchTerms: [...location.searchTerms],
-            projects: [...location.projects]
-          },
-          query
+        .filter(location =>
+          matchesSearch(location, query)
         )
-      )
-
-      .sort((a, b) =>
-        a.locationName.localeCompare(b.locationName)
-      );
+        .sort((a, b) =>
+          a.locationName.localeCompare(b.locationName)
+        );
 
     resultCountEl.textContent =
       `${locations.length} location${locations.length !== 1 ? "s" : ""}`;
 
-    if (locations.length === 0) {
-
+    if (!locations.length) {
       contentEl.innerHTML = `
         <p class="message">
           No matching locations found.
         </p>
       `;
-
       return;
     }
 
@@ -389,7 +254,6 @@
     `;
 
     locations.forEach(location => {
-
       html += `
         <div class="location-card">
 
@@ -401,13 +265,12 @@
             }
 
             <div>
-
               <div class="location-title">
                 ${location.locationName}
               </div>
 
               <div class="meta">
-                ${location.town}${location.state ? ", " + location.state : ""}
+                ${location.town}${location.state ? ", " + location.state : ""}${location.country ? " · " + location.country : ""}
               </div>
 
               <div class="meta">
@@ -416,11 +279,10 @@
               </div>
 
               <div class="tags">
-                ${renderSetItems(location.tags)}
-                ${renderSetItems(location.categories)}
-                ${renderSetItems(location.looks)}
+                ${location.town ? `<span class="tag">${location.town}</span>` : ""}
+                ${location.state ? `<span class="tag">${location.state}</span>` : ""}
+                ${location.country ? `<span class="tag">${location.country}</span>` : ""}
               </div>
-
             </div>
 
           </div>
@@ -429,20 +291,19 @@
       `;
 
       location.galleries.forEach(gallery => {
-
         html += `
           <a
             class="gallery-link"
-            href="/scouts/gallery.html?gallery=${gallery.id}"
+            href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}"
           >
             ${gallery.title}
 
             <div class="meta">
-              ${gallery.path}
+              ${titleFromSlug(gallery.projectId)}
+              ${gallery.folderId ? " / " + titleFromSlug(gallery.folderId) : ""}
               •
-              ${gallery.imageCount} photos
+              ${photoLabel(gallery.imageCount)}
             </div>
-
           </a>
         `;
       });
@@ -457,7 +318,6 @@
   }
 
   searchInput.addEventListener("input", function() {
-
     const query =
       searchInput.value
         .trim()
@@ -466,40 +326,32 @@
     renderLibrary(masterLibrary, query);
   });
 
-  fetch(DATA_URL)
+  Promise.all([
+    fetch(PROJECTS_URL).then(response => response.json()),
+    fetch(GALLERIES_URL).then(response => response.json())
+  ])
+    .then(([projectsData, galleriesData]) => {
+      const projects =
+        projectsData.projects || [];
 
-    .then(response => response.json())
+      const galleries =
+        galleriesData.galleries || [];
 
-    .then(data => {
-
-      let library = {};
-
-      (data.projects || []).forEach(project => {
-
-        library = collectGalleriesFromFolders(
-          project.folders || [],
-          project.name,
-          [],
-          library
-        );
-      });
-
-      masterLibrary = library;
+      masterLibrary =
+        buildLibrary(projects, galleries);
 
       renderLibrary(masterLibrary);
     })
 
     .catch(error => {
-
       console.error(error);
 
       contentEl.innerHTML = `
         <p class="message">
-          Could not load library.
+          Could not load library from D1.
         </p>
       `;
     });
-
 </script>
 
 </body>
