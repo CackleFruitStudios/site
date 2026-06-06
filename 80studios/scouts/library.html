@@ -10,6 +10,10 @@
     a { color: inherit; text-decoration: none; }
     .back-link { display: inline-block; color: #888; font-size: 13px; margin-bottom: 12px; }
     .back-link:hover { color: #fff; }
+    .top-nav { margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .top-nav a, .logout-btn { display: inline-block; color: #999; font-size: 14px; background: none; border: none; padding: 0; cursor: pointer; font-family: Arial, sans-serif; }
+    .top-nav a:hover, .logout-btn:hover { color: #fff; text-decoration: underline; }
+    .user-badge { color: #777; font-size: 13px; margin-left: auto; }
     h1 { font-size: 28px; margin-bottom: 6px; }
     .subtitle { color: #888; margin-bottom: 24px; font-size: 14px; }
     .search-wrap { margin-bottom: 20px; }
@@ -41,9 +45,18 @@
 
 <a class="back-link" href="/scouts/">← Back to Scouts</a>
 
+<div class="top-nav">
+  <a href="/scouts/">Projects</a>
+  <a href="/scouts/scout.html">Scout Dashboard</a>
+  <a href="/scouts/library.html">Library</a>
+  <a href="/scouts/admin.html">Admin</a>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+  <div class="user-badge" id="user-badge"></div>
+</div>
+
 <h1>Location Library</h1>
 
-<div class="subtitle">
+<div class="subtitle" id="subtitle">
   Reusable scout archive for file pulls, past locations, and cross-project reference.
 </div>
 
@@ -63,8 +76,27 @@
 <div id="content">Loading library...</div>
 
 <script>
+  const SESSION_KEY = "eightyStudiosScoutUser";
+
   const PROJECTS_URL = "/api/project-list";
   const GALLERIES_URL = "/api/gallery-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
+
+  const savedUser =
+    sessionStorage.getItem(SESSION_KEY);
+
+  if (!savedUser) {
+    window.location.href = "/scouts/login.html";
+  }
+
+  const currentUser =
+    savedUser ? JSON.parse(savedUser) : null;
+
+  const currentUserId =
+    currentUser?.id || "";
+
+  const currentUserRole =
+    currentUser?.globalRole || "";
 
   const contentEl =
     document.getElementById("content");
@@ -75,7 +107,32 @@
   const resultCountEl =
     document.getElementById("result-count");
 
+  const userBadgeEl =
+    document.getElementById("user-badge");
+
+  const subtitleEl =
+    document.getElementById("subtitle");
+
   let masterLibrary = {};
+
+  if (currentUser) {
+    userBadgeEl.textContent =
+      `${currentUser.name} · ${currentUserRole}`;
+
+    subtitleEl.textContent =
+      currentUserRole === "admin"
+        ? "Full location archive across all scout content."
+        : `Location archive available to ${currentUser.name}.`;
+  }
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href = "/scouts/login.html";
+  }
+
+  function userIsAdmin() {
+    return currentUserRole === "admin";
+  }
 
   function titleFromSlug(value) {
     return (value || "")
@@ -127,6 +184,24 @@
 
   function getImageCount(gallery) {
     return Number(gallery.imageCount || gallery.image_count || 0);
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function getVisibleProjectIds(members) {
+    if (userIsAdmin()) {
+      return null;
+    }
+
+    return members
+      .filter(member => getMemberUserId(member) === currentUserId)
+      .map(member => getMemberProjectId(member));
   }
 
   function photoLabel(count) {
@@ -328,17 +403,31 @@
 
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(GALLERIES_URL).then(response => response.json())
+    fetch(GALLERIES_URL).then(response => response.json()),
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
   ])
-    .then(([projectsData, galleriesData]) => {
+    .then(([projectsData, galleriesData, membersData]) => {
       const projects =
         projectsData.projects || [];
 
       const galleries =
         galleriesData.galleries || [];
 
+      const members =
+        membersData.members || [];
+
+      const visibleProjectIds =
+        getVisibleProjectIds(members);
+
+      const visibleGalleries =
+        visibleProjectIds === null
+          ? galleries
+          : galleries.filter(gallery =>
+              visibleProjectIds.includes(getGalleryProjectId(gallery))
+            );
+
       masterLibrary =
-        buildLibrary(projects, galleries);
+        buildLibrary(projects, visibleGalleries);
 
       renderLibrary(masterLibrary);
     })
