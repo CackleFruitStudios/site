@@ -6,7 +6,6 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-
     body {
       margin: 0;
       background: #111;
@@ -28,6 +27,38 @@
     h1 {
       font-size: 28px;
       margin-bottom: 6px;
+    }
+
+    .top-nav {
+      margin-bottom: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .top-nav a,
+    .logout-btn {
+      display: inline-block;
+      color: #999;
+      font-size: 14px;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+    }
+
+    .top-nav a:hover,
+    .logout-btn:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    .user-badge {
+      color: #777;
+      font-size: 13px;
+      margin-left: auto;
     }
 
     .subtitle {
@@ -269,19 +300,27 @@
     .move-btn {
       flex: 1;
     }
-
   </style>
 </head>
 
 <body>
 
-<a href="/scouts/">← Back to Scouts</a>
+<div class="top-nav">
+  <a href="/scouts/">Projects</a>
+  <a href="/scouts/scout.html">Scout Dashboard</a>
+  <a href="/scouts/library.html">Library</a>
+  <a href="/scouts/admin.html">Admin</a>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+  <div class="user-badge" id="user-badge"></div>
+</div>
 
 <h1>Admin Planner</h1>
 
-<div class="subtitle">
+<div class="subtitle" id="subtitle">
   REAL Cloudflare R2 Upload System
 </div>
+
+<div id="admin-content">
 
 <div class="panel">
 
@@ -427,10 +466,75 @@
 
 </div>
 
+</div>
+
 <script>
+  const SESSION_KEY =
+    "eightyStudiosScoutUser";
 
   const STORAGE_KEY =
     "scout-admin-session";
+
+  const savedUser =
+    sessionStorage.getItem(SESSION_KEY);
+
+  if (!savedUser) {
+    window.location.href =
+      "/scouts/login.html";
+  }
+
+  const currentUser =
+    savedUser ? JSON.parse(savedUser) : null;
+
+  const currentUserId =
+    currentUser?.id || "";
+
+  const currentUserRole =
+    currentUser?.globalRole || "";
+
+  const allowedAdminRoles =
+    [
+      "admin",
+      "lm",
+      "alm"
+    ];
+
+  const userBadgeEl =
+    document.getElementById("user-badge");
+
+  const subtitleEl =
+    document.getElementById("subtitle");
+
+  const adminContentEl =
+    document.getElementById("admin-content");
+
+  if (currentUser) {
+    userBadgeEl.textContent =
+      `${currentUser.name} · ${currentUserRole}`;
+  }
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href =
+      "/scouts/login.html";
+  }
+
+  function userCanUseAdmin() {
+    return allowedAdminRoles.includes(currentUserRole);
+  }
+
+  if (!userCanUseAdmin()) {
+    subtitleEl.textContent =
+      "Access denied.";
+
+    adminContentEl.innerHTML = `
+      <div class="panel">
+        <p class="warning" style="display:block;">
+          This account does not have upload admin access.
+        </p>
+      </div>
+    `;
+  }
 
   const uploadZone =
     document.getElementById("uploadZone");
@@ -573,9 +677,9 @@
 
     const pathSegments =
       activePath
-      .split("/")
-      .map(segment => slugify(segment))
-      .filter(Boolean);
+        .split("/")
+        .map(segment => slugify(segment))
+        .filter(Boolean);
 
     const finalSegment =
       pathSegments[pathSegments.length - 1] || "heroes";
@@ -667,10 +771,10 @@
 
     const incoming =
       [...files]
-      .filter(file =>
-        file.type.startsWith("image/") ||
-        isHeicFile(file)
-      );
+        .filter(file =>
+          file.type.startsWith("image/") ||
+          isHeicFile(file)
+        );
 
     localFiles =
       [
@@ -867,6 +971,14 @@
 
   async function uploadAll() {
 
+    if (!userCanUseAdmin()) {
+      showWarning(
+        "This account does not have upload admin access."
+      );
+
+      return;
+    }
+
     if (!validateRequiredFields()) {
       return;
     }
@@ -881,8 +993,8 @@
 
     const root =
       [projectId, folderPath]
-      .filter(Boolean)
-      .join("/");
+        .filter(Boolean)
+        .join("/");
 
     for (let index = 0; index < localFiles.length; index++) {
 
@@ -1022,8 +1134,8 @@
         state,
         ...folderTags
       ]
-      .map(tag => tag.trim())
-      .filter(Boolean);
+        .map(tag => tag.trim())
+        .filter(Boolean);
 
     const tags =
       [...new Set([
@@ -1037,13 +1149,13 @@
 
       projectId: projectId,
 
-           path: folderPath,
+      path: folderPath,
 
-      ownerId: "apostasy",
+      ownerId: currentUserId,
 
       visibility: "private",
 
-           shareToken:
+      shareToken:
         window.scoutShareToken ||
         (
           window.scoutShareToken =
@@ -1225,8 +1337,9 @@
     }, 500);
   }
 
-  loadSession();
-
+  if (userCanUseAdmin()) {
+    loadSession();
+  }
 </script>
 
 </body>
