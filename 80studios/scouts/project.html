@@ -181,6 +181,22 @@
     return member.projectRole || member.project_role || "";
   }
 
+  function formatRole(role) {
+    const normalizedRole =
+      (role || "").toLowerCase();
+
+    const roleLabels = {
+      lm: "LM",
+      alm: "ALM",
+      scout: "Scout",
+      producer: "Producer",
+      client: "Client",
+      admin: "Admin"
+    };
+
+    return roleLabels[normalizedRole] || role;
+  }
+
   function userCanAccessProject(members) {
     if (!currentUserId) {
       return true;
@@ -319,7 +335,7 @@
 
       projectSubtitleEl.textContent =
         currentUserId && role
-          ? `${folders.length} folders · ${projectGalleries.length} galleries · Role: ${role}`
+          ? `${folders.length} folders · ${projectGalleries.length} galleries · Role: ${formatRole(role)}`
           : `${folders.length} folders · ${projectGalleries.length} galleries`;
 
       contentEl.innerHTML = `
