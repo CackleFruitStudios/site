@@ -28,10 +28,10 @@
 
 <body>
 
-<a class="back-link" href="/scouts/">← Back to Scouts</a>
+<a class="back-link" id="back-link" href="/scouts/">← Back to Scouts</a>
 
 <div class="top-nav">
-  <a href="/scouts/">Projects</a>
+  <a id="projects-link" href="/scouts/">Projects</a>
   <a href="/scouts/library.html">Library</a>
   <a href="/scouts/admin.html">Admin</a>
 </div>
@@ -48,18 +48,38 @@
   const PROJECTS_URL = "/api/project-list";
   const FOLDERS_URL = "/api/folder-list";
   const GALLERIES_URL = "/api/gallery-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
 
   const params = new URLSearchParams(window.location.search);
 
-  const projectId = params.get("project") || "test-project-gf";
-  const folderId = params.get("folder") || params.get("path") || "folder-test-location";
+  const projectId =
+    params.get("project") || "test-project-gf";
 
-  const folderTitleEl = document.getElementById("folder-title");
-  const breadcrumbEl = document.getElementById("breadcrumb");
-  const contentEl = document.getElementById("content");
+  const folderId =
+    params.get("folder") || "folder-test-location";
+
+  const currentUserId =
+    params.get("user") || "";
+
+  const folderTitleEl =
+    document.getElementById("folder-title");
+
+  const breadcrumbEl =
+    document.getElementById("breadcrumb");
+
+  const contentEl =
+    document.getElementById("content");
+
+  const backLinkEl =
+    document.getElementById("back-link");
+
+  const projectsLinkEl =
+    document.getElementById("projects-link");
 
   function titleFromSlug(value) {
-    return (value || "").replace(/-/g, " ").replace(/\b\w/g, char => char.toUpperCase());
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
   }
 
   function getProjectId(project) {
@@ -87,13 +107,54 @@
   }
 
   function getImageCount(gallery) {
-    const count = gallery.imageCount || gallery.image_count || 0;
+    const count = Number(gallery.imageCount || gallery.image_count || 0);
     return `${count} ${count === 1 ? "photo" : "photos"}`;
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function userCanAccessProject(members) {
+    if (!currentUserId) {
+      return true;
+    }
+
+    return members.some(member =>
+      getMemberUserId(member) === currentUserId &&
+      getMemberProjectId(member) === projectId
+    );
+  }
+
+  function scopedUrl(url) {
+    if (!currentUserId) {
+      return url;
+    }
+
+    const separator =
+      url.includes("?") ? "&" : "?";
+
+    return `${url}${separator}user=${encodeURIComponent(currentUserId)}`;
+  }
+
+  function renderAccessDenied() {
+    folderTitleEl.textContent =
+      "Access Denied";
+
+    contentEl.innerHTML = `
+      <p class="message">
+        This user is not assigned to this project.
+      </p>
+    `;
   }
 
   function renderBreadcrumb(project, folder) {
     breadcrumbEl.innerHTML = `
-      <a href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
+      <a href="${scopedUrl(`/scouts/project.html?project=${encodeURIComponent(projectId)}`)}">
         ${getProjectTitle(project)}
       </a>
       /
@@ -116,8 +177,15 @@
       </div>
 
       ${galleries.map(gallery => `
-        <a class="card" href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}">
-          ${getGalleryCover(gallery) ? `<img src="${getGalleryCover(gallery)}" class="thumb">` : ""}
+        <a
+          class="card"
+          href="${scopedUrl(`/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}`)}"
+        >
+
+          ${getGalleryCover(gallery)
+            ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
+            : ""
+          }
 
           <div>
             ${gallery.title || gallery.name || gallery.id}
@@ -126,43 +194,99 @@
           <div class="meta">
             ${getImageCount(gallery)}
           </div>
+
         </a>
       `).join("")}
     `;
   }
 
+  if (currentUserId) {
+    const scopedProjectsUrl =
+      `/scouts/?user=${encodeURIComponent(currentUserId)}`;
+
+    backLinkEl.href =
+      scopedProjectsUrl;
+
+    projectsLinkEl.href =
+      scopedProjectsUrl;
+  }
+
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
     fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
-    fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json())
+    fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
   ])
-    .then(([projectsData, foldersData, galleriesData]) => {
-      const projects = projectsData.projects || [];
-      const folders = foldersData.folders || [];
-      const galleries = galleriesData.galleries || [];
+    .then(([projectsData, foldersData, galleriesData, membersData]) => {
 
-      const project = projects.find(item => getProjectId(item) === projectId);
-      const folder = folders.find(item => item.id === folderId);
+      const projects =
+        projectsData.projects || [];
 
-      if (!folder) {
-        folderTitleEl.textContent = "Folder Not Found";
-        contentEl.innerHTML = `<p class="message">This folder was not found in D1.</p>`;
+      const folders =
+        foldersData.folders || [];
+
+      const galleries =
+        galleriesData.galleries || [];
+
+      const members =
+        membersData.members || [];
+
+      if (!userCanAccessProject(members)) {
+        renderAccessDenied();
         return;
       }
 
-      const folderGalleries = galleries.filter(gallery =>
-        getGalleryProjectId(gallery) === projectId &&
-        getGalleryFolderId(gallery) === folderId
-      );
+      const project =
+        projects.find(item =>
+          getProjectId(item) === projectId
+        );
+
+      const folder =
+        folders.find(item =>
+          item.id === folderId
+        );
+
+      if (!folder) {
+
+        folderTitleEl.textContent =
+          "Folder Not Found";
+
+        contentEl.innerHTML = `
+          <p class="message">
+            This folder was not found in D1.
+          </p>
+        `;
+
+        return;
+      }
+
+      const folderGalleries =
+        galleries.filter(gallery =>
+          getGalleryProjectId(gallery) === projectId &&
+          getGalleryFolderId(gallery) === folderId
+        );
 
       renderBreadcrumb(project, folder);
-      folderTitleEl.textContent = getFolderTitle(folder);
-      contentEl.innerHTML = renderGalleries(folderGalleries);
+
+      folderTitleEl.textContent =
+        getFolderTitle(folder);
+
+      contentEl.innerHTML =
+        renderGalleries(folderGalleries);
     })
+
     .catch(error => {
+
       console.error(error);
-      folderTitleEl.textContent = "Could Not Load Folder";
-      contentEl.innerHTML = `<p class="message">There was a problem loading D1 folder data.</p>`;
+
+      folderTitleEl.textContent =
+        "Could Not Load Folder";
+
+      contentEl.innerHTML = `
+        <p class="message">
+          There was a problem loading D1 folder data.
+        </p>
+      `;
     });
 </script>
 
