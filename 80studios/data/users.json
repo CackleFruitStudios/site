@@ -1,3 +1,9 @@
+users.json
+LEGACY - migrated to D1 during Phase 3 Block 8
+Do not use for authentication
+
+
+
 {
   "users": [
     {
