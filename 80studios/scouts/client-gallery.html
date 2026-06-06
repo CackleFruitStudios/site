@@ -7,129 +7,27 @@
   <meta name="robots" content="noindex,nofollow">
 
   <style>
-    body {
-      margin: 0;
-      background: #111;
-      color: white;
-      font-family: Arial, sans-serif;
-    }
-
-    .header {
-      padding: 24px 20px;
-      text-align: center;
-      border-bottom: 1px solid #333;
-    }
-
-    .brand {
-      color: #888;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 12px;
-    }
-
-    h1 {
-      font-size: 26px;
-      margin: 0 0 8px 0;
-    }
-
-    .subtitle {
-      color: #aaa;
-      font-size: 14px;
-      margin: 0;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 6px;
-      padding: 6px;
-    }
-
-    .grid img {
-      width: 100%;
-      height: auto;
-      display: block;
-      cursor: pointer;
-      background: #222;
-    }
-
-    .message {
-      padding: 40px 20px;
-      text-align: center;
-      color: #aaa;
-    }
-
-    .lightbox {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-
-    .lightbox img {
-      max-width: 96%;
-      max-height: 94%;
-    }
-
-    .counter {
-      position: fixed;
-      bottom: 16px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      color: #aaa;
-      font-size: 14px;
-    }
-
-    .nav-button {
-      position: fixed;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 42px;
-      color: white;
-      background: rgba(0,0,0,0.45);
-      border: none;
-      padding: 12px 18px;
-      cursor: pointer;
-      z-index: 101;
-    }
-
-    .nav-button:hover {
-      background: rgba(255,255,255,0.12);
-    }
-
-    .nav-prev {
-      left: 18px;
-    }
-
-    .nav-next {
-      right: 18px;
-    }
-
-    .footer {
-      color: #666;
-      font-size: 12px;
-      text-align: center;
-      padding: 24px 20px 32px;
-    }
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; }
+    .header { padding: 24px 20px; text-align: center; border-bottom: 1px solid #333; }
+    .brand { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    h1 { font-size: 26px; margin: 0 0 8px 0; }
+    .subtitle { color: #aaa; font-size: 14px; margin: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; padding: 6px; }
+    .grid img { width: 100%; height: auto; display: block; cursor: pointer; background: #222; }
+    .message { padding: 40px 20px; text-align: center; color: #aaa; }
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 100; }
+    .lightbox img { max-width: 96%; max-height: 94%; }
+    .counter { position: fixed; bottom: 16px; left: 0; right: 0; text-align: center; color: #aaa; font-size: 14px; }
+    .nav-button { position: fixed; top: 50%; transform: translateY(-50%); font-size: 42px; color: white; background: rgba(0,0,0,0.45); border: none; padding: 12px 18px; cursor: pointer; z-index: 101; }
+    .nav-button:hover { background: rgba(255,255,255,0.12); }
+    .nav-prev { left: 18px; }
+    .nav-next { right: 18px; }
+    .footer { color: #666; font-size: 12px; text-align: center; padding: 24px 20px 32px; }
 
     @media (max-width: 600px) {
-      h1 {
-        font-size: 22px;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .nav-button {
-        font-size: 34px;
-        padding: 10px 14px;
-      }
+      h1 { font-size: 22px; }
+      .grid { grid-template-columns: 1fr; }
+      .nav-button { font-size: 34px; padding: 10px 14px; }
     }
   </style>
 </head>
@@ -137,17 +35,13 @@
 <body>
 
 <div class="header">
-
-  <div class="brand">
-    Location Gallery
-  </div>
+  <div class="brand">Location Gallery</div>
 
   <h1 id="gallery-title">
     Loading Gallery...
   </h1>
 
   <p class="subtitle" id="gallery-subtitle"></p>
-
 </div>
 
 <div class="grid" id="gallery-grid"></div>
@@ -156,22 +50,13 @@
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
 
-  <button
-    class="nav-button nav-prev"
-    onclick="prevImage(event)"
-  >
+  <button class="nav-button nav-prev" onclick="prevImage(event)">
     ‹
   </button>
 
-  <img
-    id="lightbox-img"
-    onclick="event.stopPropagation()"
-  >
+  <img id="lightbox-img" onclick="event.stopPropagation()">
 
-  <button
-    class="nav-button nav-next"
-    onclick="nextImage(event)"
-  >
+  <button class="nav-button nav-next" onclick="nextImage(event)">
     ›
   </button>
 
@@ -184,89 +69,59 @@
 </div>
 
 <script>
+  const GALLERIES_URL = "/api/gallery-list";
+  const IMAGES_URL = "/api/image-list";
 
-  const GALLERIES_URL =
-    "/data/galleries.json";
+  const params = new URLSearchParams(window.location.search);
 
-  const params =
-    new URLSearchParams(window.location.search);
+  const shareToken = params.get("share");
+  const galleryId = params.get("gallery");
 
-  const shareToken =
-    params.get("share");
-
-  const galleryId =
-    params.get("gallery");
-
-  const titleEl =
-    document.getElementById("gallery-title");
-
-  const subtitleEl =
-    document.getElementById("gallery-subtitle");
-
-  const gridEl =
-    document.getElementById("gallery-grid");
-
-  const messageEl =
-    document.getElementById("message");
-
-  const lightbox =
-    document.getElementById("lightbox");
-
-  const lightboxImg =
-    document.getElementById("lightbox-img");
-
-  const counterEl =
-    document.getElementById("counter");
+  const titleEl = document.getElementById("gallery-title");
+  const subtitleEl = document.getElementById("gallery-subtitle");
+  const gridEl = document.getElementById("gallery-grid");
+  const messageEl = document.getElementById("message");
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightbox-img");
+  const counterEl = document.getElementById("counter");
 
   let currentImages = [];
-
   let currentIndex = 0;
 
+  function getGalleryShareToken(gallery) {
+    return gallery.shareToken || gallery.share_token || "";
+  }
+
   function getImageUrl(image) {
+    return image.url || image.imageUrl || image.image_url || "";
+  }
 
-    if (typeof image === "string") {
-      return image;
-    }
-
-    return image.url || "";
+  function photoLabel(count) {
+    return `${count} ${count === 1 ? "photo" : "photos"}`;
   }
 
   function updateLightbox() {
+    if (!currentImages.length) return;
 
-    if (!currentImages.length) {
-      return;
-    }
-
-    lightboxImg.src =
-      getImageUrl(currentImages[currentIndex]);
-
-    counterEl.textContent =
-      `${currentIndex + 1} / ${currentImages.length}`;
+    lightboxImg.src = getImageUrl(currentImages[currentIndex]);
+    counterEl.textContent = `${currentIndex + 1} / ${currentImages.length}`;
   }
 
   function openLightbox(index) {
-
     currentIndex = index;
-
     updateLightbox();
-
     lightbox.style.display = "flex";
   }
 
   function closeLightbox() {
-
     lightbox.style.display = "none";
-
     lightboxImg.src = "";
   }
 
   function prevImage(event) {
-
     event.stopPropagation();
 
-    if (!currentImages.length) {
-      return;
-    }
+    if (!currentImages.length) return;
 
     currentIndex--;
 
@@ -278,12 +133,9 @@
   }
 
   function nextImage(event) {
-
     event.stopPropagation();
 
-    if (!currentImages.length) {
-      return;
-    }
+    if (!currentImages.length) return;
 
     currentIndex++;
 
@@ -294,143 +146,94 @@
     updateLightbox();
   }
 
-  document.addEventListener("keydown", function(event) {
-
-    if (lightbox.style.display !== "flex") {
-      return;
-    }
-
-    if (event.key === "ArrowLeft") {
-      prevImage(event);
-    }
-
-    if (event.key === "ArrowRight") {
-      nextImage(event);
-    }
-
-    if (event.key === "Escape") {
-      closeLightbox();
-    }
-  });
-
-  let touchStartX = 0;
-
-  let touchEndX = 0;
-
-  lightbox.addEventListener("touchstart", function(event) {
-
-    touchStartX =
-      event.changedTouches[0].screenX;
-  });
-
-  lightbox.addEventListener("touchend", function(event) {
-
-    touchEndX =
-      event.changedTouches[0].screenX;
-
-    if (touchEndX < touchStartX - 50) {
-      nextImage(event);
-    }
-
-    if (touchEndX > touchStartX + 50) {
-      prevImage(event);
-    }
-  });
-
-  function renderGallery(gallery) {
-
+  function renderGallery(gallery, images) {
     titleEl.textContent =
-      gallery.title || "Untitled Gallery";
-
-    subtitleEl.textContent =
-      `${(gallery.images || []).length} photos`;
+      gallery.title || gallery.name || gallery.id || "Untitled Gallery";
 
     currentImages =
-      gallery.images || [];
+      images.filter(image => getImageUrl(image));
+
+    subtitleEl.textContent =
+      photoLabel(currentImages.length);
 
     if (!currentImages.length) {
-
       messageEl.textContent =
         "No images are available in this gallery.";
-
       return;
     }
 
     messageEl.textContent = "";
-
     gridEl.innerHTML = "";
 
     currentImages.forEach((image, index) => {
+      const img = document.createElement("img");
 
-      const src =
-        getImageUrl(image);
-
-      const img =
-        document.createElement("img");
-
-      img.src = src;
-
-      img.alt =
-        gallery.title || "Location image";
-
-      img.loading =
-        "lazy";
-
-      img.onclick =
-        () => openLightbox(index);
+      img.src = getImageUrl(image);
+      img.alt = image.caption || image.filename || gallery.title || "Location image";
+      img.loading = "lazy";
+      img.onclick = () => openLightbox(index);
 
       gridEl.appendChild(img);
     });
   }
 
+  document.addEventListener("keydown", function(event) {
+    if (lightbox.style.display !== "flex") return;
+
+    if (event.key === "ArrowLeft") prevImage(event);
+    if (event.key === "ArrowRight") nextImage(event);
+    if (event.key === "Escape") closeLightbox();
+  });
+
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  lightbox.addEventListener("touchstart", function(event) {
+    touchStartX = event.changedTouches[0].screenX;
+  });
+
+  lightbox.addEventListener("touchend", function(event) {
+    touchEndX = event.changedTouches[0].screenX;
+
+    if (touchEndX < touchStartX - 50) nextImage(event);
+    if (touchEndX > touchStartX + 50) prevImage(event);
+  });
+
   fetch(GALLERIES_URL)
-
     .then(response => response.json())
+    .then(galleriesData => {
+      const galleries = galleriesData.galleries || [];
 
-    .then(data => {
+      const gallery = galleries.find(item => {
+        if (shareToken) {
+          return getGalleryShareToken(item) === shareToken;
+        }
 
-      const galleries =
-        data.galleries || [];
+        if (galleryId) {
+          return item.id === galleryId;
+        }
 
-      const gallery =
-        galleries.find(item => {
-
-          if (shareToken) {
-            return item.shareToken === shareToken;
-          }
-
-          if (galleryId) {
-            return item.id === galleryId;
-          }
-
-          return false;
-        });
+        return false;
+      });
 
       if (!gallery) {
-
-        titleEl.textContent =
-          "Gallery Not Found";
-
-        messageEl.textContent =
-          "This gallery link is invalid or no longer available.";
-
+        titleEl.textContent = "Gallery Not Found";
+        messageEl.textContent = "This gallery link is invalid or no longer available.";
         return;
       }
 
-      renderGallery(gallery);
+      return fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(gallery.id)}`)
+        .then(response => response.json())
+        .then(imagesData => {
+          renderGallery(gallery, imagesData.images || []);
+        });
     })
-
     .catch(error => {
-
       console.error(error);
 
-      titleEl.textContent =
-        "Could Not Load Gallery";
-
-      messageEl.textContent =
-        "There was a problem loading this gallery.";
+      titleEl.textContent = "Could Not Load Gallery";
+      messageEl.textContent = "There was a problem loading this gallery.";
     });
-
 </script>
 
 </body>
