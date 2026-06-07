@@ -317,7 +317,7 @@
 <h1>Admin Planner</h1>
 
 <div class="subtitle" id="subtitle">
-  REAL Cloudflare R2 Upload System
+  Cloudflare R2 Upload + JPG Normalization System
 </div>
 
 <div id="admin-content">
@@ -408,7 +408,7 @@
     Drag & Drop Scout Photos Here
     <div class="hint">
       HEIC / HEIF mobile photos supported.
-      Some browsers may not preview them before upload.
+      Uploads are normalized to JPG for web viewing.
     </div>
   </div>
 
@@ -450,12 +450,23 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
+
 <script>
   const SESSION_KEY =
     "eightyStudiosScoutUser";
 
   const STORAGE_KEY =
     "scout-admin-session";
+
+  const DISPLAY_MAX_SIZE =
+    1920;
+
+  const THUMBNAIL_MAX_SIZE =
+    420;
+
+  const JPEG_QUALITY =
+    0.82;
 
   const savedUser =
     sessionStorage.getItem(SESSION_KEY);
@@ -600,6 +611,235 @@
     }
 
     return "application/octet-stream";
+  }
+
+  function getBaseFilename(file) {
+
+    return (file.name || "image")
+      .replace(/\.[^/.]+$/, "");
+  }
+
+  function blobToImage(blob) {
+
+    return new Promise((resolve, reject) => {
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const img =
+        new Image();
+
+      img.onload = () => {
+
+        URL.revokeObjectURL(url);
+
+        resolve(img);
+      };
+
+      img.onerror = () => {
+
+        URL.revokeObjectURL(url);
+
+        reject(
+          new Error("Could not read image for conversion.")
+        );
+      };
+
+      img.src = url;
+    });
+  }
+
+  function canvasToJpegBlob(canvas, quality = JPEG_QUALITY) {
+
+    return new Promise((resolve, reject) => {
+
+      canvas.toBlob(blob => {
+
+        if (!blob) {
+
+          reject(
+            new Error("Could not create JPG output.")
+          );
+
+          return;
+        }
+
+        resolve(blob);
+
+      }, "image/jpeg", quality);
+    });
+  }
+
+  async function convertHeicToJpegBlob(file) {
+
+    if (!window.heic2any) {
+
+      throw new Error(
+        "HEIC converter did not load. Refresh and try again."
+      );
+    }
+
+    const converted =
+      await window.heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: JPEG_QUALITY
+      });
+
+    return Array.isArray(converted)
+      ? converted[0]
+      : converted;
+  }
+
+  async function resizeImageBlob(blob, maxSize) {
+
+    const img =
+      await blobToImage(blob);
+
+    const originalWidth =
+      img.naturalWidth || img.width;
+
+    const originalHeight =
+      img.naturalHeight || img.height;
+
+    const scale =
+      Math.min(
+        1,
+        maxSize / Math.max(originalWidth, originalHeight)
+      );
+
+    const width =
+      Math.round(originalWidth * scale);
+
+    const height =
+      Math.round(originalHeight * scale);
+
+    const canvas =
+      document.createElement("canvas");
+
+    canvas.width =
+      width;
+
+    canvas.height =
+      height;
+
+    const context =
+      canvas.getContext("2d");
+
+    context.drawImage(
+      img,
+      0,
+      0,
+      width,
+      height
+    );
+
+    return canvasToJpegBlob(canvas);
+  }
+
+  async function buildProcessedImageFiles(file) {
+
+    let sourceBlob =
+      file;
+
+    if (isHeicFile(file)) {
+
+      setUploadStatus(
+        `Converting HEIC: ${file.name}`
+      );
+
+      sourceBlob =
+        await convertHeicToJpegBlob(file);
+    }
+
+    setUploadStatus(
+      `Creating display image: ${file.name}`
+    );
+
+    const displayBlob =
+      await resizeImageBlob(
+        sourceBlob,
+        DISPLAY_MAX_SIZE
+      );
+
+    setUploadStatus(
+      `Creating thumbnail: ${file.name}`
+    );
+
+    const thumbnailBlob =
+      await resizeImageBlob(
+        sourceBlob,
+        THUMBNAIL_MAX_SIZE
+      );
+
+    const base =
+      slugify(getBaseFilename(file));
+
+    return {
+      display: {
+        blob: displayBlob,
+        filename: `${base}-display.jpg`,
+        contentType: "image/jpeg"
+      },
+      thumbnail: {
+        blob: thumbnailBlob,
+        filename: `${base}-thumb.jpg`,
+        contentType: "image/jpeg"
+      }
+    };
+  }
+
+  async function uploadBlobToR2(blob, filename, folder, contentType) {
+
+    const presignResponse =
+      await fetch("/api/r2-presign", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+
+          filename,
+
+          folder,
+
+          contentType
+        })
+      });
+
+    const presignData =
+      await presignResponse.json();
+
+    if (!presignResponse.ok || !presignData.uploadUrl) {
+
+      throw new Error(
+        presignData.error || "Could not prepare R2 upload."
+      );
+    }
+
+    const uploadResponse =
+      await fetch(presignData.uploadUrl, {
+
+        method: "PUT",
+
+        headers: {
+          "Content-Type": contentType
+        },
+
+        body: blob
+      });
+
+    if (!uploadResponse.ok) {
+
+      throw new Error(
+        `Upload failed (${uploadResponse.status})`
+      );
+    }
+
+    return presignData.publicUrl;
   }
 
   function showWarning(message) {
@@ -873,7 +1113,7 @@
           "heic-preview";
 
         heicBox.innerHTML =
-          "HEIC / HEIF<br>Preview may not display";
+          "HEIC / HEIF<br>Will convert to JPG";
 
         card.appendChild(heicBox);
 
@@ -1017,59 +1257,46 @@
         const file =
           localFiles[index];
 
-        const contentType =
-          getContentType(file);
-
         uploadStatus[index] = "uploading";
 
         uploadProgress[index] = 5;
 
         renderPreviews();
 
-        const presignResponse =
-          await fetch("/api/r2-presign", {
+        const processed =
+          await buildProcessedImageFiles(file);
 
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-
-              filename: file.name,
-
-              folder: root,
-
-              contentType: contentType
-            })
-          });
-
-        const presignData =
-          await presignResponse.json();
-
-        uploadProgress[index] = 20;
+        uploadProgress[index] = 30;
 
         renderPreviews();
 
-        const uploadResponse =
-          await fetch(presignData.uploadUrl, {
+        setUploadStatus(
+          `Uploading display image: ${file.name}`
+        );
 
-            method: "PUT",
-
-            headers: {
-              "Content-Type": contentType
-            },
-
-            body: file
-          });
-
-        if (!uploadResponse.ok) {
-
-          throw new Error(
-            `Upload failed (${uploadResponse.status})`
+        const displayUrl =
+          await uploadBlobToR2(
+            processed.display.blob,
+            processed.display.filename,
+            root,
+            processed.display.contentType
           );
-        }
+
+        uploadProgress[index] = 70;
+
+        renderPreviews();
+
+        setUploadStatus(
+          `Uploading thumbnail: ${file.name}`
+        );
+
+        const thumbnailUrl =
+          await uploadBlobToR2(
+            processed.thumbnail.blob,
+            processed.thumbnail.filename,
+            root,
+            processed.thumbnail.contentType
+          );
 
         uploadProgress[index] = 100;
 
@@ -1081,10 +1308,16 @@
             uniqueAssetId(file, index),
 
           filename:
-            file.name,
+            processed.display.filename,
 
           url:
-            presignData.publicUrl,
+            displayUrl,
+
+          displayUrl:
+            displayUrl,
+
+          thumbnailUrl:
+            thumbnailUrl,
 
           tags: [],
 
@@ -1093,7 +1326,7 @@
           source: "r2",
 
           contentType:
-            contentType
+            "image/jpeg"
         });
 
         renderPreviews();
