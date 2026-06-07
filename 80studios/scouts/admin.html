@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
 
-  
   <style>
     body {
       margin: 0;
@@ -1112,7 +1111,68 @@
       const galleryData =
         buildOutput();
 
-      const saveResponse =
+      const projectResponse =
+        await fetch("/api/project-save", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              id: galleryData.projectId,
+              title: displayTitleFromSlug(galleryData.projectId),
+              slug: galleryData.projectId,
+              description: "",
+              status: "active",
+              createdBy: currentUserId
+            })
+        });
+
+      const projectResult =
+        await projectResponse.json();
+
+      if (!projectResponse.ok || !projectResult.success) {
+
+        throw new Error(
+          projectResult.error || "Project save failed"
+        );
+      }
+
+      const folderResponse =
+        await fetch("/api/folder-save", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              id: galleryData.folderId,
+              projectId: galleryData.projectId,
+              title: displayTitleFromSlug(galleryData.folderId),
+              slug: galleryData.folderId,
+              folderType: "location",
+              sortOrder: 0,
+              createdBy: currentUserId
+            })
+        });
+
+      const folderResult =
+        await folderResponse.json();
+
+      if (!folderResponse.ok || !folderResult.success) {
+
+        throw new Error(
+          folderResult.error || "Folder save failed"
+        );
+      }
+
+      const galleryResponse =
         await fetch("/api/gallery-save", {
 
           method: "POST",
@@ -1125,28 +1185,32 @@
             JSON.stringify(galleryData)
         });
 
-      const saveResult =
-        await saveResponse.json();
+      const galleryResult =
+        await galleryResponse.json();
 
-      console.log(saveResult);
+      console.log({
+        projectResult,
+        folderResult,
+        galleryResult
+      });
 
-      if (!saveResponse.ok || !saveResult.success) {
+      if (!galleryResponse.ok || !galleryResult.success) {
 
         throw new Error(
-          saveResult.error || "Gallery save failed"
+          galleryResult.error || "Gallery save failed"
         );
       }
 
       clearWarning();
 
       alert(
-        `Gallery saved to D1 (${galleryData.id})`
+        `Project, folder, gallery, and images saved to D1 (${galleryData.id})`
       );
 
     } catch (error) {
 
       showWarning(
-        error.message || "Gallery save failed"
+        error.message || "D1 save failed"
       );
 
       console.error(error);
