@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
 
-  
   <style>
     body {
       margin: 0;
@@ -440,30 +439,12 @@
 <div class="panel">
 
   <div class="output-title">
-    Generated Gallery Entry
+    Upload Status
   </div>
 
-  <div style="display:flex; gap:8px; flex-wrap:wrap;">
-
-    <button onclick="copyJson()">
-      Copy Gallery Entry
-    </button>
-
-    <button onclick="downloadJson()">
-      Download Gallery Entry
-    </button>
-
-    <button onclick="copyProjectsBlock()">
-      Copy Project Entry
-    </button>
-
-    <button onclick="downloadBundle()">
-      Download Bundle
-    </button>
-
+  <div class="hint" id="uploadStatusMessage">
+    Ready.
   </div>
-
-  <textarea id="jsonOutput"></textarea>
 
 </div>
 
@@ -543,14 +524,14 @@
   const previewGrid =
     document.getElementById("previewGrid");
 
-  const jsonOutput =
-    document.getElementById("jsonOutput");
-
   const fileInput =
     document.getElementById("fileInput");
 
   const warningBox =
     document.getElementById("warningBox");
+
+  const uploadStatusMessage =
+    document.getElementById("uploadStatusMessage");
 
   let localFiles = [];
 
@@ -635,6 +616,32 @@
     warningBox.innerText = "";
   }
 
+  function setUploadStatus(message) {
+
+    if (!uploadStatusMessage) return;
+
+    uploadStatusMessage.innerHTML =
+      message;
+  }
+
+  function setUploadSuccess(message) {
+
+    setUploadStatus(`
+      <span class="status complete">
+        ${message}
+      </span>
+    `);
+  }
+
+  function setUploadError(message) {
+
+    setUploadStatus(`
+      <span class="status error">
+        ${message}
+      </span>
+    `);
+  }
+
   function validateRequiredFields() {
 
     const projectName =
@@ -702,7 +709,9 @@
     saveSession();
 
     if (uploadedImages.length > 0) {
-      generateJson();
+      setUploadStatus(
+        `${uploadedImages.length} image${uploadedImages.length === 1 ? "" : "s"} ready to save.`
+      );
     }
   }
 
@@ -986,6 +995,10 @@
 
     uploadedImages = [];
 
+    setUploadStatus(
+      "Uploading photos..."
+    );
+
     const projectId =
       document.getElementById("projectId").value;
 
@@ -1085,7 +1098,9 @@
 
         renderPreviews();
 
-        generateJson();
+        setUploadStatus(
+          `${uploadedImages.length} image${uploadedImages.length === 1 ? "" : "s"} uploaded.`
+        );
 
       } catch (error) {
 
@@ -1105,12 +1120,18 @@
       return;
     }
 
-    generateJson();
+    setUploadStatus(
+      "Saving project, folder, gallery, and images to D1..."
+    );
 
     try {
 
       const galleryData =
         buildOutput();
+
+      setUploadStatus(
+        "Saving project..."
+      );
 
       const projectResponse =
         await fetch("/api/project-save", {
@@ -1141,6 +1162,10 @@
           projectResult.error || "Project save failed"
         );
       }
+
+      setUploadStatus(
+        "Saving folder..."
+      );
 
       const folderResponse =
         await fetch("/api/folder-save", {
@@ -1173,6 +1198,10 @@
         );
       }
 
+      setUploadStatus(
+        "Saving gallery and image records..."
+      );
+
       const galleryResponse =
         await fetch("/api/gallery-save", {
 
@@ -1204,13 +1233,17 @@
 
       clearWarning();
 
-      alert(
-        `Project, folder, gallery, and images saved to D1 (${galleryData.id})`
+      setUploadSuccess(
+        `Upload complete. Saved to D1: ${galleryData.id}`
       );
 
     } catch (error) {
 
       showWarning(
+        error.message || "D1 save failed"
+      );
+
+      setUploadError(
         error.message || "D1 save failed"
       );
 
@@ -1327,16 +1360,6 @@
     };
   }
 
-  function generateJson() {
-
-    jsonOutput.value =
-      JSON.stringify(
-        buildOutput(),
-        null,
-        2
-      );
-  }
-
   function moveLeft(index) {
 
     if (index === 0) return;
@@ -1370,100 +1393,9 @@
 
     renderPreviews();
 
-    generateJson();
-  }
-
-  function copyJson() {
-
-    navigator.clipboard.writeText(
-      jsonOutput.value
+    setUploadStatus(
+      `Cover selected: image ${index + 1}.`
     );
-
-    alert("Gallery entry copied.");
-  }
-
-  function downloadTextFile(filename, content) {
-
-    const blob = new Blob(
-      [content],
-      {
-        type: "application/json"
-      }
-    );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const link =
-      document.createElement("a");
-
-    link.href = url;
-
-    link.download =
-      filename;
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-  }
-
-  function downloadJson() {
-
-    const galleryId =
-      document.getElementById("galleryId").value || "gallery";
-
-    downloadTextFile(
-      `${galleryId}.json`,
-      jsonOutput.value
-    );
-  }
-
-  function buildProjectsBlock() {
-
-    const output =
-      buildOutput();
-
-    return `{
-  "id": "${output.projectId}",
-  "name": "${displayTitleFromSlug(output.projectId)}",
-  "cover": "${output.cover}",
-  "library": {
-    "projectType": "Film / TV"
-  }
-}`;
-  }
-
-  function copyProjectsBlock() {
-
-    navigator.clipboard.writeText(
-      buildProjectsBlock()
-    );
-
-    alert("Project entry copied.");
-  }
-
-  function downloadBundle() {
-
-    const galleryId =
-      document.getElementById("galleryId").value || "gallery";
-
-    downloadTextFile(
-      `${galleryId}.json`,
-      jsonOutput.value
-    );
-
-    setTimeout(() => {
-
-      downloadTextFile(
-        `${galleryId}-project-entry.json`,
-        buildProjectsBlock()
-      );
-
-    }, 500);
   }
 
   if (userCanUseAdmin()) {
