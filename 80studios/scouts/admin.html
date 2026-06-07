@@ -1104,7 +1104,23 @@
         card.classList.add("cover-selected");
       }
 
-      if (isHeicFile(file)) {
+      const uploadedImage =
+        uploadedImages[index];
+
+      if (
+        uploadedImage &&
+        uploadedImage.thumbnailUrl
+      ) {
+
+        const img =
+          document.createElement("img");
+
+        img.src =
+          uploadedImage.thumbnailUrl;
+
+        card.appendChild(img);
+
+      } else if (isHeicFile(file)) {
 
         const heicBox =
           document.createElement("div");
@@ -1113,7 +1129,7 @@
           "heic-preview";
 
         heicBox.innerHTML =
-          "HEIC / HEIF<br>Will convert to JPG";
+          "HEIC / HEIF<br>Display conversion pending";
 
         card.appendChild(heicBox);
 
