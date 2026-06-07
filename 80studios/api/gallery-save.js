@@ -1,62 +1,41 @@
 function requireEnv(name) {
-
-  const value =
-    process.env[name];
+  const value = process.env[name];
 
   if (!value) {
-
-    throw new Error(
-      `Missing environment variable: ${name}`
-    );
+    throw new Error(`Missing environment variable: ${name}`);
   }
 
   return value;
 }
 
 async function runD1Query(sql, params = []) {
+  const accountId = requireEnv("CLOUDFLARE_ACCOUNT_ID");
+  const databaseId = requireEnv("D1_DATABASE_ID");
+  const apiToken = requireEnv("CLOUDFLARE_API_TOKEN");
 
-  const accountId =
-    requireEnv("CLOUDFLARE_ACCOUNT_ID");
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}/query`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ sql, params })
+    }
+  );
 
-  const databaseId =
-    requireEnv("D1_DATABASE_ID");
-
-  const apiToken =
-    requireEnv("CLOUDFLARE_API_TOKEN");
-
-  const response =
-    await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}/query`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          sql,
-          params
-        })
-      }
-    );
-
-  const data =
-    await response.json();
+  const data = await response.json();
 
   if (!response.ok || !data.success) {
-
-    throw new Error(
-      JSON.stringify(data)
-    );
+    throw new Error(JSON.stringify(data));
   }
 
   return data;
 }
 
 export default async function handler(req, res) {
-
   if (req.method !== "POST") {
-
     return res.status(405).json({
       success: false,
       error: "Method not allowed"
@@ -64,12 +43,9 @@ export default async function handler(req, res) {
   }
 
   try {
-
-    const gallery =
-      req.body;
+    const gallery = req.body;
 
     if (!gallery || !gallery.id) {
-
       return res.status(400).json({
         success: false,
         error: "Missing gallery data"
@@ -117,13 +93,10 @@ export default async function handler(req, res) {
       ]
     );
 
-    const images =
-      gallery.images || [];
+    const images = gallery.images || [];
 
     for (let index = 0; index < images.length; index++) {
-
-      const image =
-        images[index];
+      const image = images[index];
 
       await runD1Query(
         `
@@ -133,6 +106,8 @@ export default async function handler(req, res) {
           asset_id,
           filename,
           url,
+          display_url,
+          thumbnail_url,
           content_type,
           caption,
           tags_json,
@@ -140,7 +115,7 @@ export default async function handler(req, res) {
           sort_order,
           updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         `,
         [
           image.assetId || `${gallery.id}-image-${index}`,
@@ -148,6 +123,8 @@ export default async function handler(req, res) {
           image.assetId || "",
           image.filename || "",
           image.url || "",
+          image.displayUrl || image.url || "",
+          image.thumbnailUrl || image.displayUrl || image.url || "",
           image.contentType || "",
           image.caption || "",
           JSON.stringify(image.tags || []),
@@ -165,7 +142,6 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-
     return res.status(500).json({
       success: false,
       error: error.message
