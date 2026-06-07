@@ -20,6 +20,8 @@
     .breadcrumb span { color: #aaa; }
     .header h1 { font-size: 24px; margin: 0 0 8px 0; }
     .header p { margin: 0; color: #aaa; font-size: 14px; }
+    .tags { margin-top: 12px; }
+    .tag { display: inline-block; background: #222; border: 1px solid #444; color: #aaa; border-radius: 999px; padding: 4px 10px; font-size: 12px; margin: 3px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 5px; padding: 5px; }
     .grid img { width: 100%; height: auto; display: block; cursor: pointer; background: #222; }
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); display: none; justify-content: center; align-items: center; z-index: 100; }
@@ -62,6 +64,8 @@
 
   <p id="gallery-subtitle"></p>
 
+  <div id="gallery-tags"></div>
+
 </div>
 
 <div class="grid" id="gallery-grid"></div>
@@ -90,6 +94,7 @@
   const GALLERIES_URL = "/api/gallery-list";
   const IMAGES_URL = "/api/image-list";
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
+  const LOCATION_TAGS_URL = "/api/location-tag-list";
 
   const savedUser =
     sessionStorage.getItem(SESSION_KEY);
@@ -114,6 +119,7 @@
 
   const titleEl = document.getElementById("gallery-title");
   const subtitleEl = document.getElementById("gallery-subtitle");
+  const tagsEl = document.getElementById("gallery-tags");
   const breadcrumbEl = document.getElementById("breadcrumb");
   const gridEl = document.getElementById("gallery-grid");
   const lightbox = document.getElementById("lightbox");
@@ -191,6 +197,23 @@
 
   function photoLabel(count) {
     return `${count} ${count === 1 ? "photo" : "photos"}`;
+  }
+
+  function renderTags(tags) {
+    if (!tags.length) {
+      tagsEl.innerHTML = "";
+      return;
+    }
+
+    tagsEl.innerHTML = `
+      <div class="tags">
+        ${tags.map(tag => `
+          <span class="tag">
+            ${tag.tag}
+          </span>
+        `).join("")}
+      </div>
+    `;
   }
 
   function updateLightbox() {
@@ -304,13 +327,15 @@
     fetch(PROJECTS_URL).then(response => response.json()),
     fetch(GALLERIES_URL).then(response => response.json()),
     fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json()),
-    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json()),
+    fetch(`${LOCATION_TAGS_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json())
   ])
-    .then(([projectsData, galleriesData, imagesData, membersData]) => {
+    .then(([projectsData, galleriesData, imagesData, membersData, tagsData]) => {
       const projects = projectsData.projects || [];
       const galleries = galleriesData.galleries || [];
       const images = imagesData.images || [];
       const members = membersData.members || [];
+      const tags = tagsData.tags || [];
 
       const gallery =
         galleries.find(item => item.id === galleryId);
@@ -366,6 +391,8 @@
             gallery.title ||
             gallery.name ||
             gallery.id;
+
+          renderTags(tags);
 
           renderImages(
             gallery,
