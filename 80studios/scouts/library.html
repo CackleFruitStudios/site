@@ -67,7 +67,7 @@
     type="text"
     id="search"
     class="search-input"
-    placeholder="Search locations, towns, states, projects, galleries..."
+    placeholder="Search locations, towns, states, projects, galleries, tags..."
   >
 </div>
 
@@ -81,6 +81,7 @@
   const PROJECTS_URL = "/api/project-list";
   const GALLERIES_URL = "/api/gallery-list";
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
+  const LOCATION_TAGS_URL = "/api/location-tag-list";
 
   const savedUser =
     sessionStorage.getItem(SESSION_KEY);
@@ -204,11 +205,17 @@
       .map(member => getMemberProjectId(member));
   }
 
+  function getGalleryTags(galleryId, tags) {
+    return tags
+      .filter(tag => tag.galleryId === galleryId)
+      .map(tag => tag.tag);
+  }
+
   function photoLabel(count) {
     return `${count} ${count === 1 ? "photo" : "photos"}`;
   }
 
-  function buildLibrary(projects, galleries) {
+  function buildLibrary(projects, galleries, tags) {
     const library = {};
 
     galleries.forEach(gallery => {
@@ -274,7 +281,8 @@
         title: gallery.title || gallery.name || gallery.id,
         projectId,
         folderId: getGalleryFolderId(gallery),
-        imageCount: getImageCount(gallery)
+        imageCount: getImageCount(gallery),
+        tags: getGalleryTags(gallery.id, tags)
       });
     });
 
@@ -292,7 +300,8 @@
       ...location.projects,
       ...location.galleries.map(gallery => gallery.title),
       ...location.galleries.map(gallery => gallery.projectId),
-      ...location.galleries.map(gallery => gallery.folderId)
+      ...location.galleries.map(gallery => gallery.folderId),
+      ...location.galleries.flatMap(gallery => gallery.tags || [])
     ]
       .join(" ")
       .toLowerCase();
@@ -329,6 +338,15 @@
     `;
 
     locations.forEach(location => {
+      const locationTags =
+        [
+          location.town,
+          location.state,
+          location.country,
+          ...location.galleries.flatMap(gallery => gallery.tags || [])
+        ]
+          .filter(Boolean);
+
       html += `
         <div class="location-card">
 
@@ -354,9 +372,9 @@
               </div>
 
               <div class="tags">
-                ${location.town ? `<span class="tag">${location.town}</span>` : ""}
-                ${location.state ? `<span class="tag">${location.state}</span>` : ""}
-                ${location.country ? `<span class="tag">${location.country}</span>` : ""}
+                ${locationTags.map(tag => `
+                  <span class="tag">${tag}</span>
+                `).join("")}
               </div>
             </div>
 
@@ -404,9 +422,10 @@
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
     fetch(GALLERIES_URL).then(response => response.json()),
-    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json()),
+    fetch(LOCATION_TAGS_URL).then(response => response.json())
   ])
-    .then(([projectsData, galleriesData, membersData]) => {
+    .then(([projectsData, galleriesData, membersData, tagsData]) => {
       const projects =
         projectsData.projects || [];
 
@@ -415,6 +434,9 @@
 
       const members =
         membersData.members || [];
+
+      const tags =
+        tagsData.tags || [];
 
       const visibleProjectIds =
         getVisibleProjectIds(members);
@@ -427,7 +449,7 @@
             );
 
       masterLibrary =
-        buildLibrary(projects, visibleGalleries);
+        buildLibrary(projects, visibleGalleries, tags);
 
       renderLibrary(masterLibrary);
     })
