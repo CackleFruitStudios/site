@@ -464,7 +464,6 @@
 
   <textarea id="jsonOutput"></textarea>
 
-  
 </div>
 
 </div>
@@ -1096,6 +1095,61 @@
         console.error(error);
       }
     }
+
+    if (!uploadedImages.length) {
+      showWarning(
+        "No images uploaded successfully, so nothing was saved to D1."
+      );
+
+      return;
+    }
+
+    generateJson();
+
+    try {
+
+      const galleryData =
+        buildOutput();
+
+      const saveResponse =
+        await fetch("/api/gallery-save", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body:
+            JSON.stringify(galleryData)
+        });
+
+      const saveResult =
+        await saveResponse.json();
+
+      console.log(saveResult);
+
+      if (!saveResponse.ok || !saveResult.success) {
+
+        throw new Error(
+          saveResult.error || "Gallery save failed"
+        );
+      }
+
+      clearWarning();
+
+      alert(
+        `Gallery saved to D1 (${galleryData.id})`
+      );
+
+    } catch (error) {
+
+      showWarning(
+        error.message || "Gallery save failed"
+      );
+
+      console.error(error);
+    }
   }
 
   function buildOutput() {
@@ -1111,6 +1165,12 @@
 
     const folderPath =
       document.getElementById("folderPath").value;
+
+    const folderId =
+      folderPath
+        .split("/")
+        .filter(Boolean)
+        .join("-");
 
     const city =
       document.getElementById("town").value;
@@ -1149,6 +1209,8 @@
       id: galleryId,
 
       projectId: projectId,
+
+      folderId: folderId,
 
       path: folderPath,
 
