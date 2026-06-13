@@ -333,12 +333,17 @@
 
     <div>
       <label>Location Name *</label>
-      <input id="locationName" placeholder="Salerno's Restaurant">
+      <input id="locationName" placeholder="George's Apartment">
+    </div>
+
+    <div>
+      <label>Gallery Name *</label>
+      <input id="galleryName" placeholder="125 E 51st St">
     </div>
 
     <div>
       <label>Optional Folder Path (Leave blank unless authorized)</label>
-      <input id="galleryPath" placeholder="goodfellas/restaurants/heroes">
+      <input id="galleryPath" placeholder="season-4/episode-403/georges-apartment">
     </div>
 
     <div>
@@ -890,10 +895,13 @@
     const locationName =
       document.getElementById("locationName").value.trim();
 
-    if (!projectName || !locationName) {
+    const galleryName =
+      document.getElementById("galleryName").value.trim();
+
+    if (!projectName || !locationName || !galleryName) {
 
       showWarning(
-        "Project Name and Location Name are required before uploading."
+        "Project Name, Location Name, and Gallery Name are required before uploading."
       );
 
       return false;
@@ -912,12 +920,15 @@
     const locationName =
       document.getElementById("locationName").value;
 
+    const galleryName =
+      document.getElementById("galleryName").value;
+
     const galleryPathRaw =
       document.getElementById("galleryPath").value.trim();
 
     const defaultPath =
       locationName
-        ? `${slugify(locationName)}/heroes`
+        ? slugify(locationName)
         : "";
 
     const activePath =
@@ -929,8 +940,8 @@
         .map(segment => slugify(segment))
         .filter(Boolean);
 
-    const finalSegment =
-      pathSegments[pathSegments.length - 1] || "heroes";
+    const gallerySlug =
+      slugify(galleryName);
 
     document.getElementById("projectId").value =
       slugify(projectName);
@@ -939,12 +950,13 @@
       pathSegments.join("/");
 
     document.getElementById("galleryId").value =
-      `${slugify(locationName)}-${finalSegment}`;
+      gallerySlug
+        ? `${pathSegments.join("-")}-${gallerySlug}`
+            .replace(/^-+|-+$/g, "")
+        : "";
 
     document.getElementById("title").value =
-      locationName
-        ? `${locationName} — ${displayTitleFromSlug(finalSegment)}`
-        : "";
+      galleryName || "";
 
     saveSession();
 
@@ -964,6 +976,9 @@
 
       locationName:
         document.getElementById("locationName").value,
+
+      galleryName:
+        document.getElementById("galleryName").value,
 
       galleryPath:
         document.getElementById("galleryPath").value,
@@ -1048,6 +1063,7 @@
   [
     "projectName",
     "locationName",
+    "galleryName",
     "galleryPath",
     "town",
     "state",
@@ -1261,8 +1277,11 @@
     const folderPath =
       document.getElementById("folderPath").value;
 
+    const galleryId =
+      document.getElementById("galleryId").value;
+
     const root =
-      [projectId, folderPath]
+      [projectId, folderPath, galleryId]
         .filter(Boolean)
         .join("/");
 
@@ -1508,6 +1527,9 @@
     const title =
       document.getElementById("title").value;
 
+    const galleryName =
+      document.getElementById("galleryName").value;
+
     const projectId =
       document.getElementById("projectId").value;
 
@@ -1584,7 +1606,7 @@
       library: {
 
         locationName:
-          document.getElementById("locationName").value,
+          galleryName,
 
         town:
           city,
