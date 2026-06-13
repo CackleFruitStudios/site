@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>80 Studios — Admin Portal</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      font-size: 30px;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 28px;
+      line-height: 1.5;
+      max-width: 780px;
+    }
+
+    .top-nav {
+      margin-bottom: 26px;
+    }
+
+    .top-nav a {
+      display: inline-block;
+      color: #999;
+      margin-right: 14px;
+      font-size: 14px;
+    }
+
+    .top-nav a:hover {
+      color: #fff;
+    }
+
+    .section-title {
+      color: #aaa;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 34px;
+      margin-bottom: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      display: block;
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 18px;
+      color: white;
+    }
+
+    .card:hover {
+      background: #252525;
+      text-decoration: none;
+    }
+
+    .stat-card {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .stat-number {
+      font-size: 34px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      color: #999;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .meta {
+      color: #999;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .list {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .row {
+      padding: 14px 16px;
+      border-bottom: 1px solid #2d2d2d;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .row-title {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .row-meta {
+      color: #888;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #222;
+      color: #aaa;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .badge.admin {
+      background: #1b2740;
+      color: #9fc5ff;
+    }
+
+    .badge.scout {
+      background: #18351d;
+      color: #71d685;
+    }
+
+    .warning {
+      border-color: #5a2a2a;
+      background: #221515;
+    }
+
+    .warning:hover {
+      background: #2a1818;
+    }
+
+    .empty {
+      color: #888;
+      font-size: 13px;
+      padding: 14px 16px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<h1>Admin Portal</h1>
+
+<div class="subtitle">
+  Full administrative access for uploads, projects, galleries, scouts, library management, cleanup, and future account systems.
+</div>
+
+<div class="top-nav">
+  <a href="/scouts/">Scouts Home</a>
+  <a href="/scouts/admin.html">Upload Admin</a>
+  <a href="/scouts/library.html">Library</a>
+  <a href="/scouts/scout-portal.html">Scout Portal</a>
+</div>
+
+<div class="section-title">
+  Current Admin
+</div>
+
+<div class="list">
+  <div class="row">
+    <div class="row-title">
+      Andrew Devlin
+      <span class="badge admin">Admin</span>
+    </div>
+
+    <div class="row-meta">
+      devlinlocations@gmail.com
+    </div>
+  </div>
+</div>
+
+<div class="section-title">
+  System Snapshot
+</div>
+
+<div class="grid">
+
+  <div class="stat-card">
+    <div class="stat-number" id="user-count">–</div>
+    <div class="stat-label">Users</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-number" id="project-count">–</div>
+    <div class="stat-label">Projects</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-number" id="gallery-count">–</div>
+    <div class="stat-label">Galleries</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-number" id="photo-count">–</div>
+    <div class="stat-label">Photos</div>
+  </div>
+
+</div>
+
+<div class="section-title">
+  Users
+</div>
+
+<div class="list" id="users-list">
+  <div class="empty">Loading users...</div>
+</div>
+
+<div class="section-title">
+  Recent Galleries
+</div>
+
+<div class="list" id="recent-galleries">
+  <div class="empty">Loading galleries...</div>
+</div>
+
+<div class="section-title">
+  Upload + Gallery Tools
+</div>
+
+<div class="grid">
+
+  <a class="card" href="/scouts/admin.html">
+    <h2>Upload Queue</h2>
+
+    <div class="meta">
+      Create and upload scout galleries into R2 storage.
+    </div>
+  </a>
+
+  <a class="card" href="#">
+    <h2>Project Manager</h2>
+
+    <div class="meta">
+      Future project creation, editing, moving, and archive controls.
+    </div>
+  </a>
+
+  <a class="card" href="#">
+    <h2>Gallery Manager</h2>
+
+    <div class="meta">
+      Future gallery editing, metadata, sorting, and organization tools.
+    </div>
+  </a>
+
+</div>
+
+<div class="section-title">
+  Library + Search
+</div>
+
+<div class="grid">
+
+  <a class="card" href="/scouts/library.html">
+    <h2>Master Library</h2>
+
+    <div class="meta">
+      Search and browse all uploaded scout content across projects.
+    </div>
+  </a>
+
+  <a class="card" href="#">
+    <h2>Location Tags</h2>
+
+    <div class="meta">
+      Future reusable location metadata and search tagging system.
+    </div>
+  </a>
+
+  <a class="card" href="#">
+    <h2>Contacts Database</h2>
+
+    <div class="meta">
+      Future location owners, managers, permit offices, and scout contacts.
+    </div>
+  </a>
+
+</div>
+
+<div class="section-title">
+  Scout Management
+</div>
+
+<div class="grid">
+
+  <a class="card" href="#">
+    <h2>Scout Accounts</h2>
+
+    <div class="meta">
+      Future scout registration and account management system.
+    </div>
+  </a>
+
+  <a class="card" href="#">
+    <h2>Permissions</h2>
+
+    <div class="meta">
+      Future access levels, roles, and gallery visibility controls.
+    </div>
+  </a>
+
+</div>
+
+<div class="section-title">
+  System
+</div>
+
+<div class="grid">
+
+  <a class="card warning" href="#">
+    <h2>Cleanup Tools</h2>
+
+    <div class="meta">
+      Future delete, archive, and broken upload cleanup systems.
+    </div>
+  </a>
+
+  <a class="card warning" href="#">
+    <h2>Storage Monitor</h2>
+
+    <div class="meta">
+      Future R2 usage statistics and storage reporting.
+    </div>
+  </a>
+
+</div>
+
+<script>
+
+  const USERS_URL =
+    "/data/users.json";
+
+  const PROJECTS_URL =
+    "/data/projects.json";
+
+  const GALLERIES_URL =
+    "/data/galleries.json";
+
+  const userCountEl =
+    document.getElementById("user-count");
+
+  const projectCountEl =
+    document.getElementById("project-count");
+
+  const galleryCountEl =
+    document.getElementById("gallery-count");
+
+  const photoCountEl =
+    document.getElementById("photo-count");
+
+  const usersListEl =
+    document.getElementById("users-list");
+
+  const recentGalleriesEl =
+    document.getElementById("recent-galleries");
+
+  function titleFromSlug(value) {
+
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function roleBadge(role) {
+
+    const safeRole =
+      role || "scout";
+
+    return `
+      <span class="badge ${safeRole}">
+        ${titleFromSlug(safeRole)}
+      </span>
+    `;
+  }
+
+  function galleryPhotoCount(gallery) {
+
+    return (gallery.images || []).length;
+  }
+
+  function ownerName(ownerId, users) {
+
+    const user =
+      users.find(item => item.id === ownerId);
+
+    return user
+      ? user.name
+      : ownerId || "Unknown Owner";
+  }
+
+  function renderUsers(users) {
+
+    if (!users.length) {
+
+      usersListEl.innerHTML =
+        `<div class="empty">No users found.</div>`;
+
+      return;
+    }
+
+    usersListEl.innerHTML =
+      users.map(user => `
+
+        <div class="row">
+
+          <div class="row-title">
+            ${user.name}
+            ${roleBadge(user.role)}
+          </div>
+
+          <div class="row-meta">
+            ${user.email || "No email"}
+            ${
+              user.active === false
+                ? " • inactive"
+                : " • active"
+            }
+          </div>
+
+        </div>
+
+      `).join("");
+  }
+
+  function renderRecentGalleries(galleries, users) {
+
+    if (!galleries.length) {
+
+      recentGalleriesEl.innerHTML =
+        `<div class="empty">No galleries found.</div>`;
+
+      return;
+    }
+
+    recentGalleriesEl.innerHTML =
+      galleries
+        .slice()
+        .reverse()
+        .slice(0, 8)
+        .map(gallery => `
+
+          <a
+            class="row"
+            href="/scouts/gallery.html?gallery=${gallery.id}"
+          >
+
+            <div class="row-title">
+              ${gallery.title || gallery.id}
+            </div>
+
+            <div class="row-meta">
+              ${galleryPhotoCount(gallery)} photos
+              • ${titleFromSlug(gallery.projectId || "")}
+              • ${ownerName(gallery.ownerId, users)}
+              ${
+                gallery.shareToken
+                  ? `• Share ready`
+                  : `• No share token`
+              }
+            </div>
+
+          </a>
+
+        `).join("");
+  }
+
+  Promise.all([
+    fetch(USERS_URL).then(response => response.json()),
+    fetch(PROJECTS_URL).then(response => response.json()),
+    fetch(GALLERIES_URL).then(response => response.json())
+  ])
+
+    .then(([usersData, projectsData, galleriesData]) => {
+
+      const users =
+        usersData.users || [];
+
+      const projects =
+        projectsData.projects || [];
+
+      const galleries =
+        galleriesData.galleries || [];
+
+      const photoCount =
+        galleries.reduce(
+          (total, gallery) =>
+            total + galleryPhotoCount(gallery),
+          0
+        );
+
+      userCountEl.textContent =
+        users.length;
+
+      projectCountEl.textContent =
+        projects.length;
+
+      galleryCountEl.textContent =
+        galleries.length;
+
+      photoCountEl.textContent =
+        photoCount;
+
+      renderUsers(users);
+
+      renderRecentGalleries(galleries, users);
+    })
+
+    .catch(error => {
+
+      console.error(error);
+
+      usersListEl.innerHTML =
+        `<div class="empty">Could not load users.</div>`;
+
+      recentGalleriesEl.innerHTML =
+        `<div class="empty">Could not load galleries.</div>`;
+
+      userCountEl.textContent = "!";
+      projectCountEl.textContent = "!";
+      galleryCountEl.textContent = "!";
+      photoCountEl.textContent = "!";
+    });
+
+</script>
+
+</body>
+</html>
