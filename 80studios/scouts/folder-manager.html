@@ -529,7 +529,14 @@
       }
 
       currentFolders =
-        data.folders || [];
+        (data.folders || []).map(folder => ({
+          ...folder,
+          projectId: folder.projectId || folder.project_id || "",
+          parentFolderId: folder.parentFolderId || folder.parent_folder_id || "",
+          folderType: folder.folderType || folder.folder_type || "location",
+          sortOrder: folder.sortOrder || folder.sort_order || 0,
+          createdBy: folder.createdBy || folder.created_by || ""
+        }));
 
       const project =
         allProjects.find(item => item.id === projectId);
