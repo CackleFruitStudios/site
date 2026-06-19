@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>80 Studios — Folder Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
+    h1 { font-size: 30px; margin-bottom: 8px; }
+    h2 { font-size: 18px; margin-top: 0; margin-bottom: 10px; }
+    label { display: block; color: #aaa; font-size: 13px; margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #181818;
+      color: white;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    button {
+      background: #2f6fed;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    button:hover { background: #3f7fff; }
+    button.secondary { background: #333; }
+    button.secondary:hover { background: #444; }
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; line-height: 1.5; max-width: 820px; }
+    .top-nav { margin-bottom: 26px; display: flex; flex-wrap: wrap; gap: 14px; }
+    .top-nav a { color: #999; font-size: 14px; }
+    .top-nav a:hover { color: #fff; }
+
+    .section-title {
+      color: #aaa;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 30px;
+      margin-bottom: 12px;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+    .card {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .meta { color: #999; font-size: 13px; line-height: 1.45; }
+    .message { color: #aaa; margin-top: 14px; font-size: 14px; }
+    .success { color: #71d685; }
+    .error { color: #ff7777; }
+
+    .list {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .row {
+      padding: 13px 15px;
+      border-bottom: 1px solid #2d2d2d;
+    }
+
+    .row:last-child { border-bottom: none; }
+
+    .row-title { font-size: 14px; margin-bottom: 4px; }
+    .row-meta { color: #888; font-size: 12px; line-height: 1.4; }
+
+    .indent-1 { padding-left: 30px; }
+    .indent-2 { padding-left: 45px; }
+    .indent-3 { padding-left: 60px; }
+    .indent-4 { padding-left: 75px; }
+
+    .warning {
+      border: 1px solid #5a4520;
+      background: #211b10;
+      color: #d7b56d;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 18px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Folder Manager</h1>
+
+<div class="subtitle">
+  Create and organize project folders and empty galleries for LM / ALM workflows.
+  This version intentionally avoids move and delete tools until the management workflow is safer.
+</div>
+
+<div class="top-nav">
+  <a href="/scouts/">Projects</a>
+  <a href="/scouts/admin-portal.html">LM / ALM Portal</a>
+  <a href="/scouts/admin.html">Upload</a>
+  <a href="/scouts/library.html">Library</a>
+</div>
+
+<div class="warning">
+  Safe tools only: create folders, bulk-create folders, rename folders, create empty galleries, and create Heroes galleries.
+  Move/delete tools should come later.
+</div>
+
+<div class="section-title">Project</div>
+
+<div class="card">
+  <label for="project-select">Select Project</label>
+  <select id="project-select">
+    <option value="">Loading projects...</option>
+  </select>
+
+  <div class="meta" id="project-meta">
+    Choose a project to manage folders and galleries.
+  </div>
+</div>
+
+<div class="section-title">Folder Tools</div>
+
+<div class="grid">
+
+  <div class="card">
+    <h2>Create Folder</h2>
+
+    <label for="folder-title">Folder Name</label>
+    <input id="folder-title" placeholder="Example: George's Apartment">
+
+    <label for="folder-parent">Parent Folder</label>
+    <select id="folder-parent">
+      <option value="">No parent / project root</option>
+    </select>
+
+    <button onclick="createFolder()">Create Folder</button>
+
+    <div class="message" id="create-folder-message"></div>
+  </div>
+
+  <div class="card">
+    <h2>Bulk Create Folders</h2>
+
+    <label for="bulk-parent">Parent Folder</label>
+    <select id="bulk-parent">
+      <option value="">No parent / project root</option>
+    </select>
+
+    <label for="bulk-folder-list">One folder per line</label>
+    <textarea id="bulk-folder-list" placeholder="Season 4&#10;Episode 403&#10;George's Apartment&#10;Heroes"></textarea>
+
+    <button onclick="bulkCreateFolders()">Bulk Create</button>
+
+    <div class="message" id="bulk-folder-message"></div>
+  </div>
+
+  <div class="card">
+    <h2>Rename Folder</h2>
+
+    <label for="rename-folder-select">Folder</label>
+    <select id="rename-folder-select">
+      <option value="">Select folder...</option>
+    </select>
+
+    <label for="rename-folder-title">New Folder Name</label>
+    <input id="rename-folder-title" placeholder="New folder name">
+
+    <button onclick="renameFolder()">Rename Folder</button>
+
+    <div class="message" id="rename-folder-message"></div>
+  </div>
+
+</div>
+
+<div class="section-title">Gallery Tools</div>
+
+<div class="grid">
+
+  <div class="card">
+    <h2>Create Empty Gallery</h2>
+
+    <label for="gallery-title">Gallery Name</label>
+    <input id="gallery-title" placeholder="Example: 125 E 51st St">
+
+    <label for="gallery-folder">Folder</label>
+    <select id="gallery-folder">
+      <option value="">Select folder...</option>
+    </select>
+
+    <button onclick="createEmptyGallery(false)">Create Empty Gallery</button>
+
+    <div class="message" id="gallery-message"></div>
+  </div>
+
+  <div class="card">
+    <h2>Create Heroes Gallery</h2>
+
+    <label for="heroes-folder">Folder</label>
+    <select id="heroes-folder">
+      <option value="">Select folder...</option>
+    </select>
+
+    <button onclick="createEmptyGallery(true)">Create Heroes Gallery</button>
+
+    <div class="message" id="heroes-message"></div>
+  </div>
+
+</div>
+
+<div class="section-title">Current Folder Structure</div>
+
+<div class="list" id="folder-list">
+  <div class="row">
+    <div class="row-meta">Select a project to load folders.</div>
+  </div>
+</div>
+
+<script>
+  const SESSION_KEY = "eightyStudiosScoutUser";
+
+  const PROJECTS_URL = "/api/project-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
+  const FOLDER_LIST_URL = "/api/folder-list";
+  const FOLDER_SAVE_URL = "/api/folder-save";
+  const GALLERY_SAVE_URL = "/api/gallery-save";
+
+  const savedUser =
+    sessionStorage.getItem(SESSION_KEY);
+
+  if (!savedUser) {
+    window.location.href = "/scouts/login.html";
+  }
+
+  const currentUser =
+    savedUser ? JSON.parse(savedUser) : null;
+
+  const currentUserId =
+    currentUser?.id || "";
+
+  const currentUserRole =
+    currentUser?.globalRole || "";
+
+  if (!["master", "lm", "alm"].includes(currentUserRole)) {
+    window.location.href = "/scouts/";
+  }
+
+  let allProjects = [];
+  let allMembers = [];
+  let currentFolders = [];
+
+  const projectSelect =
+    document.getElementById("project-select");
+
+  const projectMeta =
+    document.getElementById("project-meta");
+
+  const folderParent =
+    document.getElementById("folder-parent");
+
+  const bulkParent =
+    document.getElementById("bulk-parent");
+
+  const renameFolderSelect =
+    document.getElementById("rename-folder-select");
+
+  const galleryFolder =
+    document.getElementById("gallery-folder");
+
+  const heroesFolder =
+    document.getElementById("heroes-folder");
+
+  const folderList =
+    document.getElementById("folder-list");
+
+  function slugify(value) {
+    return (value || "")
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function makeId(prefix, title) {
+    const base =
+      slugify(title) || "item";
+
+    const stamp =
+      Date.now().toString(36);
+
+    return `${prefix}-${base}-${stamp}`;
+  }
+
+  function titleFromSlug(value) {
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function getProjectTitle(project) {
+    return project.title || project.name || titleFromSlug(project.id);
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function userCanSeeProject(projectId) {
+    if (currentUserRole === "master") {
+      return true;
+    }
+
+    return allMembers.some(member =>
+      getMemberUserId(member) === currentUserId &&
+      getMemberProjectId(member) === projectId
+    );
+  }
+
+  function getSelectedProjectId() {
+    return projectSelect.value || "";
+  }
+
+  function getFolderDepth(folder, seen = {}) {
+    if (!folder.parentFolderId) {
+      return 0;
+    }
+
+    if (seen[folder.id]) {
+      return 0;
+    }
+
+    seen[folder.id] = true;
+
+    const parent =
+      currentFolders.find(item => item.id === folder.parentFolderId);
+
+    if (!parent) {
+      return 0;
+    }
+
+    return 1 + getFolderDepth(parent, seen);
+  }
+
+  function getFolderPath(folder) {
+    const parts = [folder.title || folder.id];
+    let parentId = folder.parentFolderId || "";
+    let safety = 0;
+
+    while (parentId && safety < 20) {
+      const parent =
+        currentFolders.find(item => item.id === parentId);
+
+      if (!parent) {
+        break;
+      }
+
+      parts.unshift(parent.title || parent.id);
+      parentId = parent.parentFolderId || "";
+      safety++;
+    }
+
+    return parts.join(" / ");
+  }
+
+  function setMessage(id, text, type) {
+    const el =
+      document.getElementById(id);
+
+    el.textContent =
+      text || "";
+
+    el.className =
+      type ? `message ${type}` : "message";
+  }
+
+  function resetMessages() {
+    [
+      "create-folder-message",
+      "bulk-folder-message",
+      "rename-folder-message",
+      "gallery-message",
+      "heroes-message"
+    ].forEach(id => setMessage(id, "", ""));
+  }
+
+  function renderProjectOptions() {
+    const visibleProjects =
+      allProjects.filter(project => userCanSeeProject(project.id));
+
+    if (!visibleProjects.length) {
+      projectSelect.innerHTML =
+        `<option value="">No assigned projects found</option>`;
+
+      return;
+    }
+
+    projectSelect.innerHTML =
+      `<option value="">Select project...</option>` +
+      visibleProjects
+        .map(project => `
+          <option value="${project.id}">
+            ${getProjectTitle(project)}
+          </option>
+        `)
+        .join("");
+  }
+
+  function renderFolderOptions() {
+    const baseOption =
+      `<option value="">No parent / project root</option>`;
+
+    const chooseOption =
+      `<option value="">Select folder...</option>`;
+
+    const folderOptions =
+      currentFolders
+        .map(folder => {
+          const depth =
+            Math.min(getFolderDepth(folder), 4);
+
+          const prefix =
+            "— ".repeat(depth);
+
+          return `
+            <option value="${folder.id}">
+              ${prefix}${folder.title || folder.id}
+            </option>
+          `;
+        })
+        .join("");
+
+    folderParent.innerHTML =
+      baseOption + folderOptions;
+
+    bulkParent.innerHTML =
+      baseOption + folderOptions;
+
+    renameFolderSelect.innerHTML =
+      chooseOption + folderOptions;
+
+    galleryFolder.innerHTML =
+      chooseOption + folderOptions;
+
+    heroesFolder.innerHTML =
+      chooseOption + folderOptions;
+  }
+
+  function renderFolderList() {
+    if (!currentFolders.length) {
+      folderList.innerHTML = `
+        <div class="row">
+          <div class="row-meta">No folders found for this project yet.</div>
+        </div>
+      `;
+      return;
+    }
+
+    folderList.innerHTML =
+      currentFolders
+        .map(folder => {
+          const depth =
+            Math.min(getFolderDepth(folder), 4);
+
+          return `
+            <div class="row indent-${depth}">
+              <div class="row-title">${folder.title || folder.id}</div>
+              <div class="row-meta">
+                ID: ${folder.id}
+                ${folder.parentFolderId ? ` • Parent: ${folder.parentFolderId}` : " • Project root"}
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+  }
+
+  async function loadFolders() {
+    resetMessages();
+
+    const projectId =
+      getSelectedProjectId();
+
+    currentFolders = [];
+
+    if (!projectId) {
+      projectMeta.textContent =
+        "Choose a project to manage folders and galleries.";
+
+      renderFolderOptions();
+      renderFolderList();
+      return;
+    }
+
+    projectMeta.textContent =
+      `Loading folders for ${projectId}...`;
+
+    try {
+      const response =
+        await fetch(`${FOLDER_LIST_URL}?projectId=${encodeURIComponent(projectId)}`);
+
+      const data =
+        await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Could not load folders.");
+      }
+
+      currentFolders =
+        data.folders || [];
+
+      const project =
+        allProjects.find(item => item.id === projectId);
+
+      projectMeta.textContent =
+        `Managing ${project ? getProjectTitle(project) : projectId}.`;
+
+      renderFolderOptions();
+      renderFolderList();
+
+    } catch (error) {
+      console.error(error);
+
+      projectMeta.textContent =
+        "Could not load folders.";
+
+      folderList.innerHTML = `
+        <div class="row">
+          <div class="row-meta error">${error.message}</div>
+        </div>
+      `;
+    }
+  }
+
+  async function saveFolder(folder) {
+    const response =
+      await fetch(FOLDER_SAVE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(folder)
+      });
+
+    const data =
+      await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Could not save folder.");
+    }
+
+    return data;
+  }
+
+  async function createFolder() {
+    const projectId =
+      getSelectedProjectId();
+
+    const title =
+      document.getElementById("folder-title").value.trim();
+
+    const parentFolderId =
+      folderParent.value || null;
+
+    if (!projectId) {
+      setMessage("create-folder-message", "Select a project first.", "error");
+      return;
+    }
+
+    if (!title) {
+      setMessage("create-folder-message", "Enter a folder name.", "error");
+      return;
+    }
+
+    try {
+      const folder = {
+        id: makeId("folder", title),
+        projectId,
+        parentFolderId,
+        title,
+        slug: slugify(title),
+        folderType: "location",
+        sortOrder: currentFolders.length,
+        createdBy: currentUserId
+      };
+
+      await saveFolder(folder);
+
+      document.getElementById("folder-title").value = "";
+
+      setMessage("create-folder-message", "Folder created.", "success");
+
+      await loadFolders();
+
+    } catch (error) {
+      console.error(error);
+      setMessage("create-folder-message", error.message, "error");
+    }
+  }
+
+  async function bulkCreateFolders() {
+    const projectId =
+      getSelectedProjectId();
+
+    const parentFolderId =
+      bulkParent.value || null;
+
+    const raw =
+      document.getElementById("bulk-folder-list").value;
+
+    const titles =
+      raw
+        .split("\n")
+        .map(item => item.trim())
+        .filter(Boolean);
+
+    if (!projectId) {
+      setMessage("bulk-folder-message", "Select a project first.", "error");
+      return;
+    }
+
+    if (!titles.length) {
+      setMessage("bulk-folder-message", "Enter at least one folder name.", "error");
+      return;
+    }
+
+    try {
+      for (let index = 0; index < titles.length; index++) {
+        const title =
+          titles[index];
+
+        await saveFolder({
+          id: makeId("folder", title),
+          projectId,
+          parentFolderId,
+          title,
+          slug: slugify(title),
+          folderType: "location",
+          sortOrder: currentFolders.length + index,
+          createdBy: currentUserId
+        });
+      }
+
+      document.getElementById("bulk-folder-list").value = "";
+
+      setMessage("bulk-folder-message", `${titles.length} folder(s) created.`, "success");
+
+      await loadFolders();
+
+    } catch (error) {
+      console.error(error);
+      setMessage("bulk-folder-message", error.message, "error");
+    }
+  }
+
+  async function renameFolder() {
+    const projectId =
+      getSelectedProjectId();
+
+    const folderId =
+      renameFolderSelect.value;
+
+    const title =
+      document.getElementById("rename-folder-title").value.trim();
+
+    if (!projectId) {
+      setMessage("rename-folder-message", "Select a project first.", "error");
+      return;
+    }
+
+    if (!folderId) {
+      setMessage("rename-folder-message", "Select a folder to rename.", "error");
+      return;
+    }
+
+    if (!title) {
+      setMessage("rename-folder-message", "Enter a new folder name.", "error");
+      return;
+    }
+
+    const existing =
+      currentFolders.find(folder => folder.id === folderId);
+
+    if (!existing) {
+      setMessage("rename-folder-message", "Folder not found.", "error");
+      return;
+    }
+
+    try {
+      await saveFolder({
+        id: existing.id,
+        projectId,
+        parentFolderId: existing.parentFolderId || null,
+        title,
+        slug: slugify(title),
+        folderType: existing.folderType || "location",
+        sortOrder: existing.sortOrder || 0,
+        createdBy: existing.createdBy || currentUserId
+      });
+
+      document.getElementById("rename-folder-title").value = "";
+
+      setMessage("rename-folder-message", "Folder renamed.", "success");
+
+      await loadFolders();
+
+    } catch (error) {
+      console.error(error);
+      setMessage("rename-folder-message", error.message, "error");
+    }
+  }
+
+  async function createEmptyGallery(isHeroes) {
+    const projectId =
+      getSelectedProjectId();
+
+    const folderId =
+      isHeroes ? heroesFolder.value : galleryFolder.value;
+
+    const title =
+      isHeroes
+        ? "Heroes"
+        : document.getElementById("gallery-title").value.trim();
+
+    const messageId =
+      isHeroes ? "heroes-message" : "gallery-message";
+
+    if (!projectId) {
+      setMessage(messageId, "Select a project first.", "error");
+      return;
+    }
+
+    if (!folderId) {
+      setMessage(messageId, "Select a folder.", "error");
+      return;
+    }
+
+    if (!title) {
+      setMessage(messageId, "Enter a gallery name.", "error");
+      return;
+    }
+
+    try {
+      const galleryId =
+        makeId("gallery", title);
+
+      const folder =
+        currentFolders.find(item => item.id === folderId);
+
+      const folderPath =
+        folder ? getFolderPath(folder) : "";
+
+      const gallery = {
+        id: galleryId,
+        projectId,
+        folderId,
+        title,
+        slug: slugify(title),
+        path: folderPath ? `${folderPath} / ${title}` : title,
+        ownerId: currentUserId,
+        createdBy: currentUserId,
+        visibility: "private",
+        shareToken: null,
+        library: {
+          locationName: title,
+          town: "",
+          state: "",
+          country: "USA"
+        },
+        admin: {
+          notes: isHeroes
+            ? "Curated Heroes gallery."
+            : ""
+        },
+        images: []
+      };
+
+      const response =
+        await fetch(GALLERY_SAVE_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(gallery)
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Could not create gallery.");
+      }
+
+      if (!isHeroes) {
+        document.getElementById("gallery-title").value = "";
+      }
+
+      setMessage(
+        messageId,
+        isHeroes ? "Heroes gallery created." : "Empty gallery created.",
+        "success"
+      );
+
+    } catch (error) {
+      console.error(error);
+      setMessage(messageId, error.message, "error");
+    }
+  }
+
+  projectSelect.addEventListener("change", loadFolders);
+
+  Promise.all([
+    fetch(PROJECTS_URL).then(response => response.json()),
+    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+  ])
+
+    .then(([projectsData, membersData]) => {
+      allProjects =
+        projectsData.projects || [];
+
+      allMembers =
+        membersData.members || [];
+
+      renderProjectOptions();
+      renderFolderOptions();
+      renderFolderList();
+    })
+
+    .catch(error => {
+      console.error(error);
+
+      projectSelect.innerHTML =
+        `<option value="">Could not load projects</option>`;
+
+      projectMeta.textContent =
+        error.message;
+    });
+</script>
+
+</body>
+</html>
