@@ -18,10 +18,12 @@
     .breadcrumb a:hover { color: #fff; text-decoration: underline; }
     h1 { font-size: 24px; margin-bottom: 20px; }
     .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 28px; margin-bottom: 10px; }
-    .card { display: block; background: #1c1c1c; color: white; padding: 15px; margin-top: 10px; border-radius: 6px; border: 1px solid #333; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .card { display: block; background: #1c1c1c; color: white; padding: 15px; border-radius: 6px; border: 1px solid #333; }
     .card:hover { background: #252525; }
+    .folder-icon { width: 100%; height: 120px; border-radius: 4px; margin-bottom: 10px; background: #202020; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 42px; color: #777; }
     .thumb { width: 100%; height: 180px; object-fit: cover; border-radius: 4px; margin-bottom: 10px; background: #222; }
-    .meta { color: #aaa; font-size: 12px; margin-top: 4px; }
+    .meta { color: #aaa; font-size: 12px; margin-top: 4px; line-height: 1.4; }
     .message { color: #aaa; }
     hr { border: none; border-top: 1px solid #333; margin: 10px 0; }
   </style>
@@ -29,15 +31,9 @@
 
 <body>
 
-<a class="back-link" href="/scouts/">← Back to Scouts</a>
+<a class="back-link" id="back-link" href="/scouts/">← Back to Project</a>
 
-<div class="top-nav">
-  <a href="/scouts/">Projects</a>
-  <a href="/scouts/library.html">Library</a>
-  <a href="/scouts/admin.html">Admin</a>
-  <button class="logout-btn" onclick="logout()">Logout</button>
-  <div class="user-badge" id="user-badge"></div>
-</div>
+<div class="top-nav" id="top-nav"></div>
 
 <div class="breadcrumb" id="breadcrumb"></div>
 
@@ -71,13 +67,14 @@
   const currentUserRole =
     currentUser?.globalRole || "";
 
-  const params = new URLSearchParams(window.location.search);
+  const params =
+    new URLSearchParams(window.location.search);
 
   const projectId =
-    params.get("project") || "test-project-gf";
+    params.get("project") || "";
 
   const folderId =
-    params.get("folder") || "folder-test-location";
+    params.get("folder") || "";
 
   const folderTitleEl =
     document.getElementById("folder-title");
@@ -88,21 +85,27 @@
   const contentEl =
     document.getElementById("content");
 
-  const userBadgeEl =
-    document.getElementById("user-badge");
+  const topNavEl =
+    document.getElementById("top-nav");
 
-  if (currentUser) {
-    userBadgeEl.textContent =
-      `${currentUser.name} · ${currentUserRole}`;
-  }
+  const backLinkEl =
+    document.getElementById("back-link");
 
   function logout() {
     sessionStorage.removeItem(SESSION_KEY);
     window.location.href = "/scouts/login.html";
   }
 
-  function userIsAdmin() {
-    return currentUserRole === "admin";
+  function userIsMaster() {
+    return currentUserRole === "master";
+  }
+
+  function userCanUseAdminTools() {
+    return ["master", "lm", "alm"].includes(currentUserRole);
+  }
+
+  function userCanUseLibrary() {
+    return ["master", "lm", "alm", "scout"].includes(currentUserRole);
   }
 
   function titleFromSlug(value) {
@@ -117,6 +120,25 @@
 
   function getProjectTitle(project) {
     return project?.title || project?.name || titleFromSlug(projectId);
+  }
+
+  function getFolderProjectId(folder) {
+    return folder.projectId || folder.project_id || "";
+  }
+
+  function getFolderParentId(folder) {
+    return folder.parentFolderId || folder.parent_folder_id || "";
+  }
+
+  function normalizeFolder(folder) {
+    return {
+      ...folder,
+      projectId: getFolderProjectId(folder),
+      parentFolderId: getFolderParentId(folder),
+      sortOrder: folder.sortOrder || folder.sort_order || 0,
+      folderType: folder.folderType || folder.folder_type || "location",
+      createdBy: folder.createdBy || folder.created_by || ""
+    };
   }
 
   function getFolderTitle(folder) {
@@ -135,8 +157,14 @@
     return gallery.cover || gallery.url || gallery.imageUrl || gallery.image_url || "";
   }
 
+  function getGalleryTitle(gallery) {
+    return gallery.title || gallery.name || gallery.id;
+  }
+
   function getImageCount(gallery) {
-    const count = Number(gallery.imageCount || gallery.image_count || 0);
+    const count =
+      Number(gallery.imageCount || gallery.image_count || 0);
+
     return `${count} ${count === 1 ? "photo" : "photos"}`;
   }
 
@@ -149,7 +177,7 @@
   }
 
   function userCanAccessProject(members) {
-    if (userIsAdmin()) {
+    if (userIsMaster()) {
       return true;
     }
 
@@ -157,6 +185,62 @@
       getMemberUserId(member) === currentUserId &&
       getMemberProjectId(member) === projectId
     );
+  }
+
+  function renderTopNav() {
+    let html = `
+      <a href="/scouts/">Projects</a>
+    `;
+
+    if (userIsMaster()) {
+      html += `<a href="/scouts/master-portal.html">Master Portal</a>`;
+    }
+
+    if (["lm", "alm"].includes(currentUserRole)) {
+      html += `<a href="/scouts/admin-portal.html">LM / ALM Portal</a>`;
+    }
+
+    if (currentUserRole === "scout") {
+      html += `<a href="/scouts/scout-portal.html">Scout Portal</a>`;
+    }
+
+    if (userCanUseLibrary()) {
+      html += `<a href="/scouts/library.html">Library</a>`;
+    }
+
+    if (userCanUseAdminTools()) {
+      html += `<a href="/scouts/folder-manager.html">Folder Manager</a>`;
+      html += `<a href="/scouts/admin.html">Upload</a>`;
+    }
+
+    html += `
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      <div class="user-badge">${currentUser?.name || "User"} · ${currentUserRole}</div>
+    `;
+
+    topNavEl.innerHTML = html;
+  }
+
+  function getFolderPath(folder, folders) {
+    const path = [];
+    let current = folder;
+    let safety = 0;
+
+    while (current && safety < 20) {
+      path.unshift(current);
+
+      const parentId =
+        current.parentFolderId || "";
+
+      current =
+        parentId
+          ? folders.find(item => item.id === parentId)
+          : null;
+
+      safety++;
+    }
+
+    return path;
   }
 
   function renderAccessDenied() {
@@ -170,23 +254,73 @@
     `;
   }
 
-  function renderBreadcrumb(project, folder) {
+  function renderMissingUrl() {
+    folderTitleEl.textContent =
+      "Missing Folder";
+
+    contentEl.innerHTML = `
+      <p class="message">
+        This page needs both a project ID and folder ID.
+      </p>
+    `;
+  }
+
+  function renderBreadcrumb(project, folder, folders) {
+    const folderPath =
+      getFolderPath(folder, folders);
+
+    const projectUrl =
+      `/scouts/project.html?project=${encodeURIComponent(projectId)}`;
+
+    backLinkEl.href =
+      projectUrl;
+
     breadcrumbEl.innerHTML = `
-      <a href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
+      <a href="${projectUrl}">
         ${getProjectTitle(project)}
       </a>
-      /
-      <span>${getFolderTitle(folder)}</span>
+      ${folderPath.map(item => `
+        / <a href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(item.id)}">
+          ${getFolderTitle(item)}
+        </a>
+      `).join("")}
+    `;
+  }
+
+  function renderChildFolders(childFolders) {
+    if (!childFolders.length) {
+      return "";
+    }
+
+    return `
+      <div class="section-title">
+        Folders
+      </div>
+
+      <div class="grid">
+        ${childFolders.map(folder => `
+          <a
+            class="card"
+            href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folder.id)}"
+          >
+            <div class="folder-icon">📁</div>
+
+            <div>
+              ${getFolderTitle(folder)}
+            </div>
+
+            <div class="meta">
+              Folder
+            </div>
+          </a>
+        `).join("")}
+      </div>
     `;
   }
 
   function renderGalleries(galleries) {
     if (!galleries.length) {
-      return `
-        <p class="message">
-          No galleries found in this folder yet.
-        </p>
-      `;
+      return "";
     }
 
     return `
@@ -194,104 +328,132 @@
         Galleries
       </div>
 
-      ${galleries.map(gallery => `
-        <a
-          class="card"
-          href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}"
-        >
+      <div class="grid">
+        ${galleries.map(gallery => `
+          <a
+            class="card"
+            href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}"
+          >
 
-          ${getGalleryCover(gallery)
-            ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
-            : ""
-          }
+            ${getGalleryCover(gallery)
+              ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
+              : `<div class="folder-icon">🖼️</div>`
+            }
 
-          <div>
-            ${gallery.title || gallery.name || gallery.id}
-          </div>
+            <div>
+              ${getGalleryTitle(gallery)}
+            </div>
 
-          <div class="meta">
-            ${getImageCount(gallery)}
-          </div>
+            <div class="meta">
+              ${getImageCount(gallery)}
+            </div>
 
-        </a>
-      `).join("")}
+          </a>
+        `).join("")}
+      </div>
     `;
   }
 
-  Promise.all([
-    fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
-    fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
-    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
-  ])
-    .then(([projectsData, foldersData, galleriesData, membersData]) => {
-      const projects =
-        projectsData.projects || [];
+  renderTopNav();
 
-      const folders =
-        foldersData.folders || [];
+  if (!projectId || !folderId) {
+    renderMissingUrl();
+  } else {
 
-      const galleries =
-        galleriesData.galleries || [];
+    Promise.all([
+      fetch(PROJECTS_URL).then(response => response.json()),
+      fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+      fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+      fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+    ])
 
-      const members =
-        membersData.members || [];
+      .then(([projectsData, foldersData, galleriesData, membersData]) => {
+        const projects =
+          projectsData.projects || [];
 
-      if (!userCanAccessProject(members)) {
-        renderAccessDenied();
-        return;
-      }
+        const folders =
+          (foldersData.folders || []).map(normalizeFolder);
 
-      const project =
-        projects.find(item =>
-          getProjectId(item) === projectId
-        );
+        const galleries =
+          galleriesData.galleries || [];
 
-      const folder =
-        folders.find(item =>
-          item.id === folderId
-        );
+        const members =
+          membersData.members || [];
 
-      if (!folder) {
+        if (!userCanAccessProject(members)) {
+          renderAccessDenied();
+          return;
+        }
+
+        const project =
+          projects.find(item =>
+            getProjectId(item) === projectId
+          );
+
+        const folder =
+          folders.find(item =>
+            item.id === folderId
+          );
+
+        if (!folder) {
+          folderTitleEl.textContent =
+            "Folder Not Found";
+
+          contentEl.innerHTML = `
+            <p class="message">
+              This folder was not found in D1.
+            </p>
+          `;
+
+          return;
+        }
+
+        const childFolders =
+          folders
+            .filter(item => item.parentFolderId === folderId)
+            .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+        const folderGalleries =
+          galleries.filter(gallery =>
+            getGalleryProjectId(gallery) === projectId &&
+            getGalleryFolderId(gallery) === folderId
+          );
+
+        renderBreadcrumb(project, folder, folders);
+
         folderTitleEl.textContent =
-          "Folder Not Found";
+          getFolderTitle(folder);
+
+        const childFolderHtml =
+          renderChildFolders(childFolders);
+
+        const galleryHtml =
+          renderGalleries(folderGalleries);
+
+        contentEl.innerHTML =
+          childFolderHtml ||
+          galleryHtml
+            ? childFolderHtml + galleryHtml
+            : `
+              <p class="message">
+                This folder is empty.
+              </p>
+            `;
+      })
+
+      .catch(error => {
+        console.error(error);
+
+        folderTitleEl.textContent =
+          "Could Not Load Folder";
 
         contentEl.innerHTML = `
           <p class="message">
-            This folder was not found in D1.
+            There was a problem loading D1 folder data.
           </p>
         `;
-
-        return;
-      }
-
-      const folderGalleries =
-        galleries.filter(gallery =>
-          getGalleryProjectId(gallery) === projectId &&
-          getGalleryFolderId(gallery) === folderId
-        );
-
-      renderBreadcrumb(project, folder);
-
-      folderTitleEl.textContent =
-        getFolderTitle(folder);
-
-      contentEl.innerHTML =
-        renderGalleries(folderGalleries);
-    })
-
-    .catch(error => {
-      console.error(error);
-
-      folderTitleEl.textContent =
-        "Could Not Load Folder";
-
-      contentEl.innerHTML = `
-        <p class="message">
-          There was a problem loading D1 folder data.
-        </p>
-      `;
-    });
+      });
+  }
 </script>
 
 </body>
