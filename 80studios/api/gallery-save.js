@@ -34,6 +34,21 @@ async function runD1Query(sql, params = []) {
   return data;
 }
 
+function getImageUrl(image) {
+  return image.displayUrl || image.display_url || image.url || "";
+}
+
+function getThumbnailUrl(image) {
+  return (
+    image.thumbnailUrl ||
+    image.thumbnail_url ||
+    image.displayUrl ||
+    image.display_url ||
+    image.url ||
+    ""
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -52,9 +67,19 @@ export default async function handler(req, res) {
       });
     }
 
+    const images = Array.isArray(gallery.images)
+      ? gallery.images
+      : [];
+
+    const cover =
+      gallery.cover ||
+      getThumbnailUrl(images[0] || {}) ||
+      getImageUrl(images[0] || "") ||
+      "";
+
     await runD1Query(
       `
-      INSERT OR REPLACE INTO galleries (
+      INSERT INTO galleries (
         id,
         project_id,
         folder_id,
@@ -70,37 +95,67 @@ export default async function handler(req, res) {
         state,
         country,
         notes,
+        cover,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(id) DO UPDATE SET
+        project_id = excluded.project_id,
+        folder_id = excluded.folder_id,
+        title = excluded.title,
+        slug = excluded.slug,
+        path = excluded.path,
+        owner_id = excluded.owner_id,
+        created_by = excluded.created_by,
+        visibility = excluded.visibility,
+        share_token = excluded.share_token,
+        location_name = excluded.location_name,
+        town = excluded.town,
+        state = excluded.state,
+        country = excluded.country,
+        notes = excluded.notes,
+        cover = excluded.cover,
+        updated_at = CURRENT_TIMESTAMP
       `,
       [
         gallery.id,
-        gallery.projectId || "",
-        gallery.folderId || null,
-        gallery.title || gallery.id,
+        gallery.projectId || gallery.project_id || "",
+        gallery.folderId || gallery.folder_id || null,
+        gallery.title || gallery.name || gallery.id,
         gallery.slug || gallery.id,
         gallery.path || "",
-        gallery.ownerId || "andrew-devlin",
-        gallery.createdBy || gallery.ownerId || "andrew-devlin",
+        gallery.ownerId || gallery.owner_id || "andrew-devlin",
+        gallery.createdBy || gallery.created_by || gallery.ownerId || "andrew-devlin",
         gallery.visibility || "private",
-        gallery.shareToken || null,
-        gallery.library?.locationName || gallery.title || "",
-        gallery.library?.town || "",
-        gallery.library?.state || "",
-        gallery.library?.country || "USA",
-        gallery.admin?.notes || ""
+        gallery.shareToken || gallery.share_token || null,
+        gallery.library?.locationName || gallery.locationName || gallery.title || "",
+        gallery.library?.town || gallery.town || "",
+        gallery.library?.state || gallery.state || "",
+        gallery.library?.country || gallery.country || "USA",
+        gallery.admin?.notes || gallery.notes || "",
+        cover
       ]
     );
 
-    const images = gallery.images || [];
+    await runD1Query(
+      `
+      DELETE FROM images
+      WHERE gallery_id = ?
+      `,
+      [gallery.id]
+    );
 
     for (let index = 0; index < images.length; index++) {
       const image = images[index];
 
+      const assetId =
+        image.assetId ||
+        image.asset_id ||
+        `${gallery.id}-image-${index}`;
+
       await runD1Query(
         `
-        INSERT OR REPLACE INTO images (
+        INSERT INTO images (
           id,
           gallery_id,
           asset_id,
@@ -118,14 +173,14 @@ export default async function handler(req, res) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         `,
         [
-          image.assetId || `${gallery.id}-image-${index}`,
+          assetId,
           gallery.id,
-          image.assetId || "",
+          assetId,
           image.filename || "",
-          image.url || "",
-          image.displayUrl || image.url || "",
-          image.thumbnailUrl || image.displayUrl || image.url || "",
-          image.contentType || "",
+          image.url || getImageUrl(image),
+          getImageUrl(image),
+          getThumbnailUrl(image),
+          image.contentType || image.content_type || "",
           image.caption || "",
           JSON.stringify(image.tags || []),
           image.source || "r2",
@@ -138,7 +193,8 @@ export default async function handler(req, res) {
       success: true,
       message: "Gallery saved to D1",
       galleryId: gallery.id,
-      imageCount: images.length
+      imageCount: images.length,
+      cover
     });
 
   } catch (error) {
