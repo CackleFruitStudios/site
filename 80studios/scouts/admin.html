@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Planner</title>
+  <title>Scout Upload</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
 
@@ -75,7 +75,7 @@
       margin-bottom: 5px;
     }
 
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       box-sizing: border-box;
       background: #1c1c1c;
@@ -92,9 +92,8 @@
     }
 
     textarea {
-      min-height: 220px;
-      font-family: monospace;
-      white-space: pre;
+      min-height: 180px;
+      font-family: Arial, sans-serif;
     }
 
     button {
@@ -307,43 +306,45 @@
 
 <div class="top-nav">
   <a href="/scouts/">Projects</a>
-  <a href="/scouts/scout.html">Scout Dashboard</a>
+  <a href="/scouts/folder-manager.html">Folder Manager</a>
   <a href="/scouts/library.html">Library</a>
-  <a href="/scouts/admin.html">Admin</a>
   <button class="logout-btn" onclick="logout()">Logout</button>
   <div class="user-badge" id="user-badge"></div>
 </div>
 
-<h1>Admin Planner</h1>
+<h1>Scout Upload</h1>
 
 <div class="subtitle" id="subtitle">
-  Cloudflare R2 Upload + JPG Normalization System
+  Select an existing D1 project and folder, create a gallery, and upload scouting photos.
 </div>
 
 <div id="admin-content">
 
 <div class="panel">
 
+  <div class="output-title">
+    D1 Location
+  </div>
+
   <div class="grid">
 
     <div>
-      <label>Project Name *</label>
-      <input id="projectName" placeholder="Good Fellas">
+      <label>Project *</label>
+      <select id="projectSelect">
+        <option value="">Loading projects...</option>
+      </select>
     </div>
 
     <div>
-      <label>Location Name *</label>
-      <input id="locationName" placeholder="George's Apartment">
+      <label>Folder / Location *</label>
+      <select id="folderSelect">
+        <option value="">Select a project first...</option>
+      </select>
     </div>
 
     <div>
       <label>Gallery Name *</label>
-      <input id="galleryName" placeholder="125 E 51st St">
-    </div>
-
-    <div>
-      <label>Optional Folder Path (Leave blank unless authorized)</label>
-      <input id="galleryPath" placeholder="season-4/episode-403/georges-apartment">
+      <input id="galleryName" placeholder="Exterior, Interior, 125 E 51st St, Heroes">
     </div>
 
     <div>
@@ -364,7 +365,6 @@
   </div>
 
   <label>Scout Notes</label>
-
   <textarea id="notes"></textarea>
 
   <div class="warning" id="warningBox"></div>
@@ -385,8 +385,8 @@
     </div>
 
     <div>
-      <label>Folder Path</label>
-      <input id="folderPath" readonly>
+      <label>Folder ID</label>
+      <input id="folderId" readonly>
     </div>
 
     <div>
@@ -461,9 +461,6 @@
   const SESSION_KEY =
     "eightyStudiosScoutUser";
 
-  const STORAGE_KEY =
-    "scout-admin-session";
-
   const DISPLAY_MAX_SIZE =
     1920;
 
@@ -472,6 +469,15 @@
 
   const JPEG_QUALITY =
     0.82;
+
+  const PROJECTS_URL =
+    "/api/project-list";
+
+  const PROJECT_MEMBERS_URL =
+    "/api/project-member-list";
+
+  const FOLDER_LIST_URL =
+    "/api/folder-list";
 
   const savedUser =
     sessionStorage.getItem(SESSION_KEY);
@@ -492,7 +498,7 @@
 
   const allowedAdminRoles =
     [
-      "admin",
+      "master",
       "lm",
       "alm"
     ];
@@ -505,6 +511,37 @@
 
   const adminContentEl =
     document.getElementById("admin-content");
+
+  const uploadZone =
+    document.getElementById("uploadZone");
+
+  const previewGrid =
+    document.getElementById("previewGrid");
+
+  const fileInput =
+    document.getElementById("fileInput");
+
+  const warningBox =
+    document.getElementById("warningBox");
+
+  const uploadStatusMessage =
+    document.getElementById("uploadStatusMessage");
+
+  const projectSelect =
+    document.getElementById("projectSelect");
+
+  const folderSelect =
+    document.getElementById("folderSelect");
+
+  let allProjects = [];
+  let allMembers = [];
+  let currentFolders = [];
+
+  let localFiles = [];
+  let uploadedImages = [];
+  let uploadProgress = {};
+  let uploadStatus = {};
+  let selectedCoverIndex = 0;
 
   if (currentUser) {
     userBadgeEl.textContent =
@@ -528,39 +565,13 @@
     adminContentEl.innerHTML = `
       <div class="panel">
         <p class="warning" style="display:block;">
-          This account does not have upload admin access.
+          This account does not have upload access.
         </p>
       </div>
     `;
   }
 
-  const uploadZone =
-    document.getElementById("uploadZone");
-
-  const previewGrid =
-    document.getElementById("previewGrid");
-
-  const fileInput =
-    document.getElementById("fileInput");
-
-  const warningBox =
-    document.getElementById("warningBox");
-
-  const uploadStatusMessage =
-    document.getElementById("uploadStatusMessage");
-
-  let localFiles = [];
-
-  let uploadedImages = [];
-
-  let uploadProgress = {};
-
-  let uploadStatus = {};
-
-  let selectedCoverIndex = 0;
-
   function slugify(value) {
-
     return (value || "")
       .toLowerCase()
       .trim()
@@ -570,7 +581,6 @@
   }
 
   function uniqueAssetId(file, index) {
-
     const timestamp =
       Date.now();
 
@@ -578,22 +588,211 @@
   }
 
   function displayTitleFromSlug(value) {
-
-    return value
+    return (value || "")
       .replace(/-/g, " ")
       .replace(/\b\w/g, char => char.toUpperCase());
   }
 
   function parseTags(value) {
-
-    return value
+    return (value || "")
       .split(",")
       .map(tag => tag.trim())
       .filter(Boolean);
   }
 
-  function isHeicFile(file) {
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
+  }
 
+  function getProjectTitle(project) {
+    return project.title || project.name || displayTitleFromSlug(getProjectId(project));
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function userCanSeeProject(projectId) {
+    if (currentUserRole === "master") {
+      return true;
+    }
+
+    return allMembers.some(member =>
+      getMemberUserId(member) === currentUserId &&
+      getMemberProjectId(member) === projectId
+    );
+  }
+
+  function getFolderProjectId(folder) {
+    return folder.projectId || folder.project_id || "";
+  }
+
+  function getFolderParentId(folder) {
+    return folder.parentFolderId || folder.parent_folder_id || "";
+  }
+
+  function normalizeFolder(folder) {
+    return {
+      ...folder,
+      projectId: getFolderProjectId(folder),
+      parentFolderId: getFolderParentId(folder),
+      sortOrder: folder.sortOrder || folder.sort_order || 0,
+      folderType: folder.folderType || folder.folder_type || "location",
+      createdBy: folder.createdBy || folder.created_by || ""
+    };
+  }
+
+  function getFolderTitle(folder) {
+    return folder.title || folder.name || displayTitleFromSlug(folder.slug || folder.id);
+  }
+
+  function getFolderDepth(folder, seen = {}) {
+    if (!folder.parentFolderId) {
+      return 0;
+    }
+
+    if (seen[folder.id]) {
+      return 0;
+    }
+
+    seen[folder.id] = true;
+
+    const parent =
+      currentFolders.find(item => item.id === folder.parentFolderId);
+
+    if (!parent) {
+      return 0;
+    }
+
+    return 1 + getFolderDepth(parent, seen);
+  }
+
+  function getFolderPath(folder) {
+    const parts =
+      [getFolderTitle(folder)];
+
+    let parentId =
+      folder.parentFolderId || "";
+
+    let safety =
+      0;
+
+    while (parentId && safety < 20) {
+      const parent =
+        currentFolders.find(item => item.id === parentId);
+
+      if (!parent) {
+        break;
+      }
+
+      parts.unshift(
+        getFolderTitle(parent)
+      );
+
+      parentId =
+        parent.parentFolderId || "";
+
+      safety++;
+    }
+
+    return parts.join(" / ");
+  }
+
+  function renderProjectOptions() {
+    const visibleProjects =
+      allProjects.filter(project =>
+        userCanSeeProject(getProjectId(project))
+      );
+
+    if (!visibleProjects.length) {
+      projectSelect.innerHTML =
+        `<option value="">No assigned projects found</option>`;
+
+      return;
+    }
+
+    projectSelect.innerHTML =
+      `<option value="">Select project...</option>` +
+      visibleProjects
+        .map(project => `
+          <option value="${getProjectId(project)}">
+            ${getProjectTitle(project)}
+          </option>
+        `)
+        .join("");
+  }
+
+  async function loadFoldersForProject() {
+    const projectId =
+      projectSelect.value || "";
+
+    currentFolders = [];
+
+    folderSelect.innerHTML =
+      `<option value="">Loading folders...</option>`;
+
+    autoGenerate();
+
+    if (!projectId) {
+      folderSelect.innerHTML =
+        `<option value="">Select a project first...</option>`;
+      return;
+    }
+
+    try {
+      const response =
+        await fetch(`${FOLDER_LIST_URL}?projectId=${encodeURIComponent(projectId)}`);
+
+      const data =
+        await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Could not load folders.");
+      }
+
+      currentFolders =
+        (data.folders || []).map(normalizeFolder);
+
+      if (!currentFolders.length) {
+        folderSelect.innerHTML =
+          `<option value="">No folders found. Create folders in Folder Manager.</option>`;
+
+        return;
+      }
+
+      folderSelect.innerHTML =
+        `<option value="">Select folder...</option>` +
+        currentFolders
+          .map(folder => {
+            const depth =
+              Math.min(getFolderDepth(folder), 5);
+
+            const prefix =
+              "— ".repeat(depth);
+
+            return `
+              <option value="${folder.id}">
+                ${prefix}${getFolderTitle(folder)}
+              </option>
+            `;
+          })
+          .join("");
+
+    } catch (error) {
+      console.error(error);
+
+      folderSelect.innerHTML =
+        `<option value="">Could not load folders</option>`;
+
+      showWarning(error.message);
+    }
+  }
+
+  function isHeicFile(file) {
     const name =
       file.name.toLowerCase();
 
@@ -606,7 +805,6 @@
   }
 
   function getContentType(file) {
-
     if (file.type) {
       return file.type;
     }
@@ -619,15 +817,12 @@
   }
 
   function getBaseFilename(file) {
-
     return (file.name || "image")
       .replace(/\.[^/.]+$/, "");
   }
 
   function blobToImage(blob) {
-
     return new Promise((resolve, reject) => {
-
       const url =
         URL.createObjectURL(blob);
 
@@ -635,16 +830,12 @@
         new Image();
 
       img.onload = () => {
-
         URL.revokeObjectURL(url);
-
         resolve(img);
       };
 
       img.onerror = () => {
-
         URL.revokeObjectURL(url);
-
         reject(
           new Error("Could not read image for conversion.")
         );
@@ -655,13 +846,9 @@
   }
 
   function canvasToJpegBlob(canvas, quality = JPEG_QUALITY) {
-
     return new Promise((resolve, reject) => {
-
       canvas.toBlob(blob => {
-
         if (!blob) {
-
           reject(
             new Error("Could not create JPG output.")
           );
@@ -676,9 +863,7 @@
   }
 
   async function convertHeicToJpegBlob(file) {
-
     if (!window.heic2any) {
-
       throw new Error(
         "HEIC converter did not load. Refresh and try again."
       );
@@ -697,7 +882,6 @@
   }
 
   async function resizeImageBlob(blob, maxSize) {
-
     const img =
       await blobToImage(blob);
 
@@ -743,12 +927,10 @@
   }
 
   async function buildProcessedImageFiles(file) {
-
     let sourceBlob =
       file;
 
     if (isHeicFile(file)) {
-
       setUploadStatus(
         `Converting HEIC: ${file.name}`
       );
@@ -795,22 +977,15 @@
   }
 
   async function uploadBlobToR2(blob, filename, folder, contentType) {
-
     const presignResponse =
       await fetch("/api/r2-presign", {
-
         method: "POST",
-
         headers: {
           "Content-Type": "application/json"
         },
-
         body: JSON.stringify({
-
           filename,
-
           folder,
-
           contentType
         })
       });
@@ -819,7 +994,6 @@
       await presignResponse.json();
 
     if (!presignResponse.ok || !presignData.uploadUrl) {
-
       throw new Error(
         presignData.error || "Could not prepare R2 upload."
       );
@@ -827,18 +1001,14 @@
 
     const uploadResponse =
       await fetch(presignData.uploadUrl, {
-
         method: "PUT",
-
         headers: {
           "Content-Type": contentType
         },
-
         body: blob
       });
 
     if (!uploadResponse.ok) {
-
       throw new Error(
         `Upload failed (${uploadResponse.status})`
       );
@@ -848,21 +1018,22 @@
   }
 
   function showWarning(message) {
+    warningBox.style.display =
+      "block";
 
-    warningBox.style.display = "block";
-
-    warningBox.innerText = message;
+    warningBox.innerText =
+      message;
   }
 
   function clearWarning() {
+    warningBox.style.display =
+      "none";
 
-    warningBox.style.display = "none";
-
-    warningBox.innerText = "";
+    warningBox.innerText =
+      "";
   }
 
   function setUploadStatus(message) {
-
     if (!uploadStatusMessage) return;
 
     uploadStatusMessage.innerHTML =
@@ -870,7 +1041,6 @@
   }
 
   function setUploadSuccess(message) {
-
     setUploadStatus(`
       <span class="status complete">
         ${message}
@@ -879,7 +1049,6 @@
   }
 
   function setUploadError(message) {
-
     setUploadStatus(`
       <span class="status error">
         ${message}
@@ -888,20 +1057,18 @@
   }
 
   function validateRequiredFields() {
+    const projectId =
+      projectSelect.value || "";
 
-    const projectName =
-      document.getElementById("projectName").value.trim();
-
-    const locationName =
-      document.getElementById("locationName").value.trim();
+    const folderId =
+      folderSelect.value || "";
 
     const galleryName =
       document.getElementById("galleryName").value.trim();
 
-    if (!projectName || !locationName || !galleryName) {
-
+    if (!projectId || !folderId || !galleryName) {
       showWarning(
-        "Project Name, Location Name, and Gallery Name are required before uploading."
+        "Project, Folder, and Gallery Name are required before uploading."
       );
 
       return false;
@@ -913,52 +1080,35 @@
   }
 
   function autoGenerate() {
+    const projectId =
+      projectSelect.value || "";
 
-    const projectName =
-      document.getElementById("projectName").value;
-
-    const locationName =
-      document.getElementById("locationName").value;
+    const folderId =
+      folderSelect.value || "";
 
     const galleryName =
-      document.getElementById("galleryName").value;
-
-    const galleryPathRaw =
-      document.getElementById("galleryPath").value.trim();
-
-    const defaultPath =
-      locationName
-        ? slugify(locationName)
-        : "";
-
-    const activePath =
-      galleryPathRaw || defaultPath;
-
-    const pathSegments =
-      activePath
-        .split("/")
-        .map(segment => slugify(segment))
-        .filter(Boolean);
+      document.getElementById("galleryName").value.trim();
 
     const gallerySlug =
       slugify(galleryName);
 
-    document.getElementById("projectId").value =
-      slugify(projectName);
-
-    document.getElementById("folderPath").value =
-      pathSegments.join("/");
-
-    document.getElementById("galleryId").value =
+    const galleryId =
       gallerySlug
-        ? `${pathSegments.join("-")}-${gallerySlug}`
+        ? `gallery-${folderId}-${gallerySlug}`
             .replace(/^-+|-+$/g, "")
         : "";
 
+    document.getElementById("projectId").value =
+      projectId;
+
+    document.getElementById("folderId").value =
+      folderId;
+
+    document.getElementById("galleryId").value =
+      galleryId;
+
     document.getElementById("title").value =
       galleryName || "";
-
-    saveSession();
 
     if (uploadedImages.length > 0) {
       setUploadStatus(
@@ -967,73 +1117,7 @@
     }
   }
 
-  function saveSession() {
-
-    const data = {
-
-      projectName:
-        document.getElementById("projectName").value,
-
-      locationName:
-        document.getElementById("locationName").value,
-
-      galleryName:
-        document.getElementById("galleryName").value,
-
-      galleryPath:
-        document.getElementById("galleryPath").value,
-
-      town:
-        document.getElementById("town").value,
-
-      state:
-        document.getElementById("state").value,
-
-      galleryTags:
-        document.getElementById("galleryTags").value,
-
-      notes:
-        document.getElementById("notes").value
-    };
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(data)
-    );
-  }
-
-  function loadSession() {
-
-    const saved =
-      localStorage.getItem(STORAGE_KEY);
-
-    if (!saved) return;
-
-    try {
-
-      const data =
-        JSON.parse(saved);
-
-      Object.entries(data).forEach(([key, value]) => {
-
-        const element =
-          document.getElementById(key);
-
-        if (element) {
-          element.value = value;
-        }
-      });
-
-      autoGenerate();
-
-    } catch (error) {
-
-      console.error(error);
-    }
-  }
-
   function addFiles(files) {
-
     const incoming =
       [...files]
         .filter(file =>
@@ -1048,68 +1132,60 @@
       ];
 
     uploadedImages = [];
-
     uploadProgress = {};
-
     uploadStatus = {};
-
     selectedCoverIndex = 0;
 
     renderPreviews();
-
     autoGenerate();
   }
 
   [
-    "projectName",
-    "locationName",
     "galleryName",
-    "galleryPath",
     "town",
     "state",
     "galleryTags",
     "notes"
   ].forEach(id => {
-
     document
       .getElementById(id)
       .addEventListener("input", autoGenerate);
   });
 
+  projectSelect.addEventListener(
+    "change",
+    loadFoldersForProject
+  );
+
+  folderSelect.addEventListener(
+    "change",
+    autoGenerate
+  );
+
   uploadZone.addEventListener("dragover", event => {
-
     event.preventDefault();
-
     uploadZone.classList.add("dragover");
   });
 
   uploadZone.addEventListener("dragleave", () => {
-
     uploadZone.classList.remove("dragover");
   });
 
   uploadZone.addEventListener("drop", event => {
-
     event.preventDefault();
-
     uploadZone.classList.remove("dragover");
-
     addFiles(event.dataTransfer.files);
   });
 
   fileInput.addEventListener("change", event => {
-
     addFiles(event.target.files);
-
     fileInput.value = "";
   });
 
   function renderPreviews() {
-
     previewGrid.innerHTML = "";
 
     localFiles.forEach((file, index) => {
-
       const card =
         document.createElement("div");
 
@@ -1127,7 +1203,6 @@
         uploadedImage &&
         uploadedImage.thumbnailUrl
       ) {
-
         const img =
           document.createElement("img");
 
@@ -1137,7 +1212,6 @@
         card.appendChild(img);
 
       } else if (isHeicFile(file)) {
-
         const heicBox =
           document.createElement("div");
 
@@ -1150,7 +1224,6 @@
         card.appendChild(heicBox);
 
       } else {
-
         const img =
           document.createElement("img");
 
@@ -1158,7 +1231,6 @@
           new FileReader();
 
         reader.onload = e => {
-
           img.src = e.target.result;
         };
 
@@ -1185,7 +1257,6 @@
         "preview-info";
 
       info.innerHTML = `
-
         <div class="preview-name">
           ${file.name}
         </div>
@@ -1218,7 +1289,6 @@
         </div>
 
         <div class="move-row">
-
           <button class="move-btn" onclick="moveLeft(${index})">
             ←
           </button>
@@ -1226,7 +1296,6 @@
           <button class="move-btn" onclick="moveRight(${index})">
             →
           </button>
-
         </div>
 
         <button
@@ -1242,20 +1311,17 @@
         >
           Remove
         </button>
-
       `;
 
       card.appendChild(info);
-
       previewGrid.appendChild(card);
     });
   }
 
   async function uploadAll() {
-
     if (!userCanUseAdmin()) {
       showWarning(
-        "This account does not have upload admin access."
+        "This account does not have upload access."
       );
 
       return;
@@ -1272,36 +1338,37 @@
     );
 
     const projectId =
-      document.getElementById("projectId").value;
+      projectSelect.value;
 
-    const folderPath =
-      document.getElementById("folderPath").value;
+    const folderId =
+      folderSelect.value;
 
     const galleryId =
       document.getElementById("galleryId").value;
 
     const root =
-      [projectId, folderPath, galleryId]
+      [projectId, folderId, galleryId]
         .filter(Boolean)
         .join("/");
 
     for (let index = 0; index < localFiles.length; index++) {
-
       try {
-
         const file =
           localFiles[index];
 
-        uploadStatus[index] = "uploading";
+        uploadStatus[index] =
+          "uploading";
 
-        uploadProgress[index] = 5;
+        uploadProgress[index] =
+          5;
 
         renderPreviews();
 
         const processed =
           await buildProcessedImageFiles(file);
 
-        uploadProgress[index] = 30;
+        uploadProgress[index] =
+          30;
 
         renderPreviews();
 
@@ -1317,7 +1384,8 @@
             processed.display.contentType
           );
 
-        uploadProgress[index] = 70;
+        uploadProgress[index] =
+          70;
 
         renderPreviews();
 
@@ -1333,12 +1401,13 @@
             processed.thumbnail.contentType
           );
 
-        uploadProgress[index] = 100;
+        uploadProgress[index] =
+          100;
 
-        uploadStatus[index] = "complete";
+        uploadStatus[index] =
+          "complete";
 
         uploadedImages.push({
-
           assetId:
             uniqueAssetId(file, index),
 
@@ -1371,8 +1440,8 @@
         );
 
       } catch (error) {
-
-        uploadStatus[index] = "error";
+        uploadStatus[index] =
+          "error";
 
         renderPreviews();
 
@@ -1389,96 +1458,19 @@
     }
 
     setUploadStatus(
-      "Saving project, folder, gallery, and images to D1..."
+      "Saving gallery and image records to D1..."
     );
 
     try {
-
       const galleryData =
         buildOutput();
 
-      setUploadStatus(
-        "Saving project..."
-      );
-
-      const projectResponse =
-        await fetch("/api/project-save", {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json"
-          },
-
-          body:
-            JSON.stringify({
-              id: galleryData.projectId,
-              title: displayTitleFromSlug(galleryData.projectId),
-              slug: galleryData.projectId,
-              description: "",
-              status: "active",
-              createdBy: currentUserId
-            })
-        });
-
-      const projectResult =
-        await projectResponse.json();
-
-      if (!projectResponse.ok || !projectResult.success) {
-
-        throw new Error(
-          projectResult.error || "Project save failed"
-        );
-      }
-
-      setUploadStatus(
-        "Saving folder..."
-      );
-
-      const folderResponse =
-        await fetch("/api/folder-save", {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json"
-          },
-
-          body:
-            JSON.stringify({
-              id: galleryData.folderId,
-              projectId: galleryData.projectId,
-              title: displayTitleFromSlug(galleryData.folderId),
-              slug: galleryData.folderId,
-              folderType: "location",
-              sortOrder: 0,
-              createdBy: currentUserId
-            })
-        });
-
-      const folderResult =
-        await folderResponse.json();
-
-      if (!folderResponse.ok || !folderResult.success) {
-
-        throw new Error(
-          folderResult.error || "Folder save failed"
-        );
-      }
-
-      setUploadStatus(
-        "Saving gallery and image records..."
-      );
-
       const galleryResponse =
         await fetch("/api/gallery-save", {
-
           method: "POST",
-
           headers: {
             "Content-Type": "application/json"
           },
-
           body:
             JSON.stringify(galleryData)
         });
@@ -1486,14 +1478,7 @@
       const galleryResult =
         await galleryResponse.json();
 
-      console.log({
-        projectResult,
-        folderResult,
-        galleryResult
-      });
-
       if (!galleryResponse.ok || !galleryResult.success) {
-
         throw new Error(
           galleryResult.error || "Gallery save failed"
         );
@@ -1502,11 +1487,10 @@
       clearWarning();
 
       setUploadSuccess(
-        `Upload complete. Saved to D1: ${galleryData.id}`
+        `Upload complete. Saved gallery: ${galleryData.id}`
       );
 
     } catch (error) {
-
       showWarning(
         error.message || "D1 save failed"
       );
@@ -1520,7 +1504,6 @@
   }
 
   function buildOutput() {
-
     const galleryId =
       document.getElementById("galleryId").value;
 
@@ -1531,16 +1514,16 @@
       document.getElementById("galleryName").value;
 
     const projectId =
-      document.getElementById("projectId").value;
-
-    const folderPath =
-      document.getElementById("folderPath").value;
+      projectSelect.value;
 
     const folderId =
-      folderPath
-        .split("/")
-        .filter(Boolean)
-        .join("-");
+      folderSelect.value;
+
+    const folder =
+      currentFolders.find(item => item.id === folderId);
+
+    const folderPath =
+      folder ? getFolderPath(folder) : "";
 
     const city =
       document.getElementById("town").value;
@@ -1575,18 +1558,28 @@
       ])];
 
     return {
+      id:
+        galleryId,
 
-      id: galleryId,
+      projectId:
+        projectId,
 
-      projectId: projectId,
+      folderId:
+        folderId,
 
-      folderId: folderId,
+      path:
+        folderPath
+          ? `${folderPath} / ${title}`
+          : title,
 
-      path: folderPath,
+      ownerId:
+        currentUserId,
 
-      ownerId: currentUserId,
+      createdBy:
+        currentUserId,
 
-      visibility: "private",
+      visibility:
+        "private",
 
       shareToken:
         window.scoutShareToken ||
@@ -1598,13 +1591,13 @@
               .replace(/^-+|-+$/g, "")
         ),
 
-      title: title,
+      title:
+        title,
 
       cover:
         uploadedImages[selectedCoverIndex]?.url || "",
 
       library: {
-
         locationName:
           galleryName,
 
@@ -1622,17 +1615,16 @@
       },
 
       admin: {
-
         notes:
           document.getElementById("notes").value
       },
 
-      images: uploadedImages
+      images:
+        uploadedImages
     };
   }
 
   function moveLeft(index) {
-
     if (index === 0) return;
 
     [localFiles[index - 1], localFiles[index]] =
@@ -1642,7 +1634,6 @@
   }
 
   function moveRight(index) {
-
     if (index >= localFiles.length - 1) return;
 
     [localFiles[index + 1], localFiles[index]] =
@@ -1652,15 +1643,13 @@
   }
 
   function removeImage(index) {
-
     localFiles.splice(index, 1);
-
     renderPreviews();
   }
 
   function setCover(index) {
-
-    selectedCoverIndex = index;
+    selectedCoverIndex =
+      index;
 
     renderPreviews();
 
@@ -1670,7 +1659,29 @@
   }
 
   if (userCanUseAdmin()) {
-    loadSession();
+    Promise.all([
+      fetch(PROJECTS_URL).then(response => response.json()),
+      fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+    ])
+
+      .then(([projectsData, membersData]) => {
+        allProjects =
+          projectsData.projects || [];
+
+        allMembers =
+          membersData.members || [];
+
+        renderProjectOptions();
+      })
+
+      .catch(error => {
+        console.error(error);
+
+        projectSelect.innerHTML =
+          `<option value="">Could not load projects</option>`;
+
+        showWarning(error.message);
+      });
   }
 </script>
 
