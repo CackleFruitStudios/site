@@ -19,14 +19,15 @@
     h1 { font-size: 28px; margin-bottom: 6px; }
     .subtitle { color: #888; margin-bottom: 26px; font-size: 14px; }
     .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 30px; margin-bottom: 10px; }
-    .card { display: block; background: #1c1c1c; color: white; padding: 15px; margin-top: 10px; border-radius: 6px; border: 1px solid #333; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .card { display: block; background: #1c1c1c; color: white; padding: 15px; border-radius: 6px; border: 1px solid #333; }
     .card:hover { background: #252525; }
     .folder-icon { width: 100%; height: 120px; border-radius: 4px; margin-bottom: 10px; background: #202020; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 42px; color: #777; }
-    .meta { color: #888; font-size: 12px; margin-top: 4px; }
+    .meta { color: #888; font-size: 12px; margin-top: 4px; line-height: 1.4; }
     .admin-panel { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; }
     .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
     .admin-card { background: #181818; border: 1px solid #2a2a2a; padding: 14px; border-radius: 6px; color: #aaa; font-size: 13px; }
-    .admin-card:hover { background: #222; }
+    .admin-card:hover { background: #222; color: white; text-decoration: none; }
     .coming-soon { color: #666; font-size: 12px; margin-top: 6px; }
     .message { color: #888; }
     hr { border: none; border-top: 1px solid #333; margin: 12px 0; }
@@ -37,14 +38,7 @@
 
 <a class="back-link" href="/scouts/">← Back to Scouts</a>
 
-<div class="top-nav">
-  <a href="/scouts/">Projects</a>
-  <a href="/scouts/scout.html">Scout Dashboard</a>
-  <a href="/scouts/library.html">Library</a>
-  <a href="/scouts/admin.html">Admin</a>
-  <button class="logout-btn" onclick="logout()">Logout</button>
-  <div class="user-badge" id="user-badge"></div>
-</div>
+<div class="top-nav" id="top-nav"></div>
 
 <div class="breadcrumb">
   <a href="/scouts/">Projects</a>
@@ -63,40 +57,25 @@
 <div class="admin-panel" id="admin-panel">
 
   <div class="section-title">
-    Admin Tools
+    Project Tools
   </div>
 
   <div class="admin-grid">
 
-    <a class="admin-card" href="/scouts/admin.html">
-      Upload Queue
-      <div class="coming-soon">Create gallery uploads</div>
+    <a class="admin-card" href="/scouts/folder-manager.html">
+      Folder Manager
+      <div class="coming-soon">Create folders, nested folders, and empty galleries</div>
     </a>
 
-    <div class="admin-card">
-      Folder Organizer
-      <div class="coming-soon">Future path manager</div>
-    </div>
+    <a class="admin-card" href="/scouts/admin.html">
+      Upload
+      <div class="coming-soon">Upload photos into project galleries</div>
+    </a>
 
     <a class="admin-card" href="/scouts/library.html">
-      File Pull Library
-      <div class="coming-soon">Cross-project scout archive</div>
+      Library
+      <div class="coming-soon">Search uploaded scout archive</div>
     </a>
-
-    <div class="admin-card">
-      Location Tags
-      <div class="coming-soon">Future reusable metadata system</div>
-    </div>
-
-    <div class="admin-card">
-      Contact Rolodex
-      <div class="coming-soon">Linked location contacts</div>
-    </div>
-
-    <div class="admin-card">
-      Scout Notes
-      <div class="coming-soon">Internal-only notes system</div>
-    </div>
 
   </div>
 
@@ -126,11 +105,11 @@
   const currentUserRole =
     currentUser?.globalRole || "";
 
-  const params = new URLSearchParams(window.location.search);
+  const params =
+    new URLSearchParams(window.location.search);
 
   const projectId =
-    params.get("project") ||
-    "test-project-gf";
+    params.get("project") || "";
 
   const projectTitleEl =
     document.getElementById("project-title");
@@ -144,17 +123,24 @@
   const adminPanelEl =
     document.getElementById("admin-panel");
 
-  const userBadgeEl =
-    document.getElementById("user-badge");
-
-  if (currentUser) {
-    userBadgeEl.textContent =
-      `${currentUser.name} · ${currentUserRole}`;
-  }
+  const topNavEl =
+    document.getElementById("top-nav");
 
   function logout() {
     sessionStorage.removeItem(SESSION_KEY);
     window.location.href = "/scouts/login.html";
+  }
+
+  function userIsMaster() {
+    return currentUserRole === "master";
+  }
+
+  function userCanUseAdminTools() {
+    return ["master", "lm", "alm"].includes(currentUserRole);
+  }
+
+  function userCanUseLibrary() {
+    return ["master", "lm", "alm", "scout"].includes(currentUserRole);
   }
 
   function titleFromSlug(value) {
@@ -171,12 +157,34 @@
     return gallery.projectId || gallery.project_id || "";
   }
 
+  function getFolderProjectId(folder) {
+    return folder.projectId || folder.project_id || "";
+  }
+
+  function getFolderParentId(folder) {
+    return folder.parentFolderId || folder.parent_folder_id || "";
+  }
+
+  function normalizeFolder(folder) {
+    return {
+      ...folder,
+      projectId: getFolderProjectId(folder),
+      parentFolderId: getFolderParentId(folder),
+      sortOrder: folder.sortOrder || folder.sort_order || 0,
+      folderType: folder.folderType || folder.folder_type || "location",
+      createdBy: folder.createdBy || folder.created_by || ""
+    };
+  }
+
   function getFolderTitle(folder) {
     return folder.title || folder.name || titleFromSlug(folder.slug || folder.id);
   }
 
-  function getFolderMeta(folder) {
-    return folder.slug || folder.id || "Folder";
+  function getFolderMeta(folder, allFolders) {
+    const childCount =
+      allFolders.filter(item => item.parentFolderId === folder.id).length;
+
+    return `${childCount} subfolders`;
   }
 
   function getMemberProjectId(member) {
@@ -196,23 +204,19 @@
       (role || "").toLowerCase();
 
     const roleLabels = {
+      master: "Master",
       lm: "LM",
       alm: "ALM",
       scout: "Scout",
       producer: "Producer",
-      client: "Client",
-      admin: "Admin"
+      client: "Client"
     };
 
     return roleLabels[normalizedRole] || role;
   }
 
-  function userIsAdmin() {
-    return currentUserRole === "admin";
-  }
-
   function userCanAccessProject(members) {
-    if (userIsAdmin()) {
+    if (userIsMaster()) {
       return true;
     }
 
@@ -223,43 +227,87 @@
   }
 
   function getUserProjectRole(members) {
-    if (userIsAdmin()) {
-      return "admin";
+    if (userIsMaster()) {
+      return "master";
     }
 
-    const member = members.find(item =>
-      getMemberUserId(item) === currentUserId &&
-      getMemberProjectId(item) === projectId
-    );
+    const member =
+      members.find(item =>
+        getMemberUserId(item) === currentUserId &&
+        getMemberProjectId(item) === projectId
+      );
 
     return member ? getMemberRole(member) : "";
   }
 
+  function renderTopNav() {
+    let html = `
+      <a href="/scouts/">Projects</a>
+    `;
+
+    if (userIsMaster()) {
+      html += `<a href="/scouts/master-portal.html">Master Portal</a>`;
+    }
+
+    if (["lm", "alm"].includes(currentUserRole)) {
+      html += `<a href="/scouts/admin-portal.html">LM / ALM Portal</a>`;
+    }
+
+    if (currentUserRole === "scout") {
+      html += `<a href="/scouts/scout-portal.html">Scout Portal</a>`;
+    }
+
+    if (userCanUseLibrary()) {
+      html += `<a href="/scouts/library.html">Library</a>`;
+    }
+
+    if (userCanUseAdminTools()) {
+      html += `<a href="/scouts/folder-manager.html">Folder Manager</a>`;
+      html += `<a href="/scouts/admin.html">Upload</a>`;
+    }
+
+    html += `
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      <div class="user-badge">${currentUser?.name || "User"} · ${currentUserRole}</div>
+    `;
+
+    topNavEl.innerHTML = html;
+  }
+
   function renderFolders(folders) {
-    if (!folders.length) {
+    const rootFolders =
+      folders
+        .filter(folder => !folder.parentFolderId)
+        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+    if (!rootFolders.length) {
       return `
         <p class="message">
-          No folders found for this project yet.
+          No root folders found for this project yet. Use Folder Manager to create your location folders.
         </p>
       `;
     }
 
-    return folders.map(folder => `
-      <a
-        class="card"
-        href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folder.id)}"
-      >
-        <div class="folder-icon">📁</div>
+    return `
+      <div class="grid">
+        ${rootFolders.map(folder => `
+          <a
+            class="card"
+            href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folder.id)}"
+          >
+            <div class="folder-icon">📁</div>
 
-        <div>
-          ${getFolderTitle(folder)}
-        </div>
+            <div>
+              ${getFolderTitle(folder)}
+            </div>
 
-        <div class="meta">
-          ${getFolderMeta(folder)}
-        </div>
-      </a>
-    `).join("");
+            <div class="meta">
+              ${getFolderMeta(folder, folders)}
+            </div>
+          </a>
+        `).join("")}
+      </div>
+    `;
   }
 
   function renderAccessDenied() {
@@ -279,74 +327,98 @@
       "none";
   }
 
-  if (!userIsAdmin()) {
+  function renderNoProject() {
+    projectTitleEl.textContent =
+      "No Project Selected";
+
+    projectSubtitleEl.textContent =
+      "Return to Projects and select a project.";
+
+    contentEl.innerHTML = `
+      <p class="message">
+        Missing project ID in the page URL.
+      </p>
+    `;
+
     adminPanelEl.style.display =
       "none";
   }
 
-  Promise.all([
-    fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
-    fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
-    fetch(PROJECT_MEMBERS_URL).then(response => response.json())
-  ])
+  renderTopNav();
 
-    .then(([projectsData, galleriesData, foldersData, membersData]) => {
-      const projects =
-        projectsData.projects || [];
+  if (!projectId) {
+    renderNoProject();
+  } else {
 
-      const galleries =
-        galleriesData.galleries || [];
+    if (!userCanUseAdminTools()) {
+      adminPanelEl.style.display =
+        "none";
+    }
 
-      const folders =
-        foldersData.folders || [];
+    Promise.all([
+      fetch(PROJECTS_URL).then(response => response.json()),
+      fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+      fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+      fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+    ])
 
-      const members =
-        membersData.members || [];
+      .then(([projectsData, galleriesData, foldersData, membersData]) => {
+        const projects =
+          projectsData.projects || [];
 
-      if (!userCanAccessProject(members)) {
-        renderAccessDenied();
-        return;
-      }
+        const galleries =
+          galleriesData.galleries || [];
 
-      const project =
-        projects.find(item => getProjectId(item) === projectId);
+        const folders =
+          (foldersData.folders || []).map(normalizeFolder);
 
-      const projectGalleries =
-        galleries.filter(gallery => getGalleryProjectId(gallery) === projectId);
+        const members =
+          membersData.members || [];
 
-      const role =
-        getUserProjectRole(members);
+        if (!userCanAccessProject(members)) {
+          renderAccessDenied();
+          return;
+        }
 
-      projectTitleEl.textContent =
-        project?.title ||
-        project?.name ||
-        titleFromSlug(projectId);
+        const project =
+          projects.find(item => getProjectId(item) === projectId);
 
-      projectSubtitleEl.textContent =
-        `${folders.length} folders · ${projectGalleries.length} galleries · Role: ${formatRole(role)}`;
+        const projectGalleries =
+          galleries.filter(gallery => getGalleryProjectId(gallery) === projectId);
 
-      contentEl.innerHTML = `
-        <div class="section-title">
-          Folders
-        </div>
+        const role =
+          getUserProjectRole(members);
 
-        ${renderFolders(folders)}
-      `;
-    })
+        projectTitleEl.textContent =
+          project?.title ||
+          project?.name ||
+          titleFromSlug(projectId);
 
-    .catch(error => {
-      console.error(error);
+        projectSubtitleEl.textContent =
+          `${folders.length} folders · ${projectGalleries.length} galleries · Role: ${formatRole(role)}`;
 
-      projectTitleEl.textContent =
-        "Could Not Load Project";
+        contentEl.innerHTML = `
+          <div class="section-title">
+            Root Folders
+          </div>
 
-      contentEl.innerHTML = `
-        <p class="message">
-          There was a problem loading project folder data.
-        </p>
-      `;
-    });
+          ${renderFolders(folders)}
+        `;
+      })
+
+      .catch(error => {
+        console.error(error);
+
+        projectTitleEl.textContent =
+          "Could Not Load Project";
+
+        contentEl.innerHTML = `
+          <p class="message">
+            There was a problem loading project folder data.
+          </p>
+        `;
+      });
+  }
 </script>
 
 </body>
