@@ -45,7 +45,10 @@ export default async function handler(req, res) {
   try {
     const project = req.body || {};
 
-    if (!project.id) {
+    const projectId = project.id || "";
+    const createdBy = project.createdBy || project.created_by || "andrew-devlin";
+
+    if (!projectId) {
       return res.status(400).json({
         success: false,
         error: "Missing project id"
@@ -54,7 +57,7 @@ export default async function handler(req, res) {
 
     await runD1Query(
       `
-      INSERT OR IGNORE INTO projects (
+      INSERT INTO projects (
         id,
         title,
         slug,
@@ -64,20 +67,42 @@ export default async function handler(req, res) {
         updated_at
       )
       VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(id) DO UPDATE SET
+        title = excluded.title,
+        slug = excluded.slug,
+        description = excluded.description,
+        status = excluded.status,
+        updated_at = CURRENT_TIMESTAMP
       `,
       [
-        project.id,
-        project.title || project.name || project.id,
-        project.slug || project.id,
+        projectId,
+        project.title || project.name || projectId,
+        project.slug || projectId,
         project.description || "",
         project.status || "active",
-        project.createdBy || "andrew-devlin"
+        createdBy
+      ]
+    );
+
+    await runD1Query(
+      `
+      INSERT OR IGNORE INTO project_members (
+        project_id,
+        user_id,
+        project_role
+      )
+      VALUES (?, ?, ?)
+      `,
+      [
+        projectId,
+        createdBy,
+        project.projectRole || project.project_role || "lm"
       ]
     );
 
     return res.status(200).json({
       success: true,
-      projectId: project.id
+      projectId
     });
 
   } catch (error) {
