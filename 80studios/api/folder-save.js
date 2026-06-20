@@ -45,7 +45,31 @@ export default async function handler(req, res) {
   try {
     const folder = req.body || {};
 
-    if (!folder.id || !folder.projectId) {
+    const folderId =
+      folder.id || "";
+
+    const projectId =
+      folder.projectId || folder.project_id || "";
+
+    const parentFolderId =
+      folder.parentFolderId || folder.parent_folder_id || null;
+
+    const title =
+      folder.title || folder.name || folderId;
+
+    const slug =
+      folder.slug || folderId;
+
+    const folderType =
+      folder.folderType || folder.folder_type || "location";
+
+    const sortOrder =
+      Number(folder.sortOrder || folder.sort_order || 0);
+
+    const createdBy =
+      folder.createdBy || folder.created_by || "andrew-devlin";
+
+    if (!folderId || !projectId) {
       return res.status(400).json({
         success: false,
         error: "Missing folder id or projectId"
@@ -54,7 +78,7 @@ export default async function handler(req, res) {
 
     await runD1Query(
       `
-      INSERT OR IGNORE INTO folders (
+      INSERT INTO folders (
         id,
         project_id,
         parent_folder_id,
@@ -66,22 +90,30 @@ export default async function handler(req, res) {
         updated_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(id) DO UPDATE SET
+        project_id = excluded.project_id,
+        parent_folder_id = excluded.parent_folder_id,
+        title = excluded.title,
+        slug = excluded.slug,
+        folder_type = excluded.folder_type,
+        sort_order = excluded.sort_order,
+        updated_at = CURRENT_TIMESTAMP
       `,
       [
-        folder.id,
-        folder.projectId,
-        folder.parentFolderId || null,
-        folder.title || folder.id,
-        folder.slug || folder.id,
-        folder.folderType || "location",
-        folder.sortOrder || 0,
-        folder.createdBy || "andrew-devlin"
+        folderId,
+        projectId,
+        parentFolderId,
+        title,
+        slug,
+        folderType,
+        sortOrder,
+        createdBy
       ]
     );
 
     return res.status(200).json({
       success: true,
-      folderId: folder.id
+      folderId
     });
 
   } catch (error) {
