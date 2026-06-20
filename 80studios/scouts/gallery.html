@@ -116,10 +116,11 @@
   const currentUserRole =
     currentUser?.globalRole || "";
 
-  const params = new URLSearchParams(window.location.search);
+  const params =
+    new URLSearchParams(window.location.search);
 
   const galleryId =
-    params.get("gallery") || "d1-api-test-gallery";
+    params.get("gallery") || "";
 
   const titleEl = document.getElementById("gallery-title");
   const subtitleEl = document.getElementById("gallery-subtitle");
@@ -131,6 +132,7 @@
   const lightboxFallback = document.getElementById("lightbox-fallback");
   const counterEl = document.getElementById("counter");
   const userBadgeEl = document.getElementById("user-badge");
+  const backLinkEl = document.getElementById("back-link");
 
   let currentImages = [];
   let currentIndex = 0;
@@ -146,11 +148,13 @@
   }
 
   function userIsAdmin() {
-    return currentUserRole === "admin";
+    return ["master", "lm", "alm"].includes(currentUserRole);
   }
 
   function titleFromSlug(value) {
-    return (value || "").replace(/-/g, " ").replace(/\b\w/g, char => char.toUpperCase());
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
   }
 
   function getProjectId(project) {
@@ -159,6 +163,25 @@
 
   function getProjectTitle(project, projectId) {
     return project?.title || project?.name || titleFromSlug(projectId);
+  }
+
+  function getFolderProjectId(folder) {
+    return folder.projectId || folder.project_id || "";
+  }
+
+  function getFolderParentId(folder) {
+    return folder.parentFolderId || folder.parent_folder_id || "";
+  }
+
+  function normalizeFolder(folder) {
+    return {
+      ...folder,
+      projectId: getFolderProjectId(folder),
+      parentFolderId: getFolderParentId(folder),
+      sortOrder: folder.sortOrder || folder.sort_order || 0,
+      folderType: folder.folderType || folder.folder_type || "location",
+      createdBy: folder.createdBy || folder.created_by || ""
+    };
   }
 
   function getFolderTitle(folder, folderId) {
@@ -171,6 +194,10 @@
 
   function getGalleryFolderId(gallery) {
     return gallery.folderId || gallery.folder_id || "";
+  }
+
+  function getGalleryTitle(gallery) {
+    return gallery.title || gallery.name || gallery.id;
   }
 
   function getImageOriginalUrl(image) {
@@ -205,7 +232,7 @@
   }
 
   function getImageAlt(image, gallery) {
-    return image.caption || image.filename || gallery.title || "Scout Image";
+    return image.caption || image.filename || getGalleryTitle(gallery) || "Scout Image";
   }
 
   function getMemberProjectId(member) {
@@ -241,7 +268,7 @@
       <div class="tags">
         ${tags.map(tag => `
           <span class="tag">
-            ${tag.tag}
+            ${tag.tag || tag.name || tag}
           </span>
         `).join("")}
       </div>
@@ -269,7 +296,8 @@
       `;
     }
 
-    counterEl.textContent = `${currentIndex + 1} / ${currentImages.length}`;
+    counterEl.textContent =
+      `${currentIndex + 1} / ${currentImages.length}`;
   }
 
   function openLightbox(index) {
@@ -311,9 +339,37 @@
     updateLightbox();
   }
 
-  function renderBreadcrumb(gallery, project, folder) {
-    const projectId = getGalleryProjectId(gallery);
-    const folderId = getGalleryFolderId(gallery);
+  function getFolderPath(folder, folders) {
+    const path = [];
+    let current = folder;
+    let safety = 0;
+
+    while (current && safety < 20) {
+      path.unshift(current);
+
+      const parentId =
+        current.parentFolderId || "";
+
+      current =
+        parentId
+          ? folders.find(item => item.id === parentId)
+          : null;
+
+      safety++;
+    }
+
+    return path;
+  }
+
+  function renderBreadcrumb(gallery, project, folder, folders) {
+    const projectId =
+      getGalleryProjectId(gallery);
+
+    const folderId =
+      getGalleryFolderId(gallery);
+
+    const projectUrl =
+      `/scouts/project.html?project=${encodeURIComponent(projectId)}`;
 
     let html = `
       <a href="/scouts/">
@@ -324,33 +380,54 @@
     if (projectId) {
       html += `
         /
-        <a href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
+        <a href="${projectUrl}">
           ${getProjectTitle(project, projectId)}
         </a>
       `;
     }
 
-    if (folderId) {
-      html += `
-        /
-        <a href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folderId)}">
-          ${getFolderTitle(folder, folderId)}
-        </a>
-      `;
+    if (folderId && folder) {
+      const folderPath =
+        getFolderPath(folder, folders);
+
+      folderPath.forEach(pathFolder => {
+        html += `
+          /
+          <a href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(pathFolder.id)}">
+            ${getFolderTitle(pathFolder, pathFolder.id)}
+          </a>
+        `;
+      });
+
+      backLinkEl.href =
+        `/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folderId)}`;
+
+      backLinkEl.textContent =
+        "← Back to Folder";
+    } else if (projectId) {
+      backLinkEl.href =
+        projectUrl;
+
+      backLinkEl.textContent =
+        "← Back to Project";
     }
 
     html += `
       /
-      <span>${gallery.title || gallery.name || gallery.id}</span>
+      <span>${getGalleryTitle(gallery)}</span>
     `;
 
     breadcrumbEl.innerHTML = html;
   }
 
   function renderImages(gallery, images) {
-    currentImages = images.filter(image => getImageOriginalUrl(image));
+    gridEl.innerHTML = "";
 
-    subtitleEl.textContent = photoLabel(currentImages.length);
+    currentImages =
+      images.filter(image => getImageOriginalUrl(image));
+
+    subtitleEl.textContent =
+      photoLabel(currentImages.length);
 
     if (!currentImages.length) {
       gridEl.innerHTML = `
@@ -363,18 +440,28 @@
 
     currentImages.forEach((image, index) => {
       if (isBrowserDisplayable(image)) {
-        const img = document.createElement("img");
+        const img =
+          document.createElement("img");
 
-        img.src = getImageThumbnailUrl(image);
-        img.alt = getImageAlt(image, gallery);
-        img.onclick = () => openLightbox(index);
+        img.src =
+          getImageThumbnailUrl(image);
+
+        img.alt =
+          getImageAlt(image, gallery);
+
+        img.onclick =
+          () => openLightbox(index);
 
         gridEl.appendChild(img);
       } else {
-        const fallback = document.createElement("div");
+        const fallback =
+          document.createElement("div");
 
-        fallback.className = "image-fallback";
-        fallback.onclick = () => openLightbox(index);
+        fallback.className =
+          "image-fallback";
+
+        fallback.onclick =
+          () => openLightbox(index);
 
         fallback.innerHTML = `
           HEIC / HEIF<br>
@@ -386,96 +473,129 @@
     });
   }
 
-  Promise.all([
-    fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(GALLERIES_URL).then(response => response.json()),
-    fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json()),
-    fetch(PROJECT_MEMBERS_URL).then(response => response.json()),
-    fetch(`${LOCATION_TAGS_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json())
-  ])
-    .then(([projectsData, galleriesData, imagesData, membersData, tagsData]) => {
-      const projects = projectsData.projects || [];
-      const galleries = galleriesData.galleries || [];
-      const images = imagesData.images || [];
-      const members = membersData.members || [];
-      const tags = tagsData.tags || [];
+  function renderMissingGallery() {
+    titleEl.textContent =
+      "Missing Gallery";
 
-      const gallery =
-        galleries.find(item => item.id === galleryId);
+    subtitleEl.textContent =
+      "";
 
-      if (!gallery) {
-        titleEl.textContent = "Gallery Not Found";
-        gridEl.innerHTML = `<div class="message">Check the gallery ID in the URL.</div>`;
-        return;
-      }
+    gridEl.innerHTML = `
+      <div class="message">
+        This page needs a gallery ID in the URL.
+      </div>
+    `;
+  }
 
-      const projectId =
-        getGalleryProjectId(gallery);
+  if (!galleryId) {
+    renderMissingGallery();
+  } else {
+    Promise.all([
+      fetch(PROJECTS_URL).then(response => response.json()),
+      fetch(GALLERIES_URL).then(response => response.json()),
+      fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json()),
+      fetch(PROJECT_MEMBERS_URL).then(response => response.json()),
+      fetch(`${LOCATION_TAGS_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json())
+    ])
 
-      if (!userCanAccessProject(members, projectId)) {
+      .then(([projectsData, galleriesData, imagesData, membersData, tagsData]) => {
+        const projects =
+          projectsData.projects || [];
+
+        const galleries =
+          galleriesData.galleries || [];
+
+        const images =
+          imagesData.images || [];
+
+        const members =
+          membersData.members || [];
+
+        const tags =
+          tagsData.tags || [];
+
+        const gallery =
+          galleries.find(item => item.id === galleryId);
+
+        if (!gallery) {
+          titleEl.textContent =
+            "Gallery Not Found";
+
+          gridEl.innerHTML = `
+            <div class="message">
+              Check the gallery ID in the URL.
+            </div>
+          `;
+          return;
+        }
+
+        const projectId =
+          getGalleryProjectId(gallery);
+
+        if (!userCanAccessProject(members, projectId)) {
+          titleEl.textContent =
+            "Access Denied";
+
+          gridEl.innerHTML = `
+            <div class="message">
+              This user is not assigned to this project.
+            </div>
+          `;
+
+          return;
+        }
+
+        const folderId =
+          getGalleryFolderId(gallery);
+
+        const project =
+          projects.find(item =>
+            getProjectId(item) === projectId
+          );
+
+        fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`)
+          .then(response => response.json())
+          .then(foldersData => {
+            const folders =
+              (foldersData.folders || []).map(normalizeFolder);
+
+            const folder =
+              folders.find(item =>
+                item.id === folderId
+              );
+
+            renderBreadcrumb(
+              gallery,
+              project,
+              folder,
+              folders
+            );
+
+            titleEl.textContent =
+              getGalleryTitle(gallery);
+
+            renderTags(tags);
+
+            renderImages(
+              gallery,
+              images
+            );
+          });
+      })
+
+      .catch(error => {
+        console.error(error);
+
         titleEl.textContent =
-          "Access Denied";
+          "Could Not Load Gallery";
 
         gridEl.innerHTML = `
           <div class="message">
-            This user is not assigned to this project.
+            There was a problem loading D1 gallery data.
           </div>
         `;
-
-        return;
-      }
-
-      const folderId =
-        getGalleryFolderId(gallery);
-
-      const project =
-        projects.find(item =>
-          getProjectId(item) === projectId
-        );
-
-      fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`)
-        .then(response => response.json())
-        .then(foldersData => {
-          const folders =
-            foldersData.folders || [];
-
-          const folder =
-            folders.find(item =>
-              item.id === folderId
-            );
-
-          renderBreadcrumb(
-            gallery,
-            project,
-            folder
-          );
-
-          titleEl.textContent =
-            gallery.title ||
-            gallery.name ||
-            gallery.id;
-
-          renderTags(tags);
-
-          renderImages(
-            gallery,
-            images
-          );
-        });
-    })
-
-    .catch(error => {
-      console.error(error);
-
-      titleEl.textContent =
-        "Could Not Load Gallery";
-
-      gridEl.innerHTML = `
-        <div class="message">
-          There was a problem loading D1 gallery data.
-        </div>
-      `;
-    });
+      });
+  }
 
   document.addEventListener("keydown", function(event) {
     if (lightbox.style.display !== "flex") return;
