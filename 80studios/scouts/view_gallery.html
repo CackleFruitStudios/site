@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scout Gallery</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; }
+    .header { padding: 20px; text-align: center; }
+    .back-link { display: inline-block; color: #888; text-decoration: none; font-size: 13px; margin-bottom: 12px; }
+    .back-link:hover { color: #fff; }
+    .logout-btn { background:#222; color:#aaa; border:1px solid #444; padding:6px 10px; cursor:pointer; margin-bottom: 12px; }
+    .logout-btn:hover { color:#fff; background:#333; }
+    .user-badge { color: #777; font-size: 13px; margin-bottom: 12px; }
+    .breadcrumb { color: #999; font-size: 13px; margin-bottom: 10px; line-height: 1.4; }
+    .breadcrumb a { color: inherit; text-decoration: none; }
+    .breadcrumb a:hover { color: #fff; text-decoration: underline; }
+    .breadcrumb span { color: #aaa; }
+    .header h1 { font-size: 24px; margin: 0 0 8px 0; }
+    .header p { margin: 0; color: #aaa; font-size: 14px; }
+    .tags { margin-top: 12px; }
+    .tag { display: inline-block; background: #222; border: 1px solid #444; color: #aaa; border-radius: 999px; padding: 4px 10px; font-size: 12px; margin: 3px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 5px; padding: 5px; }
+    .grid img { width: 100%; height: auto; display: block; cursor: pointer; background: #222; }
+    .image-fallback { background:#222; color:#aaa; min-height:180px; display:flex; align-items:center; justify-content:center; text-align:center; padding:18px; cursor:pointer; box-sizing:border-box; font-size:13px; line-height:1.4; }
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); display: none; justify-content: center; align-items: center; z-index: 100; }
+    .lightbox img { max-width: 95%; max-height: 95%; }
+    .lightbox-fallback { color:#aaa; text-align:center; line-height:1.5; font-size:16px; max-width:80%; display:none; }
+    .counter { position: fixed; bottom: 16px; left: 0; right: 0; text-align: center; color: #aaa; font-size: 14px; }
+    .nav-button { position: fixed; top: 50%; transform: translateY(-50%); font-size: 42px; color: white; background: rgba(0,0,0,0.45); border: none; padding: 12px 18px; cursor: pointer; z-index: 101; }
+    .nav-button:hover { background: rgba(255,255,255,0.12); }
+    .nav-prev { left: 20px; }
+    .nav-next { right: 20px; }
+    hr { border: none; border-top: 1px solid #333; margin: 10px 0; }
+    .message { padding: 30px; text-align: center; color: #aaa; }
+  </style>
+</head>
+
+<body>
+
+<div class="header">
+
+  <a class="back-link" id="back-link" href="/scouts/">
+    ← Back to Scouts
+  </a>
+
+  <div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="user-badge" id="user-badge"></div>
+
+  <hr>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <hr>
+
+  <h1 id="gallery-title">
+    Loading gallery...
+  </h1>
+
+  <hr>
+
+  <p id="gallery-subtitle"></p>
+
+  <div id="gallery-tags"></div>
+
+</div>
+
+<div class="grid" id="gallery-grid"></div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+
+  <button class="nav-button nav-prev" onclick="prevImage(event)">
+    ‹
+  </button>
+
+  <img id="lightbox-img" onclick="event.stopPropagation()">
+
+  <div class="lightbox-fallback" id="lightbox-fallback"></div>
+
+  <button class="nav-button nav-next" onclick="nextImage(event)">
+    ›
+  </button>
+
+  <div class="counter" id="counter"></div>
+
+</div>
+
+<script>
+  const SESSION_KEY = "eightyStudiosScoutUser";
+
+  const PROJECTS_URL = "/api/project-list";
+  const FOLDERS_URL = "/api/folder-list";
+  const GALLERIES_URL = "/api/gallery-list";
+  const IMAGES_URL = "/api/image-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
+  const LOCATION_TAGS_URL = "/api/location-tag-list";
+
+  const savedUser =
+    sessionStorage.getItem(SESSION_KEY);
+
+  if (!savedUser) {
+    window.location.href = "/scouts/login.html";
+  }
+
+  const currentUser =
+    savedUser ? JSON.parse(savedUser) : null;
+
+  const currentUserId =
+    currentUser?.id || "";
+
+  const currentUserRole =
+    currentUser?.globalRole || "";
+
+  const params =
+    new URLSearchParams(window.location.search);
+
+  const galleryId =
+    params.get("gallery") || "";
+
+  const titleEl = document.getElementById("gallery-title");
+  const subtitleEl = document.getElementById("gallery-subtitle");
+  const tagsEl = document.getElementById("gallery-tags");
+  const breadcrumbEl = document.getElementById("breadcrumb");
+  const gridEl = document.getElementById("gallery-grid");
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightbox-img");
+  const lightboxFallback = document.getElementById("lightbox-fallback");
+  const counterEl = document.getElementById("counter");
+  const userBadgeEl = document.getElementById("user-badge");
+  const backLinkEl = document.getElementById("back-link");
+
+  let currentImages = [];
+  let currentIndex = 0;
+
+  if (currentUser) {
+    userBadgeEl.textContent =
+      `${currentUser.name} · ${currentUserRole}`;
+  }
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href = "/scouts/login.html";
+  }
+
+  function userIsAdmin() {
+    return ["master", "lm", "alm"].includes(currentUserRole);
+  }
+
+  function titleFromSlug(value) {
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
+  }
+
+  function getProjectTitle(project, projectId) {
+    return project?.title || project?.name || titleFromSlug(projectId);
+  }
+
+  function getFolderProjectId(folder) {
+    return folder.projectId || folder.project_id || "";
+  }
+
+  function getFolderParentId(folder) {
+    return folder.parentFolderId || folder.parent_folder_id || "";
+  }
+
+  function normalizeFolder(folder) {
+    return {
+      ...folder,
+      projectId: getFolderProjectId(folder),
+      parentFolderId: getFolderParentId(folder),
+      sortOrder: folder.sortOrder || folder.sort_order || 0,
+      folderType: folder.folderType || folder.folder_type || "location",
+      createdBy: folder.createdBy || folder.created_by || ""
+    };
+  }
+
+  function getFolderTitle(folder, folderId) {
+    return folder?.title || folder?.name || titleFromSlug(folder?.slug || folderId);
+  }
+
+  function getGalleryProjectId(gallery) {
+    return gallery.projectId || gallery.project_id || "";
+  }
+
+  function getGalleryFolderId(gallery) {
+    return gallery.folderId || gallery.folder_id || "";
+  }
+
+  function getGalleryTitle(gallery) {
+    return gallery.title || gallery.name || gallery.id;
+  }
+
+  function getImageOriginalUrl(image) {
+    return image.url || image.imageUrl || image.image_url || "";
+  }
+
+  function getImageDisplayUrl(image) {
+    return image.displayUrl || image.display_url || getImageOriginalUrl(image);
+  }
+
+  function getImageThumbnailUrl(image) {
+    return image.thumbnailUrl || image.thumbnail_url || getImageDisplayUrl(image);
+  }
+
+  function getImageContentType(image) {
+    return (image.contentType || image.content_type || "").toLowerCase();
+  }
+
+  function isBrowserDisplayable(image) {
+    const type = getImageContentType(image);
+    const url = getImageDisplayUrl(image).toLowerCase();
+
+    if (type.includes("heic") || type.includes("heif")) {
+      return false;
+    }
+
+    if (url.endsWith(".heic") || url.endsWith(".heif")) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function getImageAlt(image, gallery) {
+    return image.caption || image.filename || getGalleryTitle(gallery) || "Scout Image";
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function userCanAccessProject(members, projectId) {
+    if (userIsAdmin()) {
+      return true;
+    }
+
+    return members.some(member =>
+      getMemberUserId(member) === currentUserId &&
+      getMemberProjectId(member) === projectId
+    );
+  }
+
+  function photoLabel(count) {
+    return `${count} ${count === 1 ? "photo" : "photos"}`;
+  }
+
+  function renderTags(tags) {
+    if (!tags.length) {
+      tagsEl.innerHTML = "";
+      return;
+    }
+
+    tagsEl.innerHTML = `
+      <div class="tags">
+        ${tags.map(tag => `
+          <span class="tag">
+            ${tag.tag || tag.name || tag}
+          </span>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function updateLightbox() {
+    if (!currentImages.length) return;
+
+    const image =
+      currentImages[currentIndex];
+
+    if (isBrowserDisplayable(image)) {
+      lightboxImg.style.display = "block";
+      lightboxFallback.style.display = "none";
+      lightboxImg.src = getImageDisplayUrl(image);
+    } else {
+      lightboxImg.style.display = "none";
+      lightboxImg.src = "";
+
+      lightboxFallback.style.display = "block";
+      lightboxFallback.innerHTML = `
+        HEIC / HEIF image<br>
+        Display conversion pending.
+      `;
+    }
+
+    counterEl.textContent =
+      `${currentIndex + 1} / ${currentImages.length}`;
+  }
+
+  function openLightbox(index) {
+    currentIndex = index;
+    updateLightbox();
+    lightbox.style.display = "flex";
+  }
+
+  function closeLightbox() {
+    lightbox.style.display = "none";
+    lightboxImg.src = "";
+  }
+
+  function prevImage(event) {
+    event.stopPropagation();
+
+    if (!currentImages.length) return;
+
+    currentIndex--;
+
+    if (currentIndex < 0) {
+      currentIndex = currentImages.length - 1;
+    }
+
+    updateLightbox();
+  }
+
+  function nextImage(event) {
+    event.stopPropagation();
+
+    if (!currentImages.length) return;
+
+    currentIndex++;
+
+    if (currentIndex >= currentImages.length) {
+      currentIndex = 0;
+    }
+
+    updateLightbox();
+  }
+
+  function getFolderPath(folder, folders) {
+    const path = [];
+    let current = folder;
+    let safety = 0;
+
+    while (current && safety < 20) {
+      path.unshift(current);
+
+      const parentId =
+        current.parentFolderId || "";
+
+      current =
+        parentId
+          ? folders.find(item => item.id === parentId)
+          : null;
+
+      safety++;
+    }
+
+    return path;
+  }
+
+  function renderBreadcrumb(gallery, project, folder, folders) {
+    const projectId =
+      getGalleryProjectId(gallery);
+
+    const folderId =
+      getGalleryFolderId(gallery);
+
+    const projectUrl =
+      `/scouts/project.html?project=${encodeURIComponent(projectId)}`;
+
+    let html = `
+      <a href="/scouts/">
+        Projects
+      </a>
+    `;
+
+    if (projectId) {
+      html += `
+        /
+        <a href="${projectUrl}">
+          ${getProjectTitle(project, projectId)}
+        </a>
+      `;
+    }
+
+    if (folderId && folder) {
+      const folderPath =
+        getFolderPath(folder, folders);
+
+      folderPath.forEach(pathFolder => {
+        html += `
+          /
+          <a href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(pathFolder.id)}">
+            ${getFolderTitle(pathFolder, pathFolder.id)}
+          </a>
+        `;
+      });
+
+      backLinkEl.href =
+        `/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folderId)}`;
+
+      backLinkEl.textContent =
+        "← Back to Folder";
+    } else if (projectId) {
+      backLinkEl.href =
+        projectUrl;
+
+      backLinkEl.textContent =
+        "← Back to Project";
+    }
+
+    html += `
+      /
+      <span>${getGalleryTitle(gallery)}</span>
+    `;
+
+    breadcrumbEl.innerHTML = html;
+  }
+
+  function renderImages(gallery, images) {
+    gridEl.innerHTML = "";
+
+    currentImages =
+      images.filter(image => getImageOriginalUrl(image));
+
+    subtitleEl.textContent =
+      photoLabel(currentImages.length);
+
+    if (!currentImages.length) {
+      gridEl.innerHTML = `
+        <div class="message">
+          No images added yet.
+        </div>
+      `;
+      return;
+    }
+
+    currentImages.forEach((image, index) => {
+      if (isBrowserDisplayable(image)) {
+        const img =
+          document.createElement("img");
+
+        img.src =
+          getImageThumbnailUrl(image);
+
+        img.alt =
+          getImageAlt(image, gallery);
+
+        img.onclick =
+          () => openLightbox(index);
+
+        gridEl.appendChild(img);
+      } else {
+        const fallback =
+          document.createElement("div");
+
+        fallback.className =
+          "image-fallback";
+
+        fallback.onclick =
+          () => openLightbox(index);
+
+        fallback.innerHTML = `
+          HEIC / HEIF<br>
+          Display conversion pending
+        `;
+
+        gridEl.appendChild(fallback);
+      }
+    });
+  }
+
+  function renderMissingGallery() {
+    titleEl.textContent =
+      "Missing Gallery";
+
+    subtitleEl.textContent =
+      "";
+
+    gridEl.innerHTML = `
+      <div class="message">
+        This page needs a gallery ID in the URL.
+      </div>
+    `;
+  }
+
+  if (!galleryId) {
+    renderMissingGallery();
+  } else {
+    Promise.all([
+      fetch(PROJECTS_URL).then(response => response.json()),
+      fetch(GALLERIES_URL).then(response => response.json()),
+      fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json()),
+      fetch(PROJECT_MEMBERS_URL).then(response => response.json()),
+      fetch(`${LOCATION_TAGS_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json())
+    ])
+
+      .then(([projectsData, galleriesData, imagesData, membersData, tagsData]) => {
+        const projects =
+          projectsData.projects || [];
+
+        const galleries =
+          galleriesData.galleries || [];
+
+        const images =
+          imagesData.images || [];
+
+        const members =
+          membersData.members || [];
+
+        const tags =
+          tagsData.tags || [];
+
+        const gallery =
+          galleries.find(item => item.id === galleryId);
+
+        if (!gallery) {
+          titleEl.textContent =
+            "Gallery Not Found";
+
+          gridEl.innerHTML = `
+            <div class="message">
+              Check the gallery ID in the URL.
+            </div>
+          `;
+          return;
+        }
+
+        const projectId =
+          getGalleryProjectId(gallery);
+
+        if (!userCanAccessProject(members, projectId)) {
+          titleEl.textContent =
+            "Access Denied";
+
+          gridEl.innerHTML = `
+            <div class="message">
+              This user is not assigned to this project.
+            </div>
+          `;
+
+          return;
+        }
+
+        const folderId =
+          getGalleryFolderId(gallery);
+
+        const project =
+          projects.find(item =>
+            getProjectId(item) === projectId
+          );
+
+        fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`)
+          .then(response => response.json())
+          .then(foldersData => {
+            const folders =
+              (foldersData.folders || []).map(normalizeFolder);
+
+            const folder =
+              folders.find(item =>
+                item.id === folderId
+              );
+
+            renderBreadcrumb(
+              gallery,
+              project,
+              folder,
+              folders
+            );
+
+            titleEl.textContent =
+              getGalleryTitle(gallery);
+
+            renderTags(tags);
+
+            renderImages(
+              gallery,
+              images
+            );
+          });
+      })
+
+      .catch(error => {
+        console.error(error);
+
+        titleEl.textContent =
+          "Could Not Load Gallery";
+
+        gridEl.innerHTML = `
+          <div class="message">
+            There was a problem loading D1 gallery data.
+          </div>
+        `;
+      });
+  }
+
+  document.addEventListener("keydown", function(event) {
+    if (lightbox.style.display !== "flex") return;
+
+    if (event.key === "ArrowLeft") prevImage(event);
+    if (event.key === "ArrowRight") nextImage(event);
+    if (event.key === "Escape") closeLightbox();
+  });
+</script>
+
+</body>
+</html>
