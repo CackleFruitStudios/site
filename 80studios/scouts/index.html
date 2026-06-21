@@ -50,6 +50,23 @@
   <div class="portal-grid" id="portal-grid"></div>
 </div>
 
+<div id="create-project-section" style="display:none;">
+  <div class="section-title">
+    Create
+  </div>
+
+  <div class="project-grid">
+    <a class="project-card" href="/scouts/create-project.html">
+      <div class="project-info">
+        <h2>+ Create Project</h2>
+        <div class="meta">
+          Start a new scouting project.
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
 <div class="section-title" id="project-section-title">
   Current Projects
 </div>
@@ -95,6 +112,9 @@
 
   const portalsSectionEl =
     document.getElementById("portals-section");
+
+  const createProjectSectionEl =
+    document.getElementById("create-project-section");
 
   const content =
     document.getElementById("content");
@@ -210,6 +230,12 @@
       `;
     }
 
+    if (userCanUseAdminTools()) {
+      html += `
+        <a href="/scouts/create-project.html">Create Project</a>
+      `;
+    }
+
     if (userCanUseLibrary()) {
       html += `
         <a href="/scouts/library.html">Library</a>
@@ -297,6 +323,10 @@
 
     sectionTitleEl.textContent =
       userCanSeeAllProjects() ? "Current Projects" : "Assigned Projects";
+
+    if (userCanUseAdminTools()) {
+      createProjectSectionEl.style.display = "block";
+    }
 
     renderTopNav();
     renderPortals();
