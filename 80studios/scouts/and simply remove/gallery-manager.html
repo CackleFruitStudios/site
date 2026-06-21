@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gallery Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
+    a { color: #999; text-decoration: none; }
+    a:hover { color: white; text-decoration: underline; }
+    h1 { font-size: 28px; margin-bottom: 6px; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 22px; line-height: 1.5; }
+    .top-nav { margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .top-nav a, .logout-btn {
+      display: inline-block;
+      color: #999;
+      font-size: 14px;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+    }
+    .top-nav a:hover, .logout-btn:hover { color: #fff; text-decoration: underline; }
+    .user-badge { color: #777; font-size: 13px; margin-left: auto; }
+    .panel { background: #181818; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-top: 16px; }
+    .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .message { color: #aaa; font-size: 14px; line-height: 1.5; margin-top: 12px; }
+    .success { color: #71d685; }
+    .error { color: #ff8f8f; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 14px; }
+    .card { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+    .card.cover-selected { border: 2px solid #71d685; }
+    .thumb { width: 100%; height: 145px; object-fit: cover; display: block; background: #222; }
+    .image-fallback {
+      height: 145px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #222;
+      color: #aaa;
+      font-size: 13px;
+      text-align: center;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    .info { padding: 10px; }
+    .filename { font-size: 12px; color: #ddd; word-break: break-word; margin-bottom: 8px; }
+    .meta { color: #888; font-size: 11px; line-height: 1.4; margin-bottom: 8px; }
+    button {
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 9px 10px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    button:hover { background: #333; }
+    .button-row { display: flex; gap: 6px; }
+    .button-row button { flex: 1; }
+    .cover-btn { width: 100%; background: #18351d; border-color: #2d5a33; color: #71d685; }
+    .delete-btn { width: 100%; background: #3b1717; border-color: #5c2222; color: #f07a7a; }
+    .save-btn { background: #18351d; border-color: #2d5a33; color: #71d685; }
+    .view-btn { background: #1b2740; border-color: #314a77; color: #9fc5ff; }
+  </style>
+</head>
+
+<body>
+
+<div class="top-nav">
+  <a href="/scouts/">Projects</a>
+  <a href="/scouts/admin-portal.html">LM / ALM Portal</a>
+  <a href="/scouts/folder-manager.html">Folder Manager</a>
+  <a href="/scouts/admin.html">Upload</a>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+  <div class="user-badge" id="user-badge"></div>
+</div>
+
+<h1 id="gallery-title">Gallery Manager</h1>
+
+<div class="subtitle" id="subtitle">
+  Manage cover image, image order, and deleted photos.
+</div>
+
+<div class="panel">
+  <div class="section-title">Actions</div>
+  <button class="save-btn" onclick="saveGallery()">Save Changes</button>
+  <button class="view-btn" onclick="openViewer()">Open Viewer</button>
+  <div class="message" id="message">Loading gallery...</div>
+</div>
+
+<div class="panel">
+  <div class="section-title">Images</div>
+  <div class="grid" id="image-grid"></div>
+</div>
+
+<script>
+  const SESSION_KEY = "eightyStudiosScoutUser";
+
+  const GALLERIES_URL = "/api/gallery-list";
+  const IMAGES_URL = "/api/image-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
+  const GALLERY_SAVE_URL = "/api/gallery-save";
+
+  const savedUser =
+    sessionStorage.getItem(SESSION_KEY);
+
+  if (!savedUser) {
+    window.location.href = "/scouts/login.html";
+  }
+
+  const currentUser =
+    savedUser ? JSON.parse(savedUser) : null;
+
+  const currentUserId =
+    currentUser?.id || "";
+
+  const currentUserRole =
+    currentUser?.globalRole || "";
+
+  const allowedRoles =
+    ["master", "lm", "alm", "scout"];
+
+  const params =
+    new URLSearchParams(window.location.search);
+
+  const galleryId =
+    params.get("gallery") || "";
+
+  const userBadgeEl =
+    document.getElementById("user-badge");
+
+  const titleEl =
+    document.getElementById("gallery-title");
+
+  const subtitleEl =
+    document.getElementById("subtitle");
+
+  const messageEl =
+    document.getElementById("message");
+
+  const imageGridEl =
+    document.getElementById("image-grid");
+
+  let currentGallery = null;
+  let currentImages = [];
+  let currentCover = "";
+
+  if (currentUser) {
+    userBadgeEl.textContent =
+      `${currentUser.name} · ${currentUserRole}`;
+  }
+
+  if (!allowedRoles.includes(currentUserRole)) {
+    document.body.innerHTML = `
+      <div class="panel">
+        <h1>Access Denied</h1>
+        <p class="message error">
+          This account cannot manage galleries.
+        </p>
+        <p>
+          <a href="/scouts/">Return to Projects</a>
+        </p>
+      </div>
+    `;
+  }
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href =
+      "/scouts/login.html";
+  }
+
+  function setMessage(text, type) {
+    messageEl.textContent =
+      text || "";
+
+    messageEl.className =
+      type ? `message ${type}` : "message";
+  }
+
+  function getGalleryProjectId(gallery) {
+    return gallery.projectId || gallery.project_id || "";
+  }
+
+  function getGalleryFolderId(gallery) {
+    return gallery.folderId || gallery.folder_id || "";
+  }
+
+  function getGalleryTitle(gallery) {
+    return gallery.title || gallery.name || gallery.id;
+  }
+
+  function getImageId(image, index) {
+    return image.id || image.assetId || image.asset_id || `${galleryId}-image-${index}`;
+  }
+
+  function getImageUrl(image) {
+    return image.displayUrl || image.display_url || image.url || "";
+  }
+
+  function getImageThumbnailUrl(image) {
+    return image.thumbnailUrl || image.thumbnail_url || getImageUrl(image);
+  }
+
+  function getImageContentType(image) {
+    return image.contentType || image.content_type || "";
+  }
+
+  function getImageFilename(image) {
+    return image.filename || image.name || image.assetId || image.asset_id || "image";
+  }
+
+  function getImageTags(image) {
+    if (Array.isArray(image.tags)) {
+      return image.tags;
+    }
+
+    if (image.tags_json) {
+      try {
+        return JSON.parse(image.tags_json);
+      } catch (error) {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function userCanAccessProject(members, projectId) {
+    if (currentUserRole === "master") {
+      return true;
+    }
+
+    return members.some(member =>
+      getMemberUserId(member) === currentUserId &&
+      getMemberProjectId(member) === projectId
+    );
+  }
+
+  function renderImages() {
+    if (!currentImages.length) {
+      imageGridEl.innerHTML = `
+        <div class="message">
+          No images found in this gallery.
+        </div>
+      `;
+      return;
+    }
+
+    imageGridEl.innerHTML =
+      currentImages.map((image, index) => {
+        const thumb =
+          getImageThumbnailUrl(image);
+
+        const imageUrl =
+          getImageUrl(image);
+
+        const isCover =
+          currentCover &&
+          (
+            currentCover === thumb ||
+            currentCover === imageUrl ||
+            currentCover === image.url
+          );
+
+        return `
+          <div class="card ${isCover ? "cover-selected" : ""}">
+            ${
+              thumb
+                ? `<img class="thumb" src="${thumb}">`
+                : `<div class="image-fallback">Image preview unavailable</div>`
+            }
+
+            <div class="info">
+              <div class="filename">
+                ${getImageFilename(image)}
+              </div>
+
+              <div class="meta">
+                ${getImageContentType(image) || "image"}<br>
+                Position ${index + 1}
+              </div>
+
+              <div class="button-row">
+                <button onclick="moveImage(${index}, -1)">←</button>
+                <button onclick="moveImage(${index}, 1)">→</button>
+              </div>
+
+              <button class="cover-btn" onclick="setCover(${index})">
+                Set Cover
+              </button>
+
+              <button class="delete-btn" onclick="deleteImage(${index})">
+                Delete
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+  }
+
+  function moveImage(index, direction) {
+    const target =
+      index + direction;
+
+    if (target < 0 || target >= currentImages.length) {
+      return;
+    }
+
+    [currentImages[index], currentImages[target]] =
+      [currentImages[target], currentImages[index]];
+
+    renderImages();
+    setMessage("Image order changed. Save changes when ready.", "");
+  }
+
+  function setCover(index) {
+    const image =
+      currentImages[index];
+
+    currentCover =
+      getImageThumbnailUrl(image) ||
+      getImageUrl(image) ||
+      "";
+
+    renderImages();
+    setMessage("Cover selected. Save changes when ready.", "");
+  }
+
+  function deleteImage(index) {
+    const image =
+      currentImages[index];
+
+    const ok =
+      confirm(`Delete this image from the gallery?\n\n${getImageFilename(image)}`);
+
+    if (!ok) {
+      return;
+    }
+
+    const imageUrl =
+      getImageUrl(image);
+
+    const thumb =
+      getImageThumbnailUrl(image);
+
+    currentImages.splice(index, 1);
+
+    if (
+      currentCover === imageUrl ||
+      currentCover === thumb ||
+      !currentImages.length
+    ) {
+      currentCover =
+        currentImages.length
+          ? getImageThumbnailUrl(currentImages[0]) || getImageUrl(currentImages[0])
+          : "";
+    }
+
+    renderImages();
+    setMessage("Image deleted from gallery. Save changes when ready.", "");
+  }
+
+  function openViewer() {
+    if (!galleryId) {
+      return;
+    }
+
+    window.open(
+      `/scouts/view-gallery.html?gallery=${encodeURIComponent(galleryId)}`,
+      "_blank"
+    );
+  }
+
+  function buildGalleryPayload() {
+    return {
+      id:
+        currentGallery.id,
+
+      projectId:
+        getGalleryProjectId(currentGallery),
+
+      folderId:
+        getGalleryFolderId(currentGallery),
+
+      title:
+        getGalleryTitle(currentGallery),
+
+      slug:
+        currentGallery.slug || currentGallery.id,
+
+      path:
+        currentGallery.path || "",
+
+      ownerId:
+        currentGallery.ownerId || currentGallery.owner_id || currentUserId,
+
+      createdBy:
+        currentGallery.createdBy || currentGallery.created_by || currentUserId,
+
+      visibility:
+        currentGallery.visibility || "private",
+
+      shareToken:
+        currentGallery.shareToken || currentGallery.share_token || null,
+
+      cover:
+        currentCover,
+
+      library: {
+        locationName:
+          currentGallery.locationName ||
+          currentGallery.location_name ||
+          getGalleryTitle(currentGallery),
+
+        town:
+          currentGallery.town || "",
+
+        state:
+          currentGallery.state || "",
+
+        country:
+          currentGallery.country || "USA"
+      },
+
+      admin: {
+        notes:
+          currentGallery.notes || ""
+      },
+
+      images:
+        currentImages.map((image, index) => ({
+          assetId:
+            image.assetId ||
+            image.asset_id ||
+            getImageId(image, index),
+
+          filename:
+            getImageFilename(image),
+
+          url:
+            image.url || getImageUrl(image),
+
+          displayUrl:
+            getImageUrl(image),
+
+          thumbnailUrl:
+            getImageThumbnailUrl(image),
+
+          contentType:
+            getImageContentType(image),
+
+          caption:
+            image.caption || "",
+
+          tags:
+            getImageTags(image),
+
+          source:
+            image.source || "r2"
+        }))
+    };
+  }
+
+  async function saveGallery() {
+    if (!currentGallery) {
+      setMessage("No gallery loaded.", "error");
+      return;
+    }
+
+    setMessage("Saving gallery...", "");
+
+    try {
+      const payload =
+        buildGalleryPayload();
+
+      const response =
+        await fetch(GALLERY_SAVE_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body:
+            JSON.stringify(payload)
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Could not save gallery.");
+      }
+
+      currentCover =
+        data.cover || payload.cover || "";
+
+      setMessage("Gallery saved.", "success");
+      renderImages();
+
+    } catch (error) {
+      console.error(error);
+      setMessage(error.message, "error");
+    }
+  }
+
+  async function loadGallery() {
+    if (!galleryId) {
+      titleEl.textContent =
+        "Missing Gallery";
+
+      setMessage("This page needs a gallery ID.", "error");
+      return;
+    }
+
+    try {
+      const [
+        galleriesResponse,
+        imagesResponse,
+        membersResponse
+      ] =
+        await Promise.all([
+          fetch(GALLERIES_URL).then(response => response.json()),
+          fetch(`${IMAGES_URL}?galleryId=${encodeURIComponent(galleryId)}`).then(response => response.json()),
+          fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+        ]);
+
+      const galleries =
+        galleriesResponse.galleries || [];
+
+      const images =
+        imagesResponse.images || [];
+
+      const members =
+        membersResponse.members || [];
+
+      const gallery =
+        galleries.find(item => item.id === galleryId);
+
+      if (!gallery) {
+        titleEl.textContent =
+          "Gallery Not Found";
+
+        setMessage("Check the gallery ID.", "error");
+        return;
+      }
+
+      const projectId =
+        getGalleryProjectId(gallery);
+
+      if (!userCanAccessProject(members, projectId)) {
+        titleEl.textContent =
+          "Access Denied";
+
+        setMessage("This account is not assigned to this project.", "error");
+        return;
+      }
+
+      currentGallery =
+        gallery;
+
+      currentImages =
+        images.slice();
+
+      currentCover =
+        gallery.cover ||
+        gallery.cover_url ||
+        getImageThumbnailUrl(images[0] || {}) ||
+        getImageUrl(images[0] || {}) ||
+        "";
+
+      titleEl.textContent =
+        getGalleryTitle(gallery);
+
+      subtitleEl.textContent =
+        `${currentImages.length} image${currentImages.length === 1 ? "" : "s"}`;
+
+      setMessage("Ready.", "");
+      renderImages();
+
+    } catch (error) {
+      console.error(error);
+
+      titleEl.textContent =
+        "Could Not Load Gallery";
+
+      setMessage(error.message, "error");
+    }
+  }
+
+  if (allowedRoles.includes(currentUserRole)) {
+    loadGallery();
+  }
+</script>
+
+</body>
+</html>
