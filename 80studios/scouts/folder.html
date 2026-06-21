@@ -104,6 +104,10 @@
     return ["master", "lm", "alm"].includes(currentUserRole);
   }
 
+  function userCanManageGalleries() {
+    return ["master", "lm", "alm", "scout"].includes(currentUserRole);
+  }
+
   function userCanUseLibrary() {
     return ["master", "lm", "alm", "scout"].includes(currentUserRole);
   }
@@ -347,6 +351,17 @@
             <div class="meta">
               ${getImageCount(gallery)}
             </div>
+
+            ${userCanManageGalleries()
+              ? `
+                <div class="meta" style="margin-top:8px;">
+                  <span style="color:#71d685;">
+                    Manage Gallery
+                  </span>
+                </div>
+              `
+              : ""
+            }
 
           </a>
         `).join("")}
