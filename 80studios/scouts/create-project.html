@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Project</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    a {
+      color: #999;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: white;
+      text-decoration: underline;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 24px;
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 760px;
+    }
+
+    .top-nav {
+      margin-bottom: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .top-nav a,
+    .logout-btn {
+      display: inline-block;
+      color: #999;
+      font-size: 14px;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+    }
+
+    .top-nav a:hover,
+    .logout-btn:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    .user-badge {
+      color: #777;
+      font-size: 13px;
+      margin-left: auto;
+    }
+
+    .panel {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 18px;
+      max-width: 760px;
+    }
+
+    label {
+      display: block;
+      color: #aaa;
+      font-size: 13px;
+      margin-top: 14px;
+      margin-bottom: 5px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #1c1c1c;
+      color: white;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 14px;
+      font-family: Arial, sans-serif;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      max-height: 300px;
+    }
+
+    button {
+      margin-top: 14px;
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    button:hover {
+      background: #333;
+    }
+
+    .message {
+      margin-top: 12px;
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .success {
+      color: #71d685;
+    }
+
+    .error {
+      color: #ff8f8f;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="top-nav">
+  <a href="/scouts/">Projects</a>
+  <a href="/scouts/admin-portal.html">LM / ALM Portal</a>
+  <a href="/scouts/folder-manager.html">Folder Manager</a>
+  <a href="/scouts/admin.html">Upload</a>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+  <div class="user-badge" id="user-badge"></div>
+</div>
+
+<h1>Create Project</h1>
+
+<div class="subtitle">
+  Create a new scouting project. You will automatically be assigned to the project as LM.
+</div>
+
+<div class="panel">
+
+  <label>Project Name *</label>
+  <input id="project-title" placeholder="Example: Summerhouse">
+
+  <label>Description</label>
+  <textarea id="project-description" placeholder="Optional notes for this project"></textarea>
+
+  <button onclick="createProject()">
+    Create Project
+  </button>
+
+  <div class="message" id="message"></div>
+
+</div>
+
+<script>
+  const SESSION_KEY =
+    "eightyStudiosScoutUser";
+
+  const savedUser =
+    sessionStorage.getItem(SESSION_KEY);
+
+  if (!savedUser) {
+    window.location.href =
+      "/scouts/login.html";
+  }
+
+  const currentUser =
+    savedUser ? JSON.parse(savedUser) : null;
+
+  const currentUserId =
+    currentUser?.id || "";
+
+  const currentUserRole =
+    currentUser?.globalRole || "";
+
+  const allowedRoles =
+    [
+      "master",
+      "lm",
+      "alm"
+    ];
+
+  const userBadgeEl =
+    document.getElementById("user-badge");
+
+  const messageEl =
+    document.getElementById("message");
+
+  if (currentUser) {
+    userBadgeEl.textContent =
+      `${currentUser.name} · ${currentUserRole}`;
+  }
+
+  if (!allowedRoles.includes(currentUserRole)) {
+    document.body.innerHTML = `
+      <div class="panel">
+        <h1>Access Denied</h1>
+        <p class="message error">
+          This account cannot create projects.
+        </p>
+        <p>
+          <a href="/scouts/">Return to Projects</a>
+        </p>
+      </div>
+    `;
+  }
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href =
+      "/scouts/login.html";
+  }
+
+  function slugify(value) {
+    return (value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/'/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function setMessage(text, type) {
+    messageEl.textContent =
+      text || "";
+
+    messageEl.className =
+      type ? `message ${type}` : "message";
+  }
+
+  async function createProject() {
+    const title =
+      document.getElementById("project-title").value.trim();
+
+    const description =
+      document.getElementById("project-description").value.trim();
+
+    if (!title) {
+      setMessage("Project name is required.", "error");
+      return;
+    }
+
+    const projectId =
+      slugify(title);
+
+    if (!projectId) {
+      setMessage("Project name must contain letters or numbers.", "error");
+      return;
+    }
+
+    setMessage("Creating project...", "");
+
+    try {
+      const response =
+        await fetch("/api/project-save", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id: projectId,
+            title,
+            slug: projectId,
+            description,
+            status: "active",
+            createdBy: currentUserId,
+            projectRole: currentUserRole === "alm" ? "alm" : "lm"
+          })
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Project creation failed.");
+      }
+
+      setMessage("Project created. Opening project...", "success");
+
+      window.location.href =
+        `/scouts/project.html?project=${encodeURIComponent(projectId)}`;
+
+    } catch (error) {
+      console.error(error);
+      setMessage(error.message, "error");
+    }
+  }
+</script>
+
+</body>
+</html>
