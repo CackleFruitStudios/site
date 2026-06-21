@@ -154,6 +154,14 @@
       .replace(/\b\w/g, char => char.toUpperCase());
   }
 
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
+  }
+
+  function getGalleryProjectId(gallery) {
+    return gallery.projectId || gallery.project_id || "";
+  }
+
   function getGalleryCover(gallery) {
     return gallery.cover || gallery.url || gallery.imageUrl || gallery.image_url || "";
   }
@@ -163,7 +171,7 @@
   }
 
   function getProjectGalleryCount(projectId, galleries) {
-    return galleries.filter(gallery => gallery.projectId === projectId).length;
+    return galleries.filter(gallery => getGalleryProjectId(gallery) === projectId).length;
   }
 
   function getMemberProjectId(member) {
@@ -189,7 +197,7 @@
         .map(member => getMemberProjectId(member));
 
     return projects.filter(project =>
-      allowedProjectIds.includes(project.id)
+      allowedProjectIds.includes(getProjectId(project))
     );
   }
 
@@ -358,17 +366,20 @@
       content.innerHTML = `
         <div class="project-grid">
           ${visibleProjects.map(project => {
+            const projectId =
+              getProjectId(project);
+
             const projectGalleries =
-              galleries.filter(gallery => gallery.projectId === project.id);
+              galleries.filter(gallery => getGalleryProjectId(gallery) === projectId);
 
             const cover =
               getProjectCover(project, projectGalleries);
 
             const role =
-              getProjectRole(project.id, members);
+              getProjectRole(projectId, members);
 
             const projectUrl =
-              `/scouts/project.html?project=${encodeURIComponent(project.id)}`;
+              `/scouts/project.html?project=${encodeURIComponent(projectId)}`;
 
             return `
               <a class="project-card" href="${projectUrl}">
@@ -376,11 +387,11 @@
 
                 <div class="project-info">
                   <h2>
-                    ${project.title || project.name || titleFromSlug(project.id)}
+                    ${project.title || project.name || titleFromSlug(projectId)}
                   </h2>
 
                   <div class="meta">
-                    ${getProjectGalleryCount(project.id, galleries)} galleries
+                    ${getProjectGalleryCount(projectId, galleries)} galleries
                   </div>
 
                   ${role ? `<div class="meta">Role: ${role}</div>` : ""}
