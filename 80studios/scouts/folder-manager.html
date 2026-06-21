@@ -37,8 +37,6 @@
     button:hover { background: #3f7fff; }
     button.secondary { background: #333; }
     button.secondary:hover { background: #444; }
-    button.danger { background: #8b2f2f; }
-    button.danger:hover { background: #a83a3a; }
     a { color: inherit; text-decoration: none; }
     a:hover { text-decoration: underline; }
 
@@ -110,6 +108,7 @@
 
 <div class="subtitle">
   Create and organize project folders and empty galleries for LM / ALM workflows.
+  This version intentionally avoids move and delete tools until the management workflow is safer.
 </div>
 
 <div class="top-nav">
@@ -120,7 +119,8 @@
 </div>
 
 <div class="warning">
-  Safe tools: create folders, bulk-create folders, rename folders, delete empty folders, create empty galleries, and create Heroes galleries.
+  Safe tools only: create folders, bulk-create folders, rename folders, create empty galleries, and create Heroes galleries.
+  Move/delete tools should come later.
 </div>
 
 <div class="section-title">Project</div>
@@ -188,19 +188,6 @@
     <div class="message" id="rename-folder-message"></div>
   </div>
 
-  <div class="card">
-    <h2>Delete Empty Folder</h2>
-
-    <label for="delete-folder-select">Folder</label>
-    <select id="delete-folder-select">
-      <option value="">Select folder...</option>
-    </select>
-
-    <button class="danger" onclick="deleteFolder()">Delete Empty Folder</button>
-
-    <div class="message" id="delete-folder-message"></div>
-  </div>
-
 </div>
 
 <div class="section-title">Gallery Tools</div>
@@ -253,7 +240,6 @@
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
   const FOLDER_LIST_URL = "/api/folder-list";
   const FOLDER_SAVE_URL = "/api/folder-save";
-  const FOLDER_DELETE_URL = "/api/folder-delete";
   const GALLERY_SAVE_URL = "/api/gallery-save";
 
   const savedUser =
@@ -294,9 +280,6 @@
 
   const renameFolderSelect =
     document.getElementById("rename-folder-select");
-
-  const deleteFolderSelect =
-    document.getElementById("delete-folder-select");
 
   const galleryFolder =
     document.getElementById("gallery-folder");
@@ -361,7 +344,10 @@
   }
 
   function getFolderDepth(folder, seen = {}) {
-    if (!folder.parentFolderId) {
+    const parentId =
+      folder.parentFolderId || folder.parent_folder_id || "";
+
+    if (!parentId) {
       return 0;
     }
 
@@ -372,7 +358,9 @@
     seen[folder.id] = true;
 
     const parent =
-      currentFolders.find(item => item.id === folder.parentFolderId);
+      currentFolders.find(item =>
+        item.id === parentId
+      );
 
     if (!parent) {
       return 0;
@@ -382,21 +370,31 @@
   }
 
   function getFolderPath(folder) {
-    const parts = [folder.title || folder.id];
-    let parentId = folder.parentFolderId || "";
-    let safety = 0;
+    const parts =
+      [folder.title || folder.id];
+
+    let parentId =
+      folder.parentFolderId || folder.parent_folder_id || "";
+
+    let safety =
+      0;
 
     while (parentId && safety < 20) {
       const parent =
-        currentFolders.find(item => item.id === parentId);
+        currentFolders.find(item =>
+          item.id === parentId
+        );
 
       if (!parent) {
         break;
       }
 
       parts.unshift(parent.title || parent.id);
-      parentId = parent.parentFolderId || "";
-      safety++;
+
+      parentId =
+        parent.parentFolderId || parent.parent_folder_id || "";
+
+      safety += 1;
     }
 
     return parts.join(" / ");
@@ -418,7 +416,6 @@
       "create-folder-message",
       "bulk-folder-message",
       "rename-folder-message",
-      "delete-folder-message",
       "gallery-message",
       "heroes-message"
     ].forEach(id => setMessage(id, "", ""));
@@ -455,11 +452,19 @@
 
     const folderOptions =
       currentFolders
-        .map(folder => `
-          <option value="${folder.id}">
-            ${getFolderPath(folder)}
-          </option>
-        `)
+        .map(folder => {
+          const depth =
+            Math.min(getFolderDepth(folder), 4);
+
+          const prefix =
+            "— ".repeat(depth);
+
+          return `
+            <option value="${folder.id}">
+              ${prefix}${folder.title || folder.id}
+            </option>
+          `;
+        })
         .join("");
 
     folderParent.innerHTML =
@@ -469,9 +474,6 @@
       baseOption + folderOptions;
 
     renameFolderSelect.innerHTML =
-      chooseOption + folderOptions;
-
-    deleteFolderSelect.innerHTML =
       chooseOption + folderOptions;
 
     galleryFolder.innerHTML =
@@ -499,7 +501,7 @@
 
           return `
             <div class="row indent-${depth}">
-              <div class="row-title">${getFolderPath(folder)}</div>
+              <div class="row-title">${folder.title || folder.id}</div>
               <div class="row-meta">
                 ID: ${folder.id}
                 ${folder.parentFolderId ? ` • Parent: ${folder.parentFolderId}` : " • Project root"}
@@ -601,11 +603,8 @@
     const title =
       document.getElementById("folder-title").value.trim();
 
-    const selectedOption =
-      folderParent.options[folderParent.selectedIndex];
-
     const parentFolderId =
-      selectedOption?.value || null;
+      folderParent.value || null;
 
     if (!projectId) {
       setMessage("create-folder-message", "Select a project first.", "error");
@@ -633,11 +632,7 @@
 
       document.getElementById("folder-title").value = "";
 
-      setMessage(
-        "create-folder-message",
-        `Folder created under ${parentFolderId || "project root"}.`,
-        "success"
-      );
+      setMessage("create-folder-message", "Folder created.", "success");
 
       await loadFolders();
 
@@ -651,11 +646,8 @@
     const projectId =
       getSelectedProjectId();
 
-    const selectedOption =
-      bulkParent.options[bulkParent.selectedIndex];
-
     const parentFolderId =
-      selectedOption?.value || null;
+      bulkParent.value || null;
 
     const raw =
       document.getElementById("bulk-folder-list").value;
@@ -759,71 +751,6 @@
     } catch (error) {
       console.error(error);
       setMessage("rename-folder-message", error.message, "error");
-    }
-  }
-
-  async function deleteFolder() {
-    const projectId =
-      getSelectedProjectId();
-
-    const folderId =
-      deleteFolderSelect.value;
-
-    if (!projectId) {
-      setMessage("delete-folder-message", "Select a project first.", "error");
-      return;
-    }
-
-    if (!folderId) {
-      setMessage("delete-folder-message", "Select a folder to delete.", "error");
-      return;
-    }
-
-    const folder =
-      currentFolders.find(item => item.id === folderId);
-
-    if (!folder) {
-      setMessage("delete-folder-message", "Folder not found.", "error");
-      return;
-    }
-
-    const folderPath =
-      getFolderPath(folder);
-
-    const confirmed =
-      window.confirm(`Delete empty folder?\n\n${folderPath}`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      const response =
-        await fetch(FOLDER_DELETE_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            projectId,
-            folderId
-          })
-        });
-
-      const data =
-        await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Could not delete folder.");
-      }
-
-      setMessage("delete-folder-message", "Folder deleted.", "success");
-
-      await loadFolders();
-
-    } catch (error) {
-      console.error(error);
-      setMessage("delete-folder-message", error.message, "error");
     }
   }
 
