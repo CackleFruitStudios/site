@@ -13,20 +13,13 @@
     a:hover { text-decoration: underline; }
     .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; max-width: 760px; line-height: 1.5; }
     .top-nav { margin-bottom: 22px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
-    .top-nav a, .logout-btn { display: inline-block; color: #999; text-decoration: none; font-size: 14px; background: none; border: none; padding: 0; cursor: pointer; font-family: Arial, sans-serif; }
+    .top-nav a, .logout-btn { display: inline-block; color: #999; font-size: 14px; background: none; border: none; padding: 0; cursor: pointer; font-family: Arial, sans-serif; }
     .top-nav a:hover, .logout-btn:hover { color: #fff; text-decoration: underline; }
     .user-badge { color: #777; font-size: 13px; margin-left: auto; }
-    .portal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 34px; }
-    .portal-card { display: block; background: #1c1c1c; border: 1px solid #333; border-radius: 8px; padding: 18px; color: white; }
-    .portal-card:hover { background: #252525; text-decoration: none; }
-    .portal-label { color: #aaa; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .portal-description { color: #999; font-size: 13px; line-height: 1.45; }
     .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 28px; margin-bottom: 10px; }
-    .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-    .project-card { display: block; background: #1c1c1c; border: 1px solid #333; border-radius: 8px; overflow: hidden; color: white; }
-    .project-card:hover { background: #252525; text-decoration: none; }
-    .thumb { width: 100%; height: 170px; object-fit: cover; display: block; background: #222; }
-    .project-info { padding: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+    .card { display: block; background: #1c1c1c; border: 1px solid #333; border-radius: 8px; color: white; padding: 18px; }
+    .card:hover { background: #252525; text-decoration: none; }
     .meta { color: #aaa; font-size: 12px; margin-top: 4px; line-height: 1.4; }
     .message { color: #aaa; margin-top: 14px; }
   </style>
@@ -37,38 +30,23 @@
 <h1>80 Studios Scouts</h1>
 
 <div class="subtitle" id="subtitle">
-  Location scouting upload, gallery, and project management system for 80 Studios.
+  Loading account...
 </div>
 
 <div class="top-nav" id="top-nav"></div>
 
-<div id="portals-section">
-  <div class="section-title">
-    Portals
-  </div>
-
-  <div class="portal-grid" id="portal-grid"></div>
-</div>
-
-<div id="create-project-section" style="display:none;">
-  <div class="section-title">
-    Create
-  </div>
-
-  <div class="project-grid">
-    <a class="project-card" href="/scouts/create-project.html">
-      <div class="project-info">
-        <h2>+ Create Project</h2>
-        <div class="meta">
-          Start a new scouting project.
-        </div>
-      </div>
+<div id="create-section" style="display:none;">
+  <div class="section-title">Create</div>
+  <div class="grid">
+    <a class="card" href="/scouts/create-project.html">
+      <h2>+ Create Project</h2>
+      <div class="meta">Start a new scouting project.</div>
     </a>
   </div>
 </div>
 
-<div class="section-title" id="project-section-title">
-  Current Projects
+<div class="section-title" id="project-title">
+  Assigned Projects
 </div>
 
 <div id="content">
@@ -77,47 +55,24 @@
 
 <script>
   const SESSION_KEY = "eightyStudiosScoutUser";
-
   const PROJECTS_URL = "/api/project-list";
-  const GALLERIES_URL = "/api/gallery-list";
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
 
-  const savedUser =
-    sessionStorage.getItem(SESSION_KEY);
+  const savedUser = sessionStorage.getItem(SESSION_KEY);
 
   if (!savedUser) {
     window.location.href = "/scouts/login.html";
   }
 
-  const currentUser =
-    savedUser ? JSON.parse(savedUser) : null;
+  const currentUser = savedUser ? JSON.parse(savedUser) : null;
+  const currentUserId = currentUser?.id || "";
+  const currentUserRole = currentUser?.globalRole || "";
 
-  const currentUserId =
-    currentUser?.id || "";
-
-  const currentUserRole =
-    currentUser?.globalRole || "";
-
-  const subtitleEl =
-    document.getElementById("subtitle");
-
-  const sectionTitleEl =
-    document.getElementById("project-section-title");
-
-  const topNavEl =
-    document.getElementById("top-nav");
-
-  const portalGridEl =
-    document.getElementById("portal-grid");
-
-  const portalsSectionEl =
-    document.getElementById("portals-section");
-
-  const createProjectSectionEl =
-    document.getElementById("create-project-section");
-
-  const content =
-    document.getElementById("content");
+  const subtitleEl = document.getElementById("subtitle");
+  const topNavEl = document.getElementById("top-nav");
+  const createSectionEl = document.getElementById("create-section");
+  const projectTitleEl = document.getElementById("project-title");
+  const contentEl = document.getElementById("content");
 
   function logout() {
     sessionStorage.removeItem(SESSION_KEY);
@@ -128,24 +83,12 @@
     return currentUserRole === "master";
   }
 
-  function userCanUseScoutTools() {
-    return ["master", "lm", "alm", "scout"].includes(currentUserRole);
-  }
-
   function userCanUseAdminTools() {
     return ["master", "lm", "alm"].includes(currentUserRole);
   }
 
   function userCanUseLibrary() {
     return ["master", "lm", "alm", "scout"].includes(currentUserRole);
-  }
-
-  function userCanSeeAllProjects() {
-    return userIsMaster();
-  }
-
-  function userIsLmOrAlm() {
-    return ["lm", "alm"].includes(currentUserRole);
   }
 
   function titleFromSlug(value) {
@@ -158,20 +101,8 @@
     return project.id || project.projectId || project.project_id || "";
   }
 
-  function getGalleryProjectId(gallery) {
-    return gallery.projectId || gallery.project_id || "";
-  }
-
-  function getGalleryCover(gallery) {
-    return gallery.cover || gallery.url || gallery.imageUrl || gallery.image_url || "";
-  }
-
-  function getProjectCover(project, galleries) {
-    return project.cover || getGalleryCover(galleries[0]) || "";
-  }
-
-  function getProjectGalleryCount(projectId, galleries) {
-    return galleries.filter(gallery => getGalleryProjectId(gallery) === projectId).length;
+  function getProjectTitle(project) {
+    return project.title || project.name || titleFromSlug(getProjectId(project));
   }
 
   function getMemberProjectId(member) {
@@ -187,14 +118,13 @@
   }
 
   function getVisibleProjects(projects, members) {
-    if (userCanSeeAllProjects()) {
+    if (userIsMaster()) {
       return projects;
     }
 
-    const allowedProjectIds =
-      members
-        .filter(member => getMemberUserId(member) === currentUserId)
-        .map(member => getMemberProjectId(member));
+    const allowedProjectIds = members
+      .filter(member => getMemberUserId(member) === currentUserId)
+      .map(member => getMemberProjectId(member));
 
     return projects.filter(project =>
       allowedProjectIds.includes(getProjectId(project))
@@ -206,209 +136,103 @@
       return "master";
     }
 
-    const member =
-      members.find(item =>
-        getMemberUserId(item) === currentUserId &&
-        getMemberProjectId(item) === projectId
-      );
+    const member = members.find(item =>
+      getMemberUserId(item) === currentUserId &&
+      getMemberProjectId(item) === projectId
+    );
 
     return member ? getMemberRole(member) : "";
   }
 
   function renderTopNav() {
-    let html = `
-      <a href="/scouts/">Projects</a>
-    `;
+    let html = `<a href="/scouts/">Projects</a>`;
 
     if (userIsMaster()) {
-      html += `
-        <a href="/scouts/master-portal.html">Master Portal</a>
-      `;
+      html += `<a href="/scouts/master-portal.html">Master Portal</a>`;
     }
 
-    if (userIsLmOrAlm()) {
-      html += `
-        <a href="/scouts/admin-portal.html">LM / ALM Portal</a>
-      `;
+    if (["lm", "alm"].includes(currentUserRole)) {
+      html += `<a href="/scouts/admin-portal.html">LM / ALM Portal</a>`;
     }
 
     if (currentUserRole === "scout") {
-      html += `
-        <a href="/scouts/scout-portal.html">Scout Portal</a>
-      `;
+      html += `<a href="/scouts/scout-portal.html">Scout Portal</a>`;
     }
 
     if (userCanUseAdminTools()) {
-      html += `
-        <a href="/scouts/create-project.html">Create Project</a>
-      `;
+      html += `<a href="/scouts/create-project.html">Create Project</a>`;
+      html += `<a href="/scouts/folder-manager.html">Folder Manager</a>`;
+      html += `<a href="/scouts/admin.html">Upload</a>`;
     }
 
     if (userCanUseLibrary()) {
-      html += `
-        <a href="/scouts/library.html">Library</a>
-      `;
-    }
-
-    if (userCanUseAdminTools()) {
-      html += `
-        <a href="/scouts/admin.html">Upload</a>
-      `;
+      html += `<a href="/scouts/library.html">Library</a>`;
     }
 
     html += `
       <button class="logout-btn" onclick="logout()">Logout</button>
-      <div class="user-badge">${currentUser.name} · ${currentUserRole}</div>
+      <div class="user-badge">${currentUser?.name || "User"} · ${currentUserRole}</div>
     `;
 
     topNavEl.innerHTML = html;
   }
 
-  function renderPortals() {
-    if (currentUserRole === "client") {
-      portalsSectionEl.style.display = "none";
+  function renderProjects(projects, members) {
+    const visibleProjects = getVisibleProjects(projects, members);
+
+    if (!visibleProjects.length) {
+      contentEl.innerHTML = `
+        <div class="message">
+          No projects found for this account.
+        </div>
+      `;
       return;
     }
 
-    let html = "";
+    contentEl.innerHTML = `
+      <div class="grid">
+        ${visibleProjects.map(project => {
+          const projectId = getProjectId(project);
+          const role = getProjectRole(projectId, members);
 
-    if (userIsMaster()) {
-      html += `
-        <a class="portal-card" href="/scouts/master-portal.html">
-          <div class="portal-label">Master Portal</div>
-          <h2>System Access Dashboard</h2>
-          <div class="portal-description">
-            For master access across all projects, users, system tools, and future platform settings.
-          </div>
-        </a>
-      `;
-    }
-
-    if (userIsLmOrAlm()) {
-      html += `
-        <a class="portal-card" href="/scouts/admin-portal.html">
-          <div class="portal-label">LM / ALM Portal</div>
-          <h2>Project Management Workflow</h2>
-          <div class="portal-description">
-            For assigned project, folder, gallery, upload, and location management workflows.
-          </div>
-        </a>
-      `;
-    }
-
-    if (currentUserRole === "scout") {
-      html += `
-        <a class="portal-card" href="/scouts/scout-portal.html">
-          <div class="portal-label">Scout Portal</div>
-          <h2>Field Upload Workflow</h2>
-          <div class="portal-description">
-            For registered scouts to view assigned projects, create location galleries, and upload scout work.
-          </div>
-        </a>
-      `;
-    }
-
-    if (userCanUseLibrary()) {
-      html += `
-        <a class="portal-card" href="/scouts/library.html">
-          <div class="portal-label">Library</div>
-          <h2>Location Archive</h2>
-          <div class="portal-description">
-            Search and browse reusable location references across permitted projects.
-          </div>
-        </a>
-      `;
-    }
-
-    portalGridEl.innerHTML = html;
+          return `
+            <a class="card" href="/scouts/project.html?project=${encodeURIComponent(projectId)}">
+              <h2>${getProjectTitle(project)}</h2>
+              <div class="meta">Project ID: ${projectId}</div>
+              ${role ? `<div class="meta">Role: ${role}</div>` : ""}
+            </a>
+          `;
+        }).join("")}
+      </div>
+    `;
   }
 
   if (currentUser) {
-    subtitleEl.textContent =
-      currentUserRole === "client"
-        ? `Client access for ${currentUser.name}`
-        : `Signed in as ${currentUser.name}`;
-
-    sectionTitleEl.textContent =
-      userCanSeeAllProjects() ? "Current Projects" : "Assigned Projects";
+    subtitleEl.textContent = `Signed in as ${currentUser.name}`;
+    projectTitleEl.textContent = userIsMaster() ? "Current Projects" : "Assigned Projects";
 
     if (userCanUseAdminTools()) {
-      createProjectSectionEl.style.display = "block";
+      createSectionEl.style.display = "block";
     }
 
     renderTopNav();
-    renderPortals();
   }
 
   Promise.all([
     fetch(PROJECTS_URL).then(response => response.json()),
-    fetch(GALLERIES_URL).then(response => response.json()),
     fetch(PROJECT_MEMBERS_URL).then(response => response.json())
   ])
-
-    .then(([projectsData, galleriesData, membersData]) => {
+    .then(([projectsData, membersData]) => {
       const projects = projectsData.projects || [];
-      const galleries = galleriesData.galleries || [];
       const members = membersData.members || [];
-
-      const visibleProjects =
-        getVisibleProjects(projects, members);
-
-      if (!visibleProjects.length) {
-        content.innerHTML = `
-          <div class="message">
-            No projects found for this account.
-          </div>
-        `;
-        return;
-      }
-
-      content.innerHTML = `
-        <div class="project-grid">
-          ${visibleProjects.map(project => {
-            const projectId =
-              getProjectId(project);
-
-            const projectGalleries =
-              galleries.filter(gallery => getGalleryProjectId(gallery) === projectId);
-
-            const cover =
-              getProjectCover(project, projectGalleries);
-
-            const role =
-              getProjectRole(projectId, members);
-
-            const projectUrl =
-              `/scouts/project.html?project=${encodeURIComponent(projectId)}`;
-
-            return `
-              <a class="project-card" href="${projectUrl}">
-                ${cover ? `<img src="${cover}" class="thumb">` : ""}
-
-                <div class="project-info">
-                  <h2>
-                    ${project.title || project.name || titleFromSlug(projectId)}
-                  </h2>
-
-                  <div class="meta">
-                    ${getProjectGalleryCount(projectId, galleries)} galleries
-                  </div>
-
-                  ${role ? `<div class="meta">Role: ${role}</div>` : ""}
-                </div>
-              </a>
-            `;
-          }).join("")}
-        </div>
-      `;
+      renderProjects(projects, members);
     })
-
     .catch(error => {
       console.error(error);
 
-      content.innerHTML = `
+      contentEl.innerHTML = `
         <div class="message">
-          Could not load project, gallery, or membership data.
+          Could not load projects or memberships.
         </div>
       `;
     });
