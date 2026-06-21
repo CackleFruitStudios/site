@@ -8,15 +8,6 @@ function requireEnv(name) {
   return value;
 }
 
-function slugify(value) {
-  return String(value || "")
-    .toLowerCase()
-    .trim()
-    .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 async function runD1Query(sql, params = []) {
   const accountId = requireEnv("CLOUDFLARE_ACCOUNT_ID");
   const databaseId = requireEnv("D1_DATABASE_ID");
@@ -43,61 +34,34 @@ async function runD1Query(sql, params = []) {
   return data.result?.[0]?.results || [];
 }
 
-async function folderIdExists(folderId) {
-  const rows = await runD1Query(
-    `
-    SELECT id
-    FROM folders
-    WHERE id = ?
-    LIMIT 1
-    `,
-    [folderId]
-  );
-
-  return rows.length > 0;
-}
-
-async function folderSlugExists(projectId, parentFolderId, slug) {
-  const rows = await runD1Query(
-    `
-    SELECT id
-    FROM folders
-    WHERE project_id = ?
-      AND (
-        (? IS NULL AND parent_folder_id IS NULL)
-        OR parent_folder_id = ?
-      )
-      AND slug = ?
-    LIMIT 1
-    `,
-    [projectId, parentFolderId, parentFolderId, slug]
-  );
-
-  return rows.length > 0;
-}
-
-async function createUniqueFolderId(baseId) {
-  let candidate = baseId;
+async function makeUniqueSlug(projectId, parentFolderId, baseSlug, folderId) {
+  let slug = baseSlug || folderId;
   let counter = 2;
 
-  while (await folderIdExists(candidate)) {
-    candidate = `${baseId}-${counter}`;
+  while (true) {
+    const existing = await runD1Query(
+      `
+      SELECT id
+      FROM folders
+      WHERE project_id = ?
+        AND slug = ?
+        AND (
+          (? IS NULL AND parent_folder_id IS NULL)
+          OR parent_folder_id = ?
+        )
+        AND id != ?
+      LIMIT 1
+      `,
+      [projectId, slug, parentFolderId, parentFolderId, folderId]
+    );
+
+    if (!existing.length) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
     counter += 1;
   }
-
-  return candidate;
-}
-
-async function createUniqueFolderSlug(projectId, parentFolderId, baseSlug) {
-  let candidate = baseSlug;
-  let counter = 2;
-
-  while (await folderSlugExists(projectId, parentFolderId, candidate)) {
-    candidate = `${baseSlug}-${counter}`;
-    counter += 1;
-  }
-
-  return candidate;
 }
 
 export default async function handler(req, res) {
@@ -111,6 +75,9 @@ export default async function handler(req, res) {
   try {
     const folder = req.body || {};
 
+    const folderId =
+      folder.id || "";
+
     const projectId =
       folder.projectId || folder.project_id || "";
 
@@ -118,19 +85,13 @@ export default async function handler(req, res) {
       folder.parentFolderId || folder.parent_folder_id || null;
 
     const title =
-      folder.title || folder.name || folder.id || "Untitled Folder";
+      folder.title || folder.name || folderId;
 
     const baseSlug =
-      slugify(folder.slug || title) || "folder";
-
-    const baseFolderId =
-      slugify(folder.id || baseSlug) || "folder";
-
-    const folderId =
-      await createUniqueFolderId(baseFolderId);
+      folder.slug || folderId;
 
     const slug =
-      await createUniqueFolderSlug(projectId, parentFolderId, baseSlug);
+      await makeUniqueSlug(projectId, parentFolderId, baseSlug, folderId);
 
     const folderType =
       folder.folderType || folder.folder_type || "location";
@@ -141,10 +102,10 @@ export default async function handler(req, res) {
     const createdBy =
       folder.createdBy || folder.created_by || "andrew-devlin";
 
-    if (!projectId) {
+    if (!folderId || !projectId) {
       return res.status(400).json({
         success: false,
-        error: "Missing projectId"
+        error: "Missing folder id or projectId"
       });
     }
 
@@ -162,6 +123,14 @@ export default async function handler(req, res) {
         updated_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(id) DO UPDATE SET
+        project_id = excluded.project_id,
+        parent_folder_id = excluded.parent_folder_id,
+        title = excluded.title,
+        slug = excluded.slug,
+        folder_type = excluded.folder_type,
+        sort_order = excluded.sort_order,
+        updated_at = CURRENT_TIMESTAMP
       `,
       [
         folderId,
