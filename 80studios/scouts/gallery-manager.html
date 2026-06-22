@@ -66,6 +66,8 @@
     .save-btn { background: #18351d; border-color: #2d5a33; color: #71d685; }
     .view-btn { background: #1b2740; border-color: #314a77; color: #9fc5ff; }
     .client-panel { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .selector-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    .selector-field { display: grid; gap: 6px; }
     .field-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; }
     label { color: #aaa; font-size: 13px; }
     input, select {
@@ -80,6 +82,10 @@
     }
     .share-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
     .muted-note { color: #777; font-size: 12px; line-height: 1.4; }
+    @media (max-width: 850px) {
+      .selector-grid { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 650px) {
       .field-row { grid-template-columns: 1fr; gap: 6px; }
       .share-row { grid-template-columns: 1fr; }
@@ -93,6 +99,7 @@
   <a href="/scouts/">Projects</a>
   <a href="/scouts/admin-portal.html">LM / ALM Portal</a>
   <a href="/scouts/folder-manager.html">Folder Manager</a>
+  <a href="/scouts/gallery-manager.html">Gallery Manager</a>
   <a href="/scouts/admin.html">Upload</a>
   <button class="logout-btn" onclick="logout()">Logout</button>
   <div class="user-badge" id="user-badge"></div>
@@ -102,6 +109,41 @@
 
 <div class="subtitle" id="subtitle">
   Manage cover image, image order, and deleted photos.
+</div>
+
+<div class="panel">
+  <div class="section-title">Gallery Selection</div>
+
+  <div class="selector-grid">
+    <div class="selector-field">
+      <label for="project-select">Project *</label>
+      <select id="project-select" onchange="handleProjectChange()">
+        <option value="">Loading projects...</option>
+      </select>
+    </div>
+
+    <div class="selector-field">
+      <label for="folder-select">Folder</label>
+      <select id="folder-select" onchange="handleFolderChange()">
+        <option value="">Select a project first...</option>
+      </select>
+    </div>
+
+    <div class="selector-field">
+      <label for="gallery-select">Gallery *</label>
+      <select id="gallery-select">
+        <option value="">Select a project first...</option>
+      </select>
+    </div>
+
+    <button type="button" onclick="openSelectedGallery()">
+      Manage Gallery
+    </button>
+  </div>
+
+  <div class="message" id="selector-message">
+    Select a project, folder, and gallery to manage. Direct gallery links still work.
+  </div>
 </div>
 
 <div class="panel">
@@ -146,6 +188,8 @@
 <script>
   const SESSION_KEY = "eightyStudiosScoutUser";
 
+  const PROJECTS_URL = "/api/project-list";
+  const FOLDERS_URL = "/api/folder-list";
   const GALLERIES_URL = "/api/gallery-list";
   const IMAGES_URL = "/api/image-list";
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
@@ -173,7 +217,7 @@
   const params =
     new URLSearchParams(window.location.search);
 
-  const galleryId =
+  let galleryId =
     params.get("gallery") || "";
 
   const userBadgeEl =
@@ -188,6 +232,18 @@
   const messageEl =
     document.getElementById("message");
 
+  const selectorMessageEl =
+    document.getElementById("selector-message");
+
+  const projectSelectEl =
+    document.getElementById("project-select");
+
+  const folderSelectEl =
+    document.getElementById("folder-select");
+
+  const gallerySelectEl =
+    document.getElementById("gallery-select");
+
   const imageGridEl =
     document.getElementById("image-grid");
 
@@ -196,6 +252,11 @@
 
   const shareLinkEl =
     document.getElementById("share-link");
+
+  let allProjects = [];
+  let allGalleries = [];
+  let allMembers = [];
+  let currentFolders = [];
 
   let currentGallery = null;
   let currentImages = [];
@@ -233,6 +294,73 @@
     messageEl.className =
       type ? `message ${type}` : "message";
   }
+
+
+  function setSelectorMessage(text, type) {
+    selectorMessageEl.textContent =
+      text || "";
+
+    selectorMessageEl.className =
+      type ? `message ${type}` : "message";
+  }
+
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
+  }
+
+  function getProjectTitle(project) {
+    return project.title || project.name || getProjectId(project);
+  }
+
+  function getFolderProjectId(folder) {
+    return folder.projectId || folder.project_id || "";
+  }
+
+  function getFolderParentId(folder) {
+    return folder.parentFolderId || folder.parent_folder_id || "";
+  }
+
+  function getFolderTitle(folder) {
+    return folder.title || folder.name || folder.id;
+  }
+
+  function normalizeFolder(folder) {
+    return {
+      ...folder,
+      projectId: getFolderProjectId(folder),
+      parentFolderId: getFolderParentId(folder),
+      sortOrder: folder.sortOrder || folder.sort_order || 0
+    };
+  }
+
+  function getFolderPath(folder, folders) {
+    const path = [];
+    let current = folder;
+    let safety = 0;
+
+    while (current && safety < 20) {
+      path.unshift(current);
+
+      const parentId =
+        current.parentFolderId || "";
+
+      current =
+        parentId
+          ? folders.find(item => item.id === parentId)
+          : null;
+
+      safety++;
+    }
+
+    return path;
+  }
+
+  function getFolderSelectLabel(folder, folders) {
+    return getFolderPath(folder, folders)
+      .map(item => getFolderTitle(item))
+      .join(" / ");
+  }
+
 
   function getGalleryProjectId(gallery) {
     return gallery.projectId || gallery.project_id || "";
@@ -299,6 +427,219 @@
       getMemberUserId(member) === currentUserId &&
       getMemberProjectId(member) === projectId
     );
+  }
+
+
+  function renderProjectSelector() {
+    const accessibleProjects =
+      allProjects
+        .filter(project =>
+          currentUserRole === "master" ||
+          userCanAccessProject(allMembers, getProjectId(project))
+        )
+        .sort((a, b) => getProjectTitle(a).localeCompare(getProjectTitle(b)));
+
+    projectSelectEl.innerHTML =
+      `<option value="">Select project...</option>` +
+      accessibleProjects.map(project => `
+        <option value="${getProjectId(project)}">
+          ${getProjectTitle(project)}
+        </option>
+      `).join("");
+
+    if (!accessibleProjects.length) {
+      projectSelectEl.innerHTML =
+        `<option value="">No assigned projects found</option>`;
+    }
+  }
+
+  async function loadFoldersForProject(projectId) {
+    if (!projectId) {
+      currentFolders = [];
+
+      folderSelectEl.innerHTML =
+        `<option value="">Select a project first...</option>`;
+
+      renderGallerySelector();
+      return;
+    }
+
+    folderSelectEl.innerHTML =
+      `<option value="">Loading folders...</option>`;
+
+    try {
+      const foldersData =
+        await fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`)
+          .then(response => response.json());
+
+      currentFolders =
+        (foldersData.folders || [])
+          .map(normalizeFolder);
+
+      currentFolders.sort((a, b) =>
+        getFolderSelectLabel(a, currentFolders)
+          .localeCompare(getFolderSelectLabel(b, currentFolders))
+      );
+
+      folderSelectEl.innerHTML =
+        `<option value="">All folders in project</option>` +
+        currentFolders.map(folder => `
+          <option value="${folder.id}">
+            ${getFolderSelectLabel(folder, currentFolders)}
+          </option>
+        `).join("");
+
+      renderGallerySelector();
+
+    } catch (error) {
+      console.error(error);
+
+      currentFolders = [];
+
+      folderSelectEl.innerHTML =
+        `<option value="">Could not load folders</option>`;
+
+      renderGallerySelector();
+    }
+  }
+
+  function renderGallerySelector() {
+    const projectId =
+      projectSelectEl.value || "";
+
+    const folderId =
+      folderSelectEl.value || "";
+
+    if (!projectId) {
+      gallerySelectEl.innerHTML =
+        `<option value="">Select a project first...</option>`;
+      return;
+    }
+
+    const galleries =
+      allGalleries
+        .filter(gallery => getGalleryProjectId(gallery) === projectId)
+        .filter(gallery => !folderId || getGalleryFolderId(gallery) === folderId)
+        .sort((a, b) => getGalleryTitle(a).localeCompare(getGalleryTitle(b)));
+
+    gallerySelectEl.innerHTML =
+      `<option value="">Select gallery...</option>` +
+      galleries.map(gallery => `
+        <option value="${gallery.id}">
+          ${getGalleryTitle(gallery)}
+        </option>
+      `).join("");
+
+    if (!galleries.length) {
+      gallerySelectEl.innerHTML =
+        `<option value="">No galleries found</option>`;
+    }
+
+    if (galleryId && galleries.some(gallery => gallery.id === galleryId)) {
+      gallerySelectEl.value =
+        galleryId;
+    }
+  }
+
+  async function handleProjectChange() {
+    const projectId =
+      projectSelectEl.value || "";
+
+    await loadFoldersForProject(projectId);
+
+    setSelectorMessage(
+      projectId
+        ? "Choose a folder or select a gallery from this project."
+        : "Select a project to load folders and galleries.",
+      ""
+    );
+  }
+
+  function handleFolderChange() {
+    renderGallerySelector();
+
+    setSelectorMessage(
+      folderSelectEl.value
+        ? "Choose a gallery from this folder."
+        : "Showing all galleries in the selected project.",
+      ""
+    );
+  }
+
+  function openSelectedGallery() {
+    const selectedGalleryId =
+      gallerySelectEl.value || "";
+
+    if (!selectedGalleryId) {
+      setSelectorMessage("Select a gallery first.", "error");
+      return;
+    }
+
+    window.location.href =
+      `/scouts/gallery-manager.html?gallery=${encodeURIComponent(selectedGalleryId)}`;
+  }
+
+  async function loadSelectorData() {
+    try {
+      const [
+        projectsResponse,
+        galleriesResponse,
+        membersResponse
+      ] =
+        await Promise.all([
+          fetch(PROJECTS_URL).then(response => response.json()),
+          fetch(GALLERIES_URL).then(response => response.json()),
+          fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+        ]);
+
+      allProjects =
+        projectsResponse.projects || [];
+
+      allGalleries =
+        galleriesResponse.galleries || [];
+
+      allMembers =
+        membersResponse.members || [];
+
+      renderProjectSelector();
+
+      if (galleryId) {
+        const gallery =
+          allGalleries.find(item => item.id === galleryId);
+
+        if (gallery) {
+          const projectId =
+            getGalleryProjectId(gallery);
+
+          const folderId =
+            getGalleryFolderId(gallery);
+
+          projectSelectEl.value =
+            projectId;
+
+          await loadFoldersForProject(projectId);
+
+          folderSelectEl.value =
+            folderId || "";
+
+          renderGallerySelector();
+
+          gallerySelectEl.value =
+            galleryId;
+
+          setSelectorMessage("Current gallery selected.", "success");
+        } else {
+          setSelectorMessage("Current gallery was not found in the selector list.", "error");
+        }
+      } else {
+        await loadFoldersForProject("");
+        setSelectorMessage("Select a project, folder, and gallery to manage.", "");
+      }
+
+    } catch (error) {
+      console.error(error);
+      setSelectorMessage(error.message || "Could not load gallery selector data.", "error");
+    }
   }
 
   function randomToken() {
@@ -758,7 +1099,19 @@
   }
 
   if (allowedRoles.includes(currentUserRole)) {
-    loadGallery();
+    loadSelectorData();
+
+    if (galleryId) {
+      loadGallery();
+    } else {
+      titleEl.textContent =
+        "Gallery Manager";
+
+      subtitleEl.textContent =
+        "Select a project, folder, and gallery to manage.";
+
+      setMessage("Choose a gallery above.", "");
+    }
   }
 </script>
 
