@@ -65,6 +65,25 @@
     .delete-btn { width: 100%; background: #3b1717; border-color: #5c2222; color: #f07a7a; }
     .save-btn { background: #18351d; border-color: #2d5a33; color: #71d685; }
     .view-btn { background: #1b2740; border-color: #314a77; color: #9fc5ff; }
+    .client-panel { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .field-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; }
+    label { color: #aaa; font-size: 13px; }
+    input, select {
+      width: 100%;
+      box-sizing: border-box;
+      background: #111;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 9px 10px;
+      font-size: 13px;
+    }
+    .share-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
+    .muted-note { color: #777; font-size: 12px; line-height: 1.4; }
+    @media (max-width: 650px) {
+      .field-row { grid-template-columns: 1fr; gap: 6px; }
+      .share-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 
@@ -90,6 +109,33 @@
   <button class="save-btn" onclick="saveGallery()">Save Changes</button>
   <button class="view-btn" onclick="openViewer()">Open Viewer</button>
   <div class="message" id="message">Loading gallery...</div>
+</div>
+
+<div class="panel">
+  <div class="section-title">Client Delivery</div>
+
+  <div class="client-panel">
+    <div class="field-row">
+      <label for="visibility-select">Visibility</label>
+      <select id="visibility-select" onchange="markClientChanged()">
+        <option value="private">Private / hidden</option>
+        <option value="client">Client link enabled</option>
+      </select>
+    </div>
+
+    <div class="field-row">
+      <label for="share-link">Client link</label>
+      <div class="share-row">
+        <input id="share-link" readonly value="">
+        <button type="button" onclick="generateClientLink()">Generate</button>
+        <button type="button" onclick="copyClientLink()">Copy</button>
+      </div>
+    </div>
+
+    <div class="muted-note">
+      Client links are read-only. Generate or enable the link, save changes, then send the copied URL.
+    </div>
+  </div>
 </div>
 
 <div class="panel">
@@ -144,6 +190,12 @@
 
   const imageGridEl =
     document.getElementById("image-grid");
+
+  const visibilitySelectEl =
+    document.getElementById("visibility-select");
+
+  const shareLinkEl =
+    document.getElementById("share-link");
 
   let currentGallery = null;
   let currentImages = [];
@@ -247,6 +299,107 @@
       getMemberUserId(member) === currentUserId &&
       getMemberProjectId(member) === projectId
     );
+  }
+
+  function randomToken() {
+    if (window.crypto && window.crypto.getRandomValues) {
+      const bytes = new Uint8Array(16);
+      window.crypto.getRandomValues(bytes);
+      return Array.from(bytes)
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+    }
+
+    return `${Date.now()}-${Math.random()}`
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, 32);
+  }
+
+  function getShareToken() {
+    return currentGallery?.shareToken ||
+      currentGallery?.share_token ||
+      "";
+  }
+
+  function buildClientUrl(token) {
+    if (!token) {
+      return "";
+    }
+
+    return `${window.location.origin}/scouts/client-gallery.html?share=${encodeURIComponent(token)}`;
+  }
+
+  function syncClientDeliveryFields() {
+    if (!currentGallery) {
+      visibilitySelectEl.value = "private";
+      shareLinkEl.value = "";
+      return;
+    }
+
+    const token = getShareToken();
+    const visibility = currentGallery.visibility || "private";
+
+    visibilitySelectEl.value =
+      visibility === "client" || visibility === "public"
+        ? "client"
+        : "private";
+
+    shareLinkEl.value = buildClientUrl(token);
+  }
+
+  function markClientChanged() {
+    if (!currentGallery) {
+      return;
+    }
+
+    currentGallery.visibility = visibilitySelectEl.value;
+
+    if (visibilitySelectEl.value === "client" && !getShareToken()) {
+      currentGallery.shareToken = randomToken();
+    }
+
+    syncClientDeliveryFields();
+    setMessage("Client delivery changed. Save changes when ready.", "");
+  }
+
+  function generateClientLink() {
+    if (!currentGallery) {
+      setMessage("Load a gallery first.", "error");
+      return;
+    }
+
+    currentGallery.visibility = "client";
+    currentGallery.shareToken = getShareToken() || randomToken();
+
+    syncClientDeliveryFields();
+    setMessage("Client link generated. Save changes before sending it.", "");
+  }
+
+  async function copyClientLink() {
+    if (!currentGallery) {
+      setMessage("Load a gallery first.", "error");
+      return;
+    }
+
+    if (!getShareToken()) {
+      generateClientLink();
+    }
+
+    const url = buildClientUrl(getShareToken());
+
+    if (!url) {
+      setMessage("Could not build client link.", "error");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setMessage("Client link copied. Save changes before sending if you just generated it.", "success");
+    } catch (error) {
+      shareLinkEl.focus();
+      shareLinkEl.select();
+      setMessage("Copy blocked by browser. The link is selected so you can copy it manually.", "");
+    }
   }
 
   function renderImages() {
@@ -379,7 +532,7 @@
     }
 
     window.open(
-      `/scouts/view-gallery.html?gallery=${encodeURIComponent(galleryId)}`,
+      `/scouts/view_gallery.html?gallery=${encodeURIComponent(galleryId)}`,
       "_blank"
     );
   }
@@ -411,10 +564,10 @@
         currentGallery.createdBy || currentGallery.created_by || currentUserId,
 
       visibility:
-        currentGallery.visibility || "private",
+        visibilitySelectEl.value || currentGallery.visibility || "private",
 
       shareToken:
-        currentGallery.shareToken || currentGallery.share_token || null,
+        getShareToken() || null,
 
       cover:
         currentCover,
@@ -506,6 +659,10 @@
       currentCover =
         data.cover || payload.cover || "";
 
+      currentGallery.visibility = payload.visibility;
+      currentGallery.shareToken = payload.shareToken;
+      syncClientDeliveryFields();
+
       setMessage("Gallery saved.", "success");
       renderImages();
 
@@ -586,6 +743,7 @@
       subtitleEl.textContent =
         `${currentImages.length} image${currentImages.length === 1 ? "" : "s"}`;
 
+      syncClientDeliveryFields();
       setMessage("Ready.", "");
       renderImages();
 
