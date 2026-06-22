@@ -81,6 +81,8 @@ export default async function handler(req, res) {
           galleries.town,
           galleries.state,
           galleries.country,
+          galleries.notes,
+          galleries.cover,
           galleries.created_at AS createdAt,
           COUNT(images.id) AS imageCount
         FROM galleries
