@@ -54,8 +54,13 @@ export default async function handler(req, res) {
           id,
           gallery_id AS galleryId,
           url,
+          display_url AS displayUrl,
+          thumbnail_url AS thumbnailUrl,
           filename,
+          content_type AS contentType,
           caption,
+          tags_json AS tagsJson,
+          source,
           sort_order AS sortOrder,
           created_at AS createdAt
         FROM images
