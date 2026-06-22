@@ -64,6 +64,60 @@ async function makeUniqueSlug(projectId, parentFolderId, baseSlug, folderId) {
   }
 }
 
+async function deleteEmptyFolder(projectId, folderId) {
+  const childFolders = await runD1Query(
+    `
+    SELECT id
+    FROM folders
+    WHERE project_id = ?
+      AND parent_folder_id = ?
+    LIMIT 1
+    `,
+    [projectId, folderId]
+  );
+
+  if (childFolders.length) {
+    return {
+      success: false,
+      status: 400,
+      error: "Cannot delete folder because it contains child folders."
+    };
+  }
+
+  const galleries = await runD1Query(
+    `
+    SELECT id
+    FROM galleries
+    WHERE project_id = ?
+      AND folder_id = ?
+    LIMIT 1
+    `,
+    [projectId, folderId]
+  );
+
+  if (galleries.length) {
+    return {
+      success: false,
+      status: 400,
+      error: "Cannot delete folder because it contains galleries."
+    };
+  }
+
+  await runD1Query(
+    `
+    DELETE FROM folders
+    WHERE id = ?
+      AND project_id = ?
+    `,
+    [folderId, projectId]
+  );
+
+  return {
+    success: true,
+    folderId
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -75,11 +129,35 @@ export default async function handler(req, res) {
   try {
     const folder = req.body || {};
 
-    const folderId =
-      folder.id || "";
+    const action =
+      folder.action || "";
 
     const projectId =
       folder.projectId || folder.project_id || "";
+
+    const folderId =
+      folder.folderId || folder.id || "";
+
+    if (action === "delete") {
+      if (!folderId || !projectId) {
+        return res.status(400).json({
+          success: false,
+          error: "Missing folderId or projectId"
+        });
+      }
+
+      const result =
+        await deleteEmptyFolder(projectId, folderId);
+
+      if (!result.success) {
+        return res.status(result.status || 400).json({
+          success: false,
+          error: result.error
+        });
+      }
+
+      return res.status(200).json(result);
+    }
 
     const parentFolderId =
       folder.parentFolderId || folder.parent_folder_id || null;
@@ -89,9 +167,6 @@ export default async function handler(req, res) {
 
     const baseSlug =
       folder.slug || folderId;
-
-    const slug =
-      await makeUniqueSlug(projectId, parentFolderId, baseSlug, folderId);
 
     const folderType =
       folder.folderType || folder.folder_type || "location";
@@ -108,6 +183,9 @@ export default async function handler(req, res) {
         error: "Missing folder id or projectId"
       });
     }
+
+    const slug =
+      await makeUniqueSlug(projectId, parentFolderId, baseSlug, folderId);
 
     await runD1Query(
       `
