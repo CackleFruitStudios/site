@@ -37,8 +37,6 @@
     button:hover { background: #3f7fff; }
     button.secondary { background: #333; }
     button.secondary:hover { background: #444; }
-    button.danger { background: #8b2f2f; }
-    button.danger:hover { background: #a83a3a; }
     a { color: inherit; text-decoration: none; }
     a:hover { text-decoration: underline; }
 
@@ -110,6 +108,7 @@
 
 <div class="subtitle">
   Create and organize project folders and empty galleries for LM / ALM workflows.
+  This version intentionally avoids move and delete tools until the management workflow is safer.
 </div>
 
 <div class="top-nav">
@@ -120,7 +119,8 @@
 </div>
 
 <div class="warning">
-  Safe tools: create folders, bulk-create folders, rename folders, delete empty folders, create empty galleries, and create Heroes galleries.
+  Safe tools only: create folders, bulk-create folders, rename folders, create empty galleries, and create Heroes galleries.
+  Move/delete tools should come later.
 </div>
 
 <div class="section-title">Project</div>
@@ -147,13 +147,9 @@
     <input id="folder-title" placeholder="Example: George's Apartment">
 
     <label for="folder-parent">Parent Folder</label>
-    <select id="folder-parent" onchange="updateCreateParentDebug()">
+    <select id="folder-parent">
       <option value="">No parent / project root</option>
     </select>
-
-    <div class="meta" id="create-parent-debug">
-      Parent: project root | ID: null
-    </div>
 
     <button onclick="createFolder()">Create Folder</button>
 
@@ -190,19 +186,6 @@
     <button onclick="renameFolder()">Rename Folder</button>
 
     <div class="message" id="rename-folder-message"></div>
-  </div>
-
-  <div class="card">
-    <h2>Delete Empty Folder</h2>
-
-    <label for="delete-folder-select">Folder</label>
-    <select id="delete-folder-select">
-      <option value="">Select folder...</option>
-    </select>
-
-    <button class="danger" onclick="deleteFolder()">Delete Empty Folder</button>
-
-    <div class="message" id="delete-folder-message"></div>
   </div>
 
 </div>
@@ -257,7 +240,6 @@
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
   const FOLDER_LIST_URL = "/api/folder-list";
   const FOLDER_SAVE_URL = "/api/folder-save";
-  const FOLDER_DELETE_URL = "/api/folder-delete";
   const GALLERY_SAVE_URL = "/api/gallery-save";
 
   const savedUser =
@@ -298,9 +280,6 @@
 
   const renameFolderSelect =
     document.getElementById("rename-folder-select");
-
-  const deleteFolderSelect =
-    document.getElementById("delete-folder-select");
 
   const galleryFolder =
     document.getElementById("gallery-folder");
@@ -422,7 +401,6 @@
       "create-folder-message",
       "bulk-folder-message",
       "rename-folder-message",
-      "delete-folder-message",
       "gallery-message",
       "heroes-message"
     ].forEach(id => setMessage(id, "", ""));
@@ -450,7 +428,44 @@
         .join("");
   }
 
+  function buildFolderTree(parentId = "", seen = {}) {
+    const children =
+      currentFolders
+        .filter(folder =>
+          (folder.parentFolderId || "") === parentId
+        )
+        .sort((a, b) => {
+          const sortA = Number(a.sortOrder || 0);
+          const sortB = Number(b.sortOrder || 0);
+
+          if (sortA !== sortB) {
+            return sortA - sortB;
+          }
+
+          return String(a.title || a.id).localeCompare(
+            String(b.title || b.id)
+          );
+        });
+
+    let ordered = [];
+
+    for (const child of children) {
+      if (seen[child.id]) {
+        continue;
+      }
+
+      seen[child.id] = true;
+      ordered.push(child);
+      ordered = ordered.concat(buildFolderTree(child.id, seen));
+    }
+
+    return ordered;
+  }
+
   function renderFolderOptions() {
+    const orderedFolders =
+      buildFolderTree("");
+
     const baseOption =
       `<option value="">No parent / project root</option>`;
 
@@ -458,7 +473,7 @@
       `<option value="">Select folder...</option>`;
 
     const folderOptions =
-      currentFolders
+      orderedFolders
         .map(folder => `
           <option value="${folder.id}">
             ${getFolderPath(folder)}
@@ -483,31 +498,6 @@
 
     heroesFolder.innerHTML =
       chooseOption + folderOptions;
-
-    updateCreateParentDebug();
-  }
-
-  function updateCreateParentDebug() {
-    const selectedOption =
-      folderParent.options[folderParent.selectedIndex];
-
-    const parentId =
-      selectedOption?.value || "";
-
-    const parentLabel =
-      selectedOption?.textContent?.trim() || "No parent / project root";
-
-    const debug =
-      document.getElementById("create-parent-debug");
-
-    if (!debug) {
-      return;
-    }
-
-    debug.textContent =
-      parentId
-        ? `Parent: ${parentLabel} | ID: ${parentId}`
-        : "Parent: project root | ID: null";
   }
 
   function renderFolderList() {
@@ -520,16 +510,20 @@
       return;
     }
 
+    const orderedFolders =
+      buildFolderTree("");
+
     folderList.innerHTML =
-      currentFolders
+      orderedFolders
         .map(folder => {
           const depth =
             Math.min(getFolderDepth(folder), 4);
 
           return `
             <div class="row indent-${depth}">
-              <div class="row-title">${getFolderPath(folder)}</div>
+              <div class="row-title">${folder.title || folder.id}</div>
               <div class="row-meta">
+                Path: ${getFolderPath(folder)}<br>
                 ID: ${folder.id}
                 ${folder.parentFolderId ? ` • Parent: ${folder.parentFolderId}` : " • Project root"}
               </div>
@@ -630,11 +624,8 @@
     const title =
       document.getElementById("folder-title").value.trim();
 
-    const selectedOption =
-      folderParent.options[folderParent.selectedIndex];
-
     const parentFolderId =
-      selectedOption?.value || null;
+      folderParent.value || null;
 
     if (!projectId) {
       setMessage("create-folder-message", "Select a project first.", "error");
@@ -662,11 +653,7 @@
 
       document.getElementById("folder-title").value = "";
 
-      setMessage(
-        "create-folder-message",
-        `Folder created under ${parentFolderId || "project root"}.`,
-        "success"
-      );
+      setMessage("create-folder-message", "Folder created.", "success");
 
       await loadFolders();
 
@@ -680,11 +667,8 @@
     const projectId =
       getSelectedProjectId();
 
-    const selectedOption =
-      bulkParent.options[bulkParent.selectedIndex];
-
     const parentFolderId =
-      selectedOption?.value || null;
+      bulkParent.value || null;
 
     const raw =
       document.getElementById("bulk-folder-list").value;
@@ -788,71 +772,6 @@
     } catch (error) {
       console.error(error);
       setMessage("rename-folder-message", error.message, "error");
-    }
-  }
-
-  async function deleteFolder() {
-    const projectId =
-      getSelectedProjectId();
-
-    const folderId =
-      deleteFolderSelect.value;
-
-    if (!projectId) {
-      setMessage("delete-folder-message", "Select a project first.", "error");
-      return;
-    }
-
-    if (!folderId) {
-      setMessage("delete-folder-message", "Select a folder to delete.", "error");
-      return;
-    }
-
-    const folder =
-      currentFolders.find(item => item.id === folderId);
-
-    if (!folder) {
-      setMessage("delete-folder-message", "Folder not found.", "error");
-      return;
-    }
-
-    const folderPath =
-      getFolderPath(folder);
-
-    const confirmed =
-      window.confirm(`Delete empty folder?\n\n${folderPath}`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      const response =
-        await fetch(FOLDER_DELETE_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            projectId,
-            folderId
-          })
-        });
-
-      const data =
-        await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Could not delete folder.");
-      }
-
-      setMessage("delete-folder-message", "Folder deleted.", "success");
-
-      await loadFolders();
-
-    } catch (error) {
-      console.error(error);
-      setMessage("delete-folder-message", error.message, "error");
     }
   }
 
