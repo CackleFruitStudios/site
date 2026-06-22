@@ -86,6 +86,8 @@
     .details-wide { grid-column: 1 / -1; }
     .share-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
     .muted-note { color: #777; font-size: 12px; line-height: 1.4; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
+    .tag-chip { display: inline-block; background: #222; border: 1px solid #444; color: #bbb; border-radius: 999px; padding: 5px 10px; font-size: 12px; }
     @media (max-width: 850px) {
       .selector-grid { grid-template-columns: 1fr; }
     }
@@ -159,47 +161,12 @@
 </div>
 
 <div class="panel">
-  <div class="section-title">Client Delivery</div>
-
-  <div class="client-panel">
-    <div class="field-row">
-      <label for="visibility-select">Visibility</label>
-      <select id="visibility-select" onchange="markClientChanged()">
-        <option value="private">Private / hidden</option>
-        <option value="client">Client link enabled</option>
-      </select>
-    </div>
-
-    <div class="field-row">
-      <label for="share-link">Client link</label>
-      <div class="share-row">
-        <input id="share-link" readonly value="">
-        <button type="button" onclick="generateClientLink()">Generate</button>
-        <button type="button" onclick="copyClientLink()">Copy</button>
-      </div>
-    </div>
-
-    <div class="muted-note">
-      Client links are read-only. Generate or enable the link, save changes, then send the copied URL.
-    </div>
-  </div>
-</div>
-
-<div class="panel">
   <div class="section-title">Gallery Details</div>
 
   <div class="details-grid">
     <div class="selector-field details-wide">
       <label for="detail-title">Gallery Title</label>
       <input id="detail-title" placeholder="Gallery title" oninput="markDetailsChanged()">
-    </div>
-
-    <div class="selector-field details-wide">
-      <label for="detail-tags">Gallery Tags</label>
-      <input id="detail-tags" placeholder="Exterior, waterfront, parking, period, practical location" oninput="markDetailsChanged()">
-      <div class="muted-note">
-        Use commas between tags. These are internal scout/library tags and are not shown on client-facing pages.
-      </div>
     </div>
 
     <div class="selector-field details-wide">
@@ -239,8 +206,60 @@
 </div>
 
 <div class="panel">
+  <div class="section-title">Client Delivery</div>
+
+  <div class="client-panel">
+    <div class="field-row">
+      <label for="visibility-select">Visibility</label>
+      <select id="visibility-select" onchange="markClientChanged()">
+        <option value="private">Private / hidden</option>
+        <option value="client">Client link enabled</option>
+      </select>
+    </div>
+
+    <div class="field-row">
+      <label for="share-link">Client link</label>
+      <div class="share-row">
+        <input id="share-link" readonly value="">
+        <button type="button" onclick="generateClientLink()">Generate</button>
+        <button type="button" onclick="copyClientLink()">Copy</button>
+      </div>
+    </div>
+
+    <div class="muted-note">
+      Client links are read-only. Generate or enable the link, save changes, then send the copied URL.
+    </div>
+  </div>
+</div>
+
+<div class="panel">
   <div class="section-title">Images</div>
   <div class="grid" id="image-grid"></div>
+</div>
+
+
+<div class="panel">
+  <div class="section-title">Gallery Tags</div>
+
+  <div class="client-panel">
+    <div id="tag-list" class="tag-list">
+      <span class="muted-note">Load a gallery to view tags.</span>
+    </div>
+
+    <div class="field-row">
+      <label for="tag-input">Add Tags</label>
+      <div class="share-row">
+        <input id="tag-input" placeholder="Exterior, waterfront, parking">
+        <button type="button" onclick="addGalleryTags()">Add</button>
+      </div>
+    </div>
+
+    <div class="muted-note">
+      Tags use the existing location tag API. Use commas to add multiple tags. Tags are internal/library data and are not shown on client-facing pages.
+    </div>
+
+    <div class="message" id="tag-message"></div>
+  </div>
 </div>
 
 <script>
@@ -252,6 +271,8 @@
   const IMAGES_URL = "/api/image-list";
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
   const GALLERY_SAVE_URL = "/api/gallery-save";
+  const LOCATION_TAGS_URL = "/api/location-tag-list";
+  const LOCATION_TAG_SAVE_URL = "/api/location-tag-save";
 
   const savedUser =
     sessionStorage.getItem(SESSION_KEY);
@@ -314,8 +335,6 @@
   const detailTitleEl =
     document.getElementById("detail-title");
 
-  const detailTagsEl =
-    document.getElementById("detail-tags");
 
   const detailLocationNameEl =
     document.getElementById("detail-location-name");
@@ -332,6 +351,15 @@
   const detailNotesEl =
     document.getElementById("detail-notes");
 
+  const tagInputEl =
+    document.getElementById("tag-input");
+
+  const tagListEl =
+    document.getElementById("tag-list");
+
+  const tagMessageEl =
+    document.getElementById("tag-message");
+
   let allProjects = [];
   let allGalleries = [];
   let allMembers = [];
@@ -339,6 +367,7 @@
 
   let currentGallery = null;
   let currentImages = [];
+  let currentTags = [];
   let currentCover = "";
 
   if (currentUser) {
@@ -453,46 +482,144 @@
     return gallery.title || gallery.name || gallery.id;
   }
 
-  function getGalleryTags(gallery) {
-    if (!gallery) {
-      return [];
-    }
+  function normalizeTag(tag) {
+    return String(tag || "")
+      .trim()
+      .toLowerCase();
+  }
 
-    if (Array.isArray(gallery.tags)) {
-      return gallery.tags;
-    }
-
-    if (gallery.tags_json) {
-      try {
-        const parsed = JSON.parse(gallery.tags_json);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (error) {
-        return [];
-      }
-    }
-
-    if (typeof gallery.tags === "string") {
-      return gallery.tags
-        .split(",")
-        .map(tag => tag.trim())
-        .filter(Boolean);
-    }
-
-    return [];
+  function getTagText(tag) {
+    return tag.tag || tag.name || tag;
   }
 
   function parseTagsInput(value) {
     return (value || "")
       .split(",")
-      .map(tag => tag.trim())
+      .map(normalizeTag)
       .filter(Boolean);
   }
 
-  function tagsToInput(tags) {
-    return (tags || [])
-      .map(tag => typeof tag === "string" ? tag : tag.tag || tag.name || "")
-      .filter(Boolean)
-      .join(", ");
+  function renderTagList() {
+    if (!tagListEl) {
+      return;
+    }
+
+    if (!currentGallery) {
+      tagListEl.innerHTML =
+        `<span class="muted-note">Load a gallery to view tags.</span>`;
+      return;
+    }
+
+    if (!currentTags.length) {
+      tagListEl.innerHTML =
+        `<span class="muted-note">No tags added yet.</span>`;
+      return;
+    }
+
+    tagListEl.innerHTML =
+      currentTags
+        .map(tag => `<span class="tag-chip">${getTagText(tag)}</span>`)
+        .join("");
+  }
+
+  function setTagMessage(text, type) {
+    if (!tagMessageEl) {
+      return;
+    }
+
+    tagMessageEl.textContent =
+      text || "";
+
+    tagMessageEl.className =
+      type ? `message ${type}` : "message";
+  }
+
+  async function loadGalleryTags(activeGalleryId) {
+    currentTags = [];
+
+    if (!activeGalleryId) {
+      renderTagList();
+      return;
+    }
+
+    try {
+      const tagsData =
+        await fetch(`${LOCATION_TAGS_URL}?galleryId=${encodeURIComponent(activeGalleryId)}`)
+          .then(response => response.json());
+
+      currentTags =
+        tagsData.tags || [];
+
+      renderTagList();
+      setTagMessage("", "");
+
+    } catch (error) {
+      console.error(error);
+      currentTags = [];
+      renderTagList();
+      setTagMessage("Could not load gallery tags.", "error");
+    }
+  }
+
+  async function addGalleryTags() {
+    if (!currentGallery || !galleryId) {
+      setTagMessage("Load a gallery first.", "error");
+      return;
+    }
+
+    const tags =
+      parseTagsInput(tagInputEl.value);
+
+    if (!tags.length) {
+      setTagMessage("Enter at least one tag.", "error");
+      return;
+    }
+
+    const existing =
+      new Set(currentTags.map(tag => normalizeTag(getTagText(tag))));
+
+    const newTags =
+      tags.filter(tag => !existing.has(tag));
+
+    if (!newTags.length) {
+      setTagMessage("Those tags are already added.", "");
+      tagInputEl.value = "";
+      return;
+    }
+
+    setTagMessage("Saving tags...", "");
+
+    try {
+      for (const tag of newTags) {
+        const response =
+          await fetch(LOCATION_TAG_SAVE_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body:
+              JSON.stringify({
+                galleryId,
+                tag
+              })
+          });
+
+        const data =
+          await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Could not save tag.");
+        }
+      }
+
+      tagInputEl.value = "";
+      await loadGalleryTags(galleryId);
+      setTagMessage("Tags added.", "success");
+
+    } catch (error) {
+      console.error(error);
+      setTagMessage(error.message || "Could not save tags.", "error");
+    }
   }
 
   function getImageId(image, index) {
@@ -812,7 +939,6 @@
   function syncDetailsFields() {
     if (!currentGallery) {
       detailTitleEl.value = "";
-      detailTagsEl.value = "";
       detailLocationNameEl.value = "";
       detailTownEl.value = "";
       detailStateEl.value = "";
@@ -823,9 +949,6 @@
 
     detailTitleEl.value =
       getGalleryTitle(currentGallery);
-
-    detailTagsEl.value =
-      tagsToInput(getGalleryTags(currentGallery));
 
     detailLocationNameEl.value =
       currentGallery.locationName ||
@@ -856,7 +979,6 @@
 
     currentGallery.title = detailTitleEl.value.trim() || currentGallery.id;
     currentGallery.name = currentGallery.title;
-    currentGallery.tags = parseTagsInput(detailTagsEl.value);
     currentGallery.locationName = detailLocationNameEl.value.trim();
     currentGallery.town = detailTownEl.value.trim();
     currentGallery.state = detailStateEl.value.trim();
@@ -1073,12 +1195,6 @@
       title:
         detailTitleEl.value.trim() || getGalleryTitle(currentGallery),
 
-      tags:
-        parseTagsInput(detailTagsEl.value),
-
-      tagsJson:
-        JSON.stringify(parseTagsInput(detailTagsEl.value)),
-
       slug:
         currentGallery.slug || currentGallery.id,
 
@@ -1119,10 +1235,7 @@
 
       admin: {
         notes:
-          detailNotesEl.value || "",
-
-        tags:
-          parseTagsInput(detailTagsEl.value)
+          detailNotesEl.value || ""
       },
 
       images:
@@ -1193,8 +1306,6 @@
 
       currentGallery.title = payload.title;
       currentGallery.name = payload.title;
-      currentGallery.tags = payload.tags;
-      currentGallery.tags_json = payload.tagsJson;
       currentGallery.locationName = payload.library.locationName;
       currentGallery.town = payload.library.town;
       currentGallery.state = payload.library.state;
@@ -1287,6 +1398,7 @@
 
       syncDetailsFields();
       syncClientDeliveryFields();
+      await loadGalleryTags(galleryId);
       setMessage("Ready.", "");
       renderImages();
 
@@ -1313,6 +1425,7 @@
         "Select a project, folder, and gallery to manage.";
 
       setMessage("Choose a gallery above.", "");
+      renderTagList();
     }
   }
 </script>
