@@ -110,7 +110,6 @@
 
 <div class="subtitle">
   Create and organize project folders and empty galleries for LM / ALM workflows.
-  This version intentionally avoids move and delete tools until the management workflow is safer.
 </div>
 
 <div class="top-nav">
@@ -148,9 +147,13 @@
     <input id="folder-title" placeholder="Example: George's Apartment">
 
     <label for="folder-parent">Parent Folder</label>
-    <select id="folder-parent">
+    <select id="folder-parent" onchange="updateCreateParentDebug()">
       <option value="">No parent / project root</option>
     </select>
+
+    <div class="meta" id="create-parent-debug">
+      Parent: project root | ID: null
+    </div>
 
     <button onclick="createFolder()">Create Folder</button>
 
@@ -254,7 +257,6 @@
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
   const FOLDER_LIST_URL = "/api/folder-list";
   const FOLDER_SAVE_URL = "/api/folder-save";
-  const FOLDER_DELETE_URL = "/api/folder-delete";
   const GALLERY_SAVE_URL = "/api/gallery-save";
 
   const savedUser =
@@ -447,45 +449,7 @@
         .join("");
   }
 
-  function buildFolderTree(parentId = "", seen = {}) {
-    const normalizedParentId =
-      parentId || "";
-
-    const children =
-      currentFolders
-        .filter(folder =>
-          (folder.parentFolderId || folder.parent_folder_id || "") === normalizedParentId
-        )
-        .sort((a, b) => {
-          const sortA = Number(a.sortOrder || a.sort_order || 0);
-          const sortB = Number(b.sortOrder || b.sort_order || 0);
-
-          if (sortA !== sortB) {
-            return sortA - sortB;
-          }
-
-          return String(a.title || a.id).localeCompare(String(b.title || b.id));
-        });
-
-    let result = [];
-
-    for (const child of children) {
-      if (seen[child.id]) {
-        continue;
-      }
-
-      seen[child.id] = true;
-      result.push(child);
-      result = result.concat(buildFolderTree(child.id, seen));
-    }
-
-    return result;
-  }
-
   function renderFolderOptions() {
-    const orderedFolders =
-      buildFolderTree("");
-
     const baseOption =
       `<option value="">No parent / project root</option>`;
 
@@ -493,7 +457,7 @@
       `<option value="">Select folder...</option>`;
 
     const folderOptions =
-      orderedFolders
+      currentFolders
         .map(folder => `
           <option value="${folder.id}">
             ${getFolderPath(folder)}
@@ -510,10 +474,8 @@
     renameFolderSelect.innerHTML =
       chooseOption + folderOptions;
 
-    if (deleteFolderSelect) {
-      deleteFolderSelect.innerHTML =
-        chooseOption + folderOptions;
-    }
+    deleteFolderSelect.innerHTML =
+      chooseOption + folderOptions;
 
     galleryFolder.innerHTML =
       chooseOption + folderOptions;
@@ -525,7 +487,26 @@
   }
 
   function updateCreateParentDebug() {
-    return;
+    const selectedOption =
+      folderParent.options[folderParent.selectedIndex];
+
+    const parentId =
+      selectedOption?.value || "";
+
+    const parentLabel =
+      selectedOption?.textContent?.trim() || "No parent / project root";
+
+    const debug =
+      document.getElementById("create-parent-debug");
+
+    if (!debug) {
+      return;
+    }
+
+    debug.textContent =
+      parentId
+        ? `Parent: ${parentLabel} | ID: ${parentId}`
+        : "Parent: project root | ID: null";
   }
 
   function renderFolderList() {
@@ -538,18 +519,15 @@
       return;
     }
 
-    const orderedFolders =
-      buildFolderTree("");
-
     folderList.innerHTML =
-      orderedFolders
+      currentFolders
         .map(folder => {
           const depth =
             Math.min(getFolderDepth(folder), 4);
 
           return `
             <div class="row indent-${depth}">
-              <div class="row-title">${folder.title || folder.id}</div>
+              <div class="row-title">${getFolderPath(folder)}</div>
               <div class="row-meta">
                 ID: ${folder.id}
                 ${folder.parentFolderId ? ` • Parent: ${folder.parentFolderId}` : " • Project root"}
@@ -651,8 +629,11 @@
     const title =
       document.getElementById("folder-title").value.trim();
 
+    const selectedOption =
+      folderParent.options[folderParent.selectedIndex];
+
     const parentFolderId =
-      folderParent.value || null;
+      selectedOption?.value || null;
 
     if (!projectId) {
       setMessage("create-folder-message", "Select a project first.", "error");
@@ -680,7 +661,11 @@
 
       document.getElementById("folder-title").value = "";
 
-      setMessage("create-folder-message", "Folder created.", "success");
+      setMessage(
+        "create-folder-message",
+        `Folder created under ${parentFolderId || "project root"}.`,
+        "success"
+      );
 
       await loadFolders();
 
@@ -694,8 +679,11 @@
     const projectId =
       getSelectedProjectId();
 
+    const selectedOption =
+      bulkParent.options[bulkParent.selectedIndex];
+
     const parentFolderId =
-      bulkParent.value || null;
+      selectedOption?.value || null;
 
     const raw =
       document.getElementById("bulk-folder-list").value;
@@ -839,12 +827,13 @@
 
     try {
       const response =
-        await fetch(FOLDER_DELETE_URL, {
+        await fetch(FOLDER_SAVE_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
+            action: "delete",
             projectId,
             folderId
           })
