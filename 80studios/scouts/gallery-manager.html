@@ -70,7 +70,7 @@
     .selector-field { display: grid; gap: 6px; }
     .field-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; }
     label { color: #aaa; font-size: 13px; }
-    input, select {
+    input, select, textarea {
       width: 100%;
       box-sizing: border-box;
       background: #111;
@@ -79,7 +79,11 @@
       border-radius: 6px;
       padding: 9px 10px;
       font-size: 13px;
+      font-family: Arial, sans-serif;
     }
+    textarea { min-height: 120px; resize: vertical; line-height: 1.45; }
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .details-wide { grid-column: 1 / -1; }
     .share-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
     .muted-note { color: #777; font-size: 12px; line-height: 1.4; }
     @media (max-width: 850px) {
@@ -89,6 +93,7 @@
     @media (max-width: 650px) {
       .field-row { grid-template-columns: 1fr; gap: 6px; }
       .share-row { grid-template-columns: 1fr; }
+      .details-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -181,6 +186,51 @@
 </div>
 
 <div class="panel">
+  <div class="section-title">Gallery Details</div>
+
+  <div class="details-grid">
+    <div class="selector-field details-wide">
+      <label for="detail-title">Gallery Title</label>
+      <input id="detail-title" placeholder="Gallery title" oninput="markDetailsChanged()">
+    </div>
+
+    <div class="selector-field details-wide">
+      <label for="detail-location-name">Location Name</label>
+      <input id="detail-location-name" placeholder="Location name / scout name" oninput="markDetailsChanged()">
+    </div>
+
+    <div class="selector-field">
+      <label for="detail-town">Town / City</label>
+      <input id="detail-town" placeholder="Town or city" oninput="markDetailsChanged()">
+    </div>
+
+    <div class="selector-field">
+      <label for="detail-state">State / Region</label>
+      <input id="detail-state" placeholder="State or region" oninput="markDetailsChanged()">
+    </div>
+
+    <div class="selector-field">
+      <label for="detail-country">Country</label>
+      <input id="detail-country" placeholder="Country" oninput="markDetailsChanged()">
+    </div>
+
+    <div class="selector-field">
+      <label>Client Visibility</label>
+      <input value="Private internal notes only" readonly>
+    </div>
+
+    <div class="selector-field details-wide">
+      <label for="detail-notes">Private Gallery Details / Scout Notes</label>
+      <textarea id="detail-notes" placeholder="Parking, power, bathrooms, access, owner contact, permit notes, restrictions, road width, cell coverage, sun direction, shoot concerns, and any internal notes. These notes are not shown to clients." oninput="markDetailsChanged()"></textarea>
+    </div>
+  </div>
+
+  <div class="muted-note">
+    Gallery details are internal only. They save with the gallery and are not shown on client-facing pages.
+  </div>
+</div>
+
+<div class="panel">
   <div class="section-title">Images</div>
   <div class="grid" id="image-grid"></div>
 </div>
@@ -252,6 +302,24 @@
 
   const shareLinkEl =
     document.getElementById("share-link");
+
+  const detailTitleEl =
+    document.getElementById("detail-title");
+
+  const detailLocationNameEl =
+    document.getElementById("detail-location-name");
+
+  const detailTownEl =
+    document.getElementById("detail-town");
+
+  const detailStateEl =
+    document.getElementById("detail-state");
+
+  const detailCountryEl =
+    document.getElementById("detail-country");
+
+  const detailNotesEl =
+    document.getElementById("detail-notes");
 
   let allProjects = [];
   let allGalleries = [];
@@ -688,6 +756,61 @@
     shareLinkEl.value = buildClientUrl(token);
   }
 
+  function syncDetailsFields() {
+    if (!currentGallery) {
+      detailTitleEl.value = "";
+      detailLocationNameEl.value = "";
+      detailTownEl.value = "";
+      detailStateEl.value = "";
+      detailCountryEl.value = "";
+      detailNotesEl.value = "";
+      return;
+    }
+
+    detailTitleEl.value =
+      getGalleryTitle(currentGallery);
+
+    detailLocationNameEl.value =
+      currentGallery.locationName ||
+      currentGallery.location_name ||
+      "";
+
+    detailTownEl.value =
+      currentGallery.town ||
+      "";
+
+    detailStateEl.value =
+      currentGallery.state ||
+      "";
+
+    detailCountryEl.value =
+      currentGallery.country ||
+      "USA";
+
+    detailNotesEl.value =
+      currentGallery.notes ||
+      "";
+  }
+
+  function markDetailsChanged() {
+    if (!currentGallery) {
+      return;
+    }
+
+    currentGallery.title = detailTitleEl.value.trim() || currentGallery.id;
+    currentGallery.name = currentGallery.title;
+    currentGallery.locationName = detailLocationNameEl.value.trim();
+    currentGallery.town = detailTownEl.value.trim();
+    currentGallery.state = detailStateEl.value.trim();
+    currentGallery.country = detailCountryEl.value.trim() || "USA";
+    currentGallery.notes = detailNotesEl.value;
+
+    titleEl.textContent =
+      getGalleryTitle(currentGallery);
+
+    setMessage("Gallery details changed. Save changes when ready.", "");
+  }
+
   function markClientChanged() {
     if (!currentGallery) {
       return;
@@ -890,7 +1013,7 @@
         getGalleryFolderId(currentGallery),
 
       title:
-        getGalleryTitle(currentGallery),
+        detailTitleEl.value.trim() || getGalleryTitle(currentGallery),
 
       slug:
         currentGallery.slug || currentGallery.id,
@@ -915,23 +1038,24 @@
 
       library: {
         locationName:
+          detailLocationNameEl.value.trim() ||
           currentGallery.locationName ||
           currentGallery.location_name ||
           getGalleryTitle(currentGallery),
 
         town:
-          currentGallery.town || "",
+          detailTownEl.value.trim(),
 
         state:
-          currentGallery.state || "",
+          detailStateEl.value.trim(),
 
         country:
-          currentGallery.country || "USA"
+          detailCountryEl.value.trim() || "USA"
       },
 
       admin: {
         notes:
-          currentGallery.notes || ""
+          detailNotesEl.value || ""
       },
 
       images:
@@ -1000,8 +1124,16 @@
       currentCover =
         data.cover || payload.cover || "";
 
+      currentGallery.title = payload.title;
+      currentGallery.name = payload.title;
+      currentGallery.locationName = payload.library.locationName;
+      currentGallery.town = payload.library.town;
+      currentGallery.state = payload.library.state;
+      currentGallery.country = payload.library.country;
+      currentGallery.notes = payload.admin.notes;
       currentGallery.visibility = payload.visibility;
       currentGallery.shareToken = payload.shareToken;
+      syncDetailsFields();
       syncClientDeliveryFields();
 
       setMessage("Gallery saved.", "success");
@@ -1084,6 +1216,7 @@
       subtitleEl.textContent =
         `${currentImages.length} image${currentImages.length === 1 ? "" : "s"}`;
 
+      syncDetailsFields();
       syncClientDeliveryFields();
       setMessage("Ready.", "");
       renderImages();
