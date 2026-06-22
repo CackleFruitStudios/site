@@ -37,6 +37,8 @@
     button:hover { background: #3f7fff; }
     button.secondary { background: #333; }
     button.secondary:hover { background: #444; }
+    button.danger { background: #8b2f2f; }
+    button.danger:hover { background: #a83a3a; }
     a { color: inherit; text-decoration: none; }
     a:hover { text-decoration: underline; }
 
@@ -119,8 +121,7 @@
 </div>
 
 <div class="warning">
-  Safe tools only: create folders, bulk-create folders, rename folders, create empty galleries, and create Heroes galleries.
-  Move/delete tools should come later.
+  Safe tools: create folders, bulk-create folders, rename folders, delete empty folders, create empty galleries, and create Heroes galleries.
 </div>
 
 <div class="section-title">Project</div>
@@ -361,10 +362,7 @@
   }
 
   function getFolderDepth(folder, seen = {}) {
-    const parentId =
-      folder.parentFolderId || folder.parent_folder_id || "";
-
-    if (!parentId) {
+    if (!folder.parentFolderId) {
       return 0;
     }
 
@@ -375,9 +373,7 @@
     seen[folder.id] = true;
 
     const parent =
-      currentFolders.find(item =>
-        item.id === parentId
-      );
+      currentFolders.find(item => item.id === folder.parentFolderId);
 
     if (!parent) {
       return 0;
@@ -387,31 +383,21 @@
   }
 
   function getFolderPath(folder) {
-    const parts =
-      [folder.title || folder.id];
-
-    let parentId =
-      folder.parentFolderId || folder.parent_folder_id || "";
-
-    let safety =
-      0;
+    const parts = [folder.title || folder.id];
+    let parentId = folder.parentFolderId || "";
+    let safety = 0;
 
     while (parentId && safety < 20) {
       const parent =
-        currentFolders.find(item =>
-          item.id === parentId
-        );
+        currentFolders.find(item => item.id === parentId);
 
       if (!parent) {
         break;
       }
 
       parts.unshift(parent.title || parent.id);
-
-      parentId =
-        parent.parentFolderId || parent.parent_folder_id || "";
-
-      safety += 1;
+      parentId = parent.parentFolderId || "";
+      safety++;
     }
 
     return parts.join(" / ");
@@ -461,7 +447,45 @@
         .join("");
   }
 
+  function buildFolderTree(parentId = "", seen = {}) {
+    const normalizedParentId =
+      parentId || "";
+
+    const children =
+      currentFolders
+        .filter(folder =>
+          (folder.parentFolderId || folder.parent_folder_id || "") === normalizedParentId
+        )
+        .sort((a, b) => {
+          const sortA = Number(a.sortOrder || a.sort_order || 0);
+          const sortB = Number(b.sortOrder || b.sort_order || 0);
+
+          if (sortA !== sortB) {
+            return sortA - sortB;
+          }
+
+          return String(a.title || a.id).localeCompare(String(b.title || b.id));
+        });
+
+    let result = [];
+
+    for (const child of children) {
+      if (seen[child.id]) {
+        continue;
+      }
+
+      seen[child.id] = true;
+      result.push(child);
+      result = result.concat(buildFolderTree(child.id, seen));
+    }
+
+    return result;
+  }
+
   function renderFolderOptions() {
+    const orderedFolders =
+      buildFolderTree("");
+
     const baseOption =
       `<option value="">No parent / project root</option>`;
 
@@ -469,20 +493,12 @@
       `<option value="">Select folder...</option>`;
 
     const folderOptions =
-      currentFolders
-        .map(folder => {
-          const depth =
-            Math.min(getFolderDepth(folder), 4);
-
-          const prefix =
-            "— ".repeat(depth);
-
-          return `
-            <option value="${folder.id}">
-              ${prefix}${folder.title || folder.id}
-            </option>
-          `;
-        })
+      orderedFolders
+        .map(folder => `
+          <option value="${folder.id}">
+            ${getFolderPath(folder)}
+          </option>
+        `)
         .join("");
 
     folderParent.innerHTML =
@@ -494,14 +510,22 @@
     renameFolderSelect.innerHTML =
       chooseOption + folderOptions;
 
-    deleteFolderSelect.innerHTML =
-      chooseOption + folderOptions;
+    if (deleteFolderSelect) {
+      deleteFolderSelect.innerHTML =
+        chooseOption + folderOptions;
+    }
 
     galleryFolder.innerHTML =
       chooseOption + folderOptions;
 
     heroesFolder.innerHTML =
       chooseOption + folderOptions;
+
+    updateCreateParentDebug();
+  }
+
+  function updateCreateParentDebug() {
+    return;
   }
 
   function renderFolderList() {
@@ -514,8 +538,11 @@
       return;
     }
 
+    const orderedFolders =
+      buildFolderTree("");
+
     folderList.innerHTML =
-      currentFolders
+      orderedFolders
         .map(folder => {
           const depth =
             Math.min(getFolderDepth(folder), 4);
