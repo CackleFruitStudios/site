@@ -67,6 +67,11 @@
       <div class="coming-soon">Create folders, nested folders, and empty galleries</div>
     </a>
 
+    <a class="admin-card" href="/scouts/gallery-manager.html">
+      Gallery Manager
+      <div class="coming-soon">Manage covers, ordering, deletions, and client delivery</div>
+    </a>
+
     <a class="admin-card" href="/scouts/admin.html">
       Upload
       <div class="coming-soon">Upload photos into project galleries</div>
@@ -263,6 +268,7 @@
 
     if (userCanUseAdminTools()) {
       html += `<a href="/scouts/folder-manager.html">Folder Manager</a>`;
+      html += `<a href="/scouts/gallery-manager.html">Gallery Manager</a>`;
       html += `<a href="/scouts/admin.html">Upload</a>`;
     }
 
