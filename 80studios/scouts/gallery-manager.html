@@ -113,7 +113,7 @@
 <h1 id="gallery-title">Gallery Manager</h1>
 
 <div class="subtitle" id="subtitle">
-  Manage cover image, image order, and deleted photos.
+  Manage gallery details, tags, cover image, image order, and deleted photos.
 </div>
 
 <div class="panel">
@@ -192,6 +192,14 @@
     <div class="selector-field details-wide">
       <label for="detail-title">Gallery Title</label>
       <input id="detail-title" placeholder="Gallery title" oninput="markDetailsChanged()">
+    </div>
+
+    <div class="selector-field details-wide">
+      <label for="detail-tags">Gallery Tags</label>
+      <input id="detail-tags" placeholder="Exterior, waterfront, parking, period, practical location" oninput="markDetailsChanged()">
+      <div class="muted-note">
+        Use commas between tags. These are internal scout/library tags and are not shown on client-facing pages.
+      </div>
     </div>
 
     <div class="selector-field details-wide">
@@ -305,6 +313,9 @@
 
   const detailTitleEl =
     document.getElementById("detail-title");
+
+  const detailTagsEl =
+    document.getElementById("detail-tags");
 
   const detailLocationNameEl =
     document.getElementById("detail-location-name");
@@ -440,6 +451,48 @@
 
   function getGalleryTitle(gallery) {
     return gallery.title || gallery.name || gallery.id;
+  }
+
+  function getGalleryTags(gallery) {
+    if (!gallery) {
+      return [];
+    }
+
+    if (Array.isArray(gallery.tags)) {
+      return gallery.tags;
+    }
+
+    if (gallery.tags_json) {
+      try {
+        const parsed = JSON.parse(gallery.tags_json);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    if (typeof gallery.tags === "string") {
+      return gallery.tags
+        .split(",")
+        .map(tag => tag.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  function parseTagsInput(value) {
+    return (value || "")
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(Boolean);
+  }
+
+  function tagsToInput(tags) {
+    return (tags || [])
+      .map(tag => typeof tag === "string" ? tag : tag.tag || tag.name || "")
+      .filter(Boolean)
+      .join(", ");
   }
 
   function getImageId(image, index) {
@@ -759,6 +812,7 @@
   function syncDetailsFields() {
     if (!currentGallery) {
       detailTitleEl.value = "";
+      detailTagsEl.value = "";
       detailLocationNameEl.value = "";
       detailTownEl.value = "";
       detailStateEl.value = "";
@@ -769,6 +823,9 @@
 
     detailTitleEl.value =
       getGalleryTitle(currentGallery);
+
+    detailTagsEl.value =
+      tagsToInput(getGalleryTags(currentGallery));
 
     detailLocationNameEl.value =
       currentGallery.locationName ||
@@ -799,6 +856,7 @@
 
     currentGallery.title = detailTitleEl.value.trim() || currentGallery.id;
     currentGallery.name = currentGallery.title;
+    currentGallery.tags = parseTagsInput(detailTagsEl.value);
     currentGallery.locationName = detailLocationNameEl.value.trim();
     currentGallery.town = detailTownEl.value.trim();
     currentGallery.state = detailStateEl.value.trim();
@@ -1015,6 +1073,12 @@
       title:
         detailTitleEl.value.trim() || getGalleryTitle(currentGallery),
 
+      tags:
+        parseTagsInput(detailTagsEl.value),
+
+      tagsJson:
+        JSON.stringify(parseTagsInput(detailTagsEl.value)),
+
       slug:
         currentGallery.slug || currentGallery.id,
 
@@ -1055,7 +1119,10 @@
 
       admin: {
         notes:
-          detailNotesEl.value || ""
+          detailNotesEl.value || "",
+
+        tags:
+          parseTagsInput(detailTagsEl.value)
       },
 
       images:
@@ -1126,6 +1193,8 @@
 
       currentGallery.title = payload.title;
       currentGallery.name = payload.title;
+      currentGallery.tags = payload.tags;
+      currentGallery.tags_json = payload.tagsJson;
       currentGallery.locationName = payload.library.locationName;
       currentGallery.town = payload.library.town;
       currentGallery.state = payload.library.state;
