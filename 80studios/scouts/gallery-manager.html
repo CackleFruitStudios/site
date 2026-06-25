@@ -65,12 +65,12 @@
     .delete-btn { width: 100%; background: #3b1717; border-color: #5c2222; color: #f07a7a; }
     .save-btn { background: #18351d; border-color: #2d5a33; color: #71d685; }
     .view-btn { background: #1b2740; border-color: #314a77; color: #9fc5ff; }
-    .client-panel { display: grid; grid-template-columns: 1fr; gap: 10px; }
-    .selector-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
-    .selector-field { display: grid; gap: 6px; }
-    .field-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; }
+
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .details-wide { grid-column: 1 / -1; }
+    .field { display: grid; gap: 6px; }
     label { color: #aaa; font-size: 13px; }
-    input, select, textarea {
+    input, textarea {
       width: 100%;
       box-sizing: border-box;
       background: #111;
@@ -81,20 +81,9 @@
       font-size: 13px;
       font-family: Arial, sans-serif;
     }
-    textarea { min-height: 120px; resize: vertical; line-height: 1.45; }
-    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .details-wide { grid-column: 1 / -1; }
-    .share-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
-    .muted-note { color: #777; font-size: 12px; line-height: 1.4; }
-    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
-    .tag-chip { display: inline-block; background: #222; border: 1px solid #444; color: #bbb; border-radius: 999px; padding: 5px 10px; font-size: 12px; }
-    @media (max-width: 850px) {
-      .selector-grid { grid-template-columns: 1fr; }
-    }
-
+    textarea { min-height: 135px; resize: vertical; line-height: 1.45; }
+    .muted-note { color: #777; font-size: 12px; line-height: 1.4; margin-top: 8px; }
     @media (max-width: 650px) {
-      .field-row { grid-template-columns: 1fr; gap: 6px; }
-      .share-row { grid-template-columns: 1fr; }
       .details-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -115,42 +104,7 @@
 <h1 id="gallery-title">Gallery Manager</h1>
 
 <div class="subtitle" id="subtitle">
-  Manage gallery details, tags, cover image, image order, and deleted photos.
-</div>
-
-<div class="panel">
-  <div class="section-title">Gallery Selection</div>
-
-  <div class="selector-grid">
-    <div class="selector-field">
-      <label for="project-select">Project *</label>
-      <select id="project-select" onchange="handleProjectChange()">
-        <option value="">Loading projects...</option>
-      </select>
-    </div>
-
-    <div class="selector-field">
-      <label for="folder-select">Folder</label>
-      <select id="folder-select" onchange="handleFolderChange()">
-        <option value="">Select a project first...</option>
-      </select>
-    </div>
-
-    <div class="selector-field">
-      <label for="gallery-select">Gallery *</label>
-      <select id="gallery-select">
-        <option value="">Select a project first...</option>
-      </select>
-    </div>
-
-    <button type="button" onclick="openSelectedGallery()">
-      Manage Gallery
-    </button>
-  </div>
-
-  <div class="message" id="selector-message">
-    Select a project, folder, and gallery to manage. Direct gallery links still work.
-  </div>
+  Manage gallery details, internal tags, cover image, image order, and deleted photos.
 </div>
 
 <div class="panel">
@@ -160,75 +114,49 @@
   <div class="message" id="message">Loading gallery...</div>
 </div>
 
+
 <div class="panel">
   <div class="section-title">Gallery Details</div>
 
   <div class="details-grid">
-    <div class="selector-field details-wide">
+    <div class="field details-wide">
       <label for="detail-title">Gallery Title</label>
       <input id="detail-title" placeholder="Gallery title" oninput="markDetailsChanged()">
     </div>
 
-    <div class="selector-field details-wide">
+    <div class="field details-wide">
       <label for="detail-location-name">Location Name</label>
       <input id="detail-location-name" placeholder="Location name / scout name" oninput="markDetailsChanged()">
     </div>
 
-    <div class="selector-field">
+    <div class="field">
       <label for="detail-town">Town / City</label>
       <input id="detail-town" placeholder="Town or city" oninput="markDetailsChanged()">
     </div>
 
-    <div class="selector-field">
+    <div class="field">
       <label for="detail-state">State / Region</label>
       <input id="detail-state" placeholder="State or region" oninput="markDetailsChanged()">
     </div>
 
-    <div class="selector-field">
+    <div class="field">
       <label for="detail-country">Country</label>
       <input id="detail-country" placeholder="Country" oninput="markDetailsChanged()">
     </div>
 
-    <div class="selector-field">
+    <div class="field">
       <label>Client Visibility</label>
-      <input value="Private internal notes only" readonly>
+      <input value="Internal only — not shown to clients" readonly>
     </div>
 
-    <div class="selector-field details-wide">
+    <div class="field details-wide">
       <label for="detail-notes">Private Gallery Details / Scout Notes</label>
       <textarea id="detail-notes" placeholder="Parking, power, bathrooms, access, owner contact, permit notes, restrictions, road width, cell coverage, sun direction, shoot concerns, and any internal notes. These notes are not shown to clients." oninput="markDetailsChanged()"></textarea>
     </div>
   </div>
 
   <div class="muted-note">
-    Gallery details are internal only. They save with the gallery and are not shown on client-facing pages.
-  </div>
-</div>
-
-<div class="panel">
-  <div class="section-title">Client Delivery</div>
-
-  <div class="client-panel">
-    <div class="field-row">
-      <label for="visibility-select">Visibility</label>
-      <select id="visibility-select" onchange="markClientChanged()">
-        <option value="private">Private / hidden</option>
-        <option value="client">Client link enabled</option>
-      </select>
-    </div>
-
-    <div class="field-row">
-      <label for="share-link">Client link</label>
-      <div class="share-row">
-        <input id="share-link" readonly value="">
-        <button type="button" onclick="generateClientLink()">Generate</button>
-        <button type="button" onclick="copyClientLink()">Copy</button>
-      </div>
-    </div>
-
-    <div class="muted-note">
-      Client links are read-only. Generate or enable the link, save changes, then send the copied URL.
-    </div>
+    Details save with the gallery and are not shown on client-facing pages.
   </div>
 </div>
 
@@ -241,32 +169,27 @@
 <div class="panel">
   <div class="section-title">Gallery Tags</div>
 
-  <div class="client-panel">
-    <div id="tag-list" class="tag-list">
-      <span class="muted-note">Load a gallery to view tags.</span>
-    </div>
-
-    <div class="field-row">
-      <label for="tag-input">Add Tags</label>
-      <div class="share-row">
-        <input id="tag-input" placeholder="Exterior, waterfront, parking">
-        <button type="button" onclick="addGalleryTags()">Add</button>
-      </div>
-    </div>
-
-    <div class="muted-note">
-      Tags use the existing location tag API. Use commas to add multiple tags. Tags are internal/library data and are not shown on client-facing pages.
-    </div>
-
-    <div class="message" id="tag-message"></div>
+  <div class="field">
+    <label for="tag-input">Add / Edit Tags</label>
+    <input id="tag-input" placeholder="Exterior, waterfront, parking, period, practical location">
   </div>
+
+  <button type="button" onclick="saveGalleryTags()">
+    Save Tags
+  </button>
+
+  <div class="muted-note">
+    Use commas between tags. Tags are internal scout/library tags and are not shown on client-facing pages.
+  </div>
+
+  <div class="message" id="tag-message"></div>
 </div>
+
+
 
 <script>
   const SESSION_KEY = "eightyStudiosScoutUser";
 
-  const PROJECTS_URL = "/api/project-list";
-  const FOLDERS_URL = "/api/folder-list";
   const GALLERIES_URL = "/api/gallery-list";
   const IMAGES_URL = "/api/image-list";
   const PROJECT_MEMBERS_URL = "/api/project-member-list";
@@ -296,7 +219,7 @@
   const params =
     new URLSearchParams(window.location.search);
 
-  let galleryId =
+  const galleryId =
     params.get("gallery") || "";
 
   const userBadgeEl =
@@ -311,30 +234,11 @@
   const messageEl =
     document.getElementById("message");
 
-  const selectorMessageEl =
-    document.getElementById("selector-message");
-
-  const projectSelectEl =
-    document.getElementById("project-select");
-
-  const folderSelectEl =
-    document.getElementById("folder-select");
-
-  const gallerySelectEl =
-    document.getElementById("gallery-select");
-
   const imageGridEl =
     document.getElementById("image-grid");
 
-  const visibilitySelectEl =
-    document.getElementById("visibility-select");
-
-  const shareLinkEl =
-    document.getElementById("share-link");
-
   const detailTitleEl =
     document.getElementById("detail-title");
-
 
   const detailLocationNameEl =
     document.getElementById("detail-location-name");
@@ -354,20 +258,11 @@
   const tagInputEl =
     document.getElementById("tag-input");
 
-  const tagListEl =
-    document.getElementById("tag-list");
-
   const tagMessageEl =
     document.getElementById("tag-message");
 
-  let allProjects = [];
-  let allGalleries = [];
-  let allMembers = [];
-  let currentFolders = [];
-
   let currentGallery = null;
   let currentImages = [];
-  let currentTags = [];
   let currentCover = "";
 
   if (currentUser) {
@@ -403,73 +298,6 @@
       type ? `message ${type}` : "message";
   }
 
-
-  function setSelectorMessage(text, type) {
-    selectorMessageEl.textContent =
-      text || "";
-
-    selectorMessageEl.className =
-      type ? `message ${type}` : "message";
-  }
-
-  function getProjectId(project) {
-    return project.id || project.projectId || project.project_id || "";
-  }
-
-  function getProjectTitle(project) {
-    return project.title || project.name || getProjectId(project);
-  }
-
-  function getFolderProjectId(folder) {
-    return folder.projectId || folder.project_id || "";
-  }
-
-  function getFolderParentId(folder) {
-    return folder.parentFolderId || folder.parent_folder_id || "";
-  }
-
-  function getFolderTitle(folder) {
-    return folder.title || folder.name || folder.id;
-  }
-
-  function normalizeFolder(folder) {
-    return {
-      ...folder,
-      projectId: getFolderProjectId(folder),
-      parentFolderId: getFolderParentId(folder),
-      sortOrder: folder.sortOrder || folder.sort_order || 0
-    };
-  }
-
-  function getFolderPath(folder, folders) {
-    const path = [];
-    let current = folder;
-    let safety = 0;
-
-    while (current && safety < 20) {
-      path.unshift(current);
-
-      const parentId =
-        current.parentFolderId || "";
-
-      current =
-        parentId
-          ? folders.find(item => item.id === parentId)
-          : null;
-
-      safety++;
-    }
-
-    return path;
-  }
-
-  function getFolderSelectLabel(folder, folders) {
-    return getFolderPath(folder, folders)
-      .map(item => getFolderTitle(item))
-      .join(" / ");
-  }
-
-
   function getGalleryProjectId(gallery) {
     return gallery.projectId || gallery.project_id || "";
   }
@@ -480,146 +308,6 @@
 
   function getGalleryTitle(gallery) {
     return gallery.title || gallery.name || gallery.id;
-  }
-
-  function normalizeTag(tag) {
-    return String(tag || "")
-      .trim()
-      .toLowerCase();
-  }
-
-  function getTagText(tag) {
-    return tag.tag || tag.name || tag;
-  }
-
-  function parseTagsInput(value) {
-    return (value || "")
-      .split(",")
-      .map(normalizeTag)
-      .filter(Boolean);
-  }
-
-  function renderTagList() {
-    if (!tagListEl) {
-      return;
-    }
-
-    if (!currentGallery) {
-      tagListEl.innerHTML =
-        `<span class="muted-note">Load a gallery to view tags.</span>`;
-      return;
-    }
-
-    if (!currentTags.length) {
-      tagListEl.innerHTML =
-        `<span class="muted-note">No tags added yet.</span>`;
-      return;
-    }
-
-    tagListEl.innerHTML =
-      currentTags
-        .map(tag => `<span class="tag-chip">${getTagText(tag)}</span>`)
-        .join("");
-  }
-
-  function setTagMessage(text, type) {
-    if (!tagMessageEl) {
-      return;
-    }
-
-    tagMessageEl.textContent =
-      text || "";
-
-    tagMessageEl.className =
-      type ? `message ${type}` : "message";
-  }
-
-  async function loadGalleryTags(activeGalleryId) {
-    currentTags = [];
-
-    if (!activeGalleryId) {
-      renderTagList();
-      return;
-    }
-
-    try {
-      const tagsData =
-        await fetch(`${LOCATION_TAGS_URL}?galleryId=${encodeURIComponent(activeGalleryId)}`)
-          .then(response => response.json());
-
-      currentTags =
-        tagsData.tags || [];
-
-      renderTagList();
-      setTagMessage("", "");
-
-    } catch (error) {
-      console.error(error);
-      currentTags = [];
-      renderTagList();
-      setTagMessage("Could not load gallery tags.", "error");
-    }
-  }
-
-  async function addGalleryTags() {
-    if (!currentGallery || !galleryId) {
-      setTagMessage("Load a gallery first.", "error");
-      return;
-    }
-
-    const tags =
-      parseTagsInput(tagInputEl.value);
-
-    if (!tags.length) {
-      setTagMessage("Enter at least one tag.", "error");
-      return;
-    }
-
-    const existing =
-      new Set(currentTags.map(tag => normalizeTag(getTagText(tag))));
-
-    const newTags =
-      tags.filter(tag => !existing.has(tag));
-
-    if (!newTags.length) {
-      setTagMessage("Those tags are already added.", "");
-      tagInputEl.value = "";
-      return;
-    }
-
-    setTagMessage("Saving tags...", "");
-
-    try {
-      for (const tag of newTags) {
-        const response =
-          await fetch(LOCATION_TAG_SAVE_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body:
-              JSON.stringify({
-                galleryId,
-                tag
-              })
-          });
-
-        const data =
-          await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || "Could not save tag.");
-        }
-      }
-
-      tagInputEl.value = "";
-      await loadGalleryTags(galleryId);
-      setTagMessage("Tags added.", "success");
-
-    } catch (error) {
-      console.error(error);
-      setTagMessage(error.message || "Could not save tags.", "error");
-    }
   }
 
   function getImageId(image, index) {
@@ -678,262 +366,30 @@
   }
 
 
-  function renderProjectSelector() {
-    const accessibleProjects =
-      allProjects
-        .filter(project =>
-          currentUserRole === "master" ||
-          userCanAccessProject(allMembers, getProjectId(project))
-        )
-        .sort((a, b) => getProjectTitle(a).localeCompare(getProjectTitle(b)));
+  function setTagMessage(text, type) {
+    tagMessageEl.textContent =
+      text || "";
 
-    projectSelectEl.innerHTML =
-      `<option value="">Select project...</option>` +
-      accessibleProjects.map(project => `
-        <option value="${getProjectId(project)}">
-          ${getProjectTitle(project)}
-        </option>
-      `).join("");
-
-    if (!accessibleProjects.length) {
-      projectSelectEl.innerHTML =
-        `<option value="">No assigned projects found</option>`;
-    }
+    tagMessageEl.className =
+      type ? `message ${type}` : "message";
   }
 
-  async function loadFoldersForProject(projectId) {
-    if (!projectId) {
-      currentFolders = [];
-
-      folderSelectEl.innerHTML =
-        `<option value="">Select a project first...</option>`;
-
-      renderGallerySelector();
-      return;
-    }
-
-    folderSelectEl.innerHTML =
-      `<option value="">Loading folders...</option>`;
-
-    try {
-      const foldersData =
-        await fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`)
-          .then(response => response.json());
-
-      currentFolders =
-        (foldersData.folders || [])
-          .map(normalizeFolder);
-
-      currentFolders.sort((a, b) =>
-        getFolderSelectLabel(a, currentFolders)
-          .localeCompare(getFolderSelectLabel(b, currentFolders))
-      );
-
-      folderSelectEl.innerHTML =
-        `<option value="">All folders in project</option>` +
-        currentFolders.map(folder => `
-          <option value="${folder.id}">
-            ${getFolderSelectLabel(folder, currentFolders)}
-          </option>
-        `).join("");
-
-      renderGallerySelector();
-
-    } catch (error) {
-      console.error(error);
-
-      currentFolders = [];
-
-      folderSelectEl.innerHTML =
-        `<option value="">Could not load folders</option>`;
-
-      renderGallerySelector();
-    }
+  function getGalleryLocationName(gallery) {
+    return gallery.locationName || gallery.location_name || "";
   }
 
-  function renderGallerySelector() {
-    const projectId =
-      projectSelectEl.value || "";
-
-    const folderId =
-      folderSelectEl.value || "";
-
-    if (!projectId) {
-      gallerySelectEl.innerHTML =
-        `<option value="">Select a project first...</option>`;
-      return;
-    }
-
-    const galleries =
-      allGalleries
-        .filter(gallery => getGalleryProjectId(gallery) === projectId)
-        .filter(gallery => !folderId || getGalleryFolderId(gallery) === folderId)
-        .sort((a, b) => getGalleryTitle(a).localeCompare(getGalleryTitle(b)));
-
-    gallerySelectEl.innerHTML =
-      `<option value="">Select gallery...</option>` +
-      galleries.map(gallery => `
-        <option value="${gallery.id}">
-          ${getGalleryTitle(gallery)}
-        </option>
-      `).join("");
-
-    if (!galleries.length) {
-      gallerySelectEl.innerHTML =
-        `<option value="">No galleries found</option>`;
-    }
-
-    if (galleryId && galleries.some(gallery => gallery.id === galleryId)) {
-      gallerySelectEl.value =
-        galleryId;
-    }
+  function parseTagInput(value) {
+    return (value || "")
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(Boolean);
   }
 
-  async function handleProjectChange() {
-    const projectId =
-      projectSelectEl.value || "";
-
-    await loadFoldersForProject(projectId);
-
-    setSelectorMessage(
-      projectId
-        ? "Choose a folder or select a gallery from this project."
-        : "Select a project to load folders and galleries.",
-      ""
-    );
-  }
-
-  function handleFolderChange() {
-    renderGallerySelector();
-
-    setSelectorMessage(
-      folderSelectEl.value
-        ? "Choose a gallery from this folder."
-        : "Showing all galleries in the selected project.",
-      ""
-    );
-  }
-
-  function openSelectedGallery() {
-    const selectedGalleryId =
-      gallerySelectEl.value || "";
-
-    if (!selectedGalleryId) {
-      setSelectorMessage("Select a gallery first.", "error");
-      return;
-    }
-
-    window.location.href =
-      `/scouts/gallery-manager.html?gallery=${encodeURIComponent(selectedGalleryId)}`;
-  }
-
-  async function loadSelectorData() {
-    try {
-      const [
-        projectsResponse,
-        galleriesResponse,
-        membersResponse
-      ] =
-        await Promise.all([
-          fetch(PROJECTS_URL).then(response => response.json()),
-          fetch(GALLERIES_URL).then(response => response.json()),
-          fetch(PROJECT_MEMBERS_URL).then(response => response.json())
-        ]);
-
-      allProjects =
-        projectsResponse.projects || [];
-
-      allGalleries =
-        galleriesResponse.galleries || [];
-
-      allMembers =
-        membersResponse.members || [];
-
-      renderProjectSelector();
-
-      if (galleryId) {
-        const gallery =
-          allGalleries.find(item => item.id === galleryId);
-
-        if (gallery) {
-          const projectId =
-            getGalleryProjectId(gallery);
-
-          const folderId =
-            getGalleryFolderId(gallery);
-
-          projectSelectEl.value =
-            projectId;
-
-          await loadFoldersForProject(projectId);
-
-          folderSelectEl.value =
-            folderId || "";
-
-          renderGallerySelector();
-
-          gallerySelectEl.value =
-            galleryId;
-
-          setSelectorMessage("Current gallery selected.", "success");
-        } else {
-          setSelectorMessage("Current gallery was not found in the selector list.", "error");
-        }
-      } else {
-        await loadFoldersForProject("");
-        setSelectorMessage("Select a project, folder, and gallery to manage.", "");
-      }
-
-    } catch (error) {
-      console.error(error);
-      setSelectorMessage(error.message || "Could not load gallery selector data.", "error");
-    }
-  }
-
-  function randomToken() {
-    if (window.crypto && window.crypto.getRandomValues) {
-      const bytes = new Uint8Array(16);
-      window.crypto.getRandomValues(bytes);
-      return Array.from(bytes)
-        .map(byte => byte.toString(16).padStart(2, "0"))
-        .join("");
-    }
-
-    return `${Date.now()}-${Math.random()}`
-      .replace(/[^a-zA-Z0-9]/g, "")
-      .slice(0, 32);
-  }
-
-  function getShareToken() {
-    return currentGallery?.shareToken ||
-      currentGallery?.share_token ||
-      "";
-  }
-
-  function buildClientUrl(token) {
-    if (!token) {
-      return "";
-    }
-
-    return `${window.location.origin}/scouts/client-gallery.html?share=${encodeURIComponent(token)}`;
-  }
-
-  function syncClientDeliveryFields() {
-    if (!currentGallery) {
-      visibilitySelectEl.value = "private";
-      shareLinkEl.value = "";
-      return;
-    }
-
-    const token = getShareToken();
-    const visibility = currentGallery.visibility || "private";
-
-    visibilitySelectEl.value =
-      visibility === "client" || visibility === "public"
-        ? "client"
-        : "private";
-
-    shareLinkEl.value = buildClientUrl(token);
+  function tagsToInput(tags) {
+    return (tags || [])
+      .map(tag => typeof tag === "string" ? tag : tag.tag || tag.name || tag.title || "")
+      .filter(Boolean)
+      .join(", ");
   }
 
   function syncDetailsFields() {
@@ -951,25 +407,19 @@
       getGalleryTitle(currentGallery);
 
     detailLocationNameEl.value =
-      currentGallery.locationName ||
-      currentGallery.location_name ||
-      "";
+      getGalleryLocationName(currentGallery);
 
     detailTownEl.value =
-      currentGallery.town ||
-      "";
+      currentGallery.town || "";
 
     detailStateEl.value =
-      currentGallery.state ||
-      "";
+      currentGallery.state || "";
 
     detailCountryEl.value =
-      currentGallery.country ||
-      "USA";
+      currentGallery.country || "USA";
 
     detailNotesEl.value =
-      currentGallery.notes ||
-      "";
+      currentGallery.notes || "";
   }
 
   function markDetailsChanged() {
@@ -977,13 +427,29 @@
       return;
     }
 
-    currentGallery.title = detailTitleEl.value.trim() || currentGallery.id;
-    currentGallery.name = currentGallery.title;
-    currentGallery.locationName = detailLocationNameEl.value.trim();
-    currentGallery.town = detailTownEl.value.trim();
-    currentGallery.state = detailStateEl.value.trim();
-    currentGallery.country = detailCountryEl.value.trim() || "USA";
-    currentGallery.notes = detailNotesEl.value;
+    currentGallery.title =
+      detailTitleEl.value.trim() || currentGallery.id;
+
+    currentGallery.name =
+      currentGallery.title;
+
+    currentGallery.locationName =
+      detailLocationNameEl.value.trim();
+
+    currentGallery.location_name =
+      currentGallery.locationName;
+
+    currentGallery.town =
+      detailTownEl.value.trim();
+
+    currentGallery.state =
+      detailStateEl.value.trim();
+
+    currentGallery.country =
+      detailCountryEl.value.trim() || "USA";
+
+    currentGallery.notes =
+      detailNotesEl.value;
 
     titleEl.textContent =
       getGalleryTitle(currentGallery);
@@ -991,58 +457,73 @@
     setMessage("Gallery details changed. Save changes when ready.", "");
   }
 
-  function markClientChanged() {
-    if (!currentGallery) {
-      return;
-    }
-
-    currentGallery.visibility = visibilitySelectEl.value;
-
-    if (visibilitySelectEl.value === "client" && !getShareToken()) {
-      currentGallery.shareToken = randomToken();
-    }
-
-    syncClientDeliveryFields();
-    setMessage("Client delivery changed. Save changes when ready.", "");
-  }
-
-  function generateClientLink() {
-    if (!currentGallery) {
-      setMessage("Load a gallery first.", "error");
-      return;
-    }
-
-    currentGallery.visibility = "client";
-    currentGallery.shareToken = getShareToken() || randomToken();
-
-    syncClientDeliveryFields();
-    setMessage("Client link generated. Save changes before sending it.", "");
-  }
-
-  async function copyClientLink() {
-    if (!currentGallery) {
-      setMessage("Load a gallery first.", "error");
-      return;
-    }
-
-    if (!getShareToken()) {
-      generateClientLink();
-    }
-
-    const url = buildClientUrl(getShareToken());
-
-    if (!url) {
-      setMessage("Could not build client link.", "error");
+  async function loadGalleryTags() {
+    if (!galleryId || !tagInputEl) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(url);
-      setMessage("Client link copied. Save changes before sending if you just generated it.", "success");
+      const data =
+        await fetch(`${LOCATION_TAGS_URL}?galleryId=${encodeURIComponent(galleryId)}`)
+          .then(response => response.json());
+
+      const tags =
+        data.tags || data.locationTags || [];
+
+      tagInputEl.value =
+        tagsToInput(tags);
+
+      setTagMessage(
+        tags.length ? "Tags loaded." : "No tags saved yet.",
+        tags.length ? "success" : ""
+      );
+
     } catch (error) {
-      shareLinkEl.focus();
-      shareLinkEl.select();
-      setMessage("Copy blocked by browser. The link is selected so you can copy it manually.", "");
+      console.error(error);
+      setTagMessage("Could not load tags.", "error");
+    }
+  }
+
+  async function saveGalleryTags() {
+    if (!galleryId) {
+      setTagMessage("Load a gallery first.", "error");
+      return;
+    }
+
+    const tags =
+      parseTagInput(tagInputEl.value);
+
+    setTagMessage("Saving tags...", "");
+
+    try {
+      const response =
+        await fetch(LOCATION_TAG_SAVE_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body:
+            JSON.stringify({
+              galleryId,
+              tags,
+              projectId: currentGallery ? getGalleryProjectId(currentGallery) : "",
+              folderId: currentGallery ? getGalleryFolderId(currentGallery) : "",
+              createdBy: currentUserId
+            })
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Could not save tags.");
+      }
+
+      setTagMessage("Tags saved.", "success");
+
+    } catch (error) {
+      console.error(error);
+      setTagMessage(error.message || "Could not save tags.", "error");
     }
   }
 
@@ -1208,10 +689,10 @@
         currentGallery.createdBy || currentGallery.created_by || currentUserId,
 
       visibility:
-        visibilitySelectEl.value || currentGallery.visibility || "private",
+        currentGallery.visibility || "private",
 
       shareToken:
-        getShareToken() || null,
+        currentGallery.shareToken || currentGallery.share_token || null,
 
       cover:
         currentCover,
@@ -1219,8 +700,7 @@
       library: {
         locationName:
           detailLocationNameEl.value.trim() ||
-          currentGallery.locationName ||
-          currentGallery.location_name ||
+          getGalleryLocationName(currentGallery) ||
           getGalleryTitle(currentGallery),
 
         town:
@@ -1307,14 +787,13 @@
       currentGallery.title = payload.title;
       currentGallery.name = payload.title;
       currentGallery.locationName = payload.library.locationName;
+      currentGallery.location_name = payload.library.locationName;
       currentGallery.town = payload.library.town;
       currentGallery.state = payload.library.state;
       currentGallery.country = payload.library.country;
       currentGallery.notes = payload.admin.notes;
-      currentGallery.visibility = payload.visibility;
-      currentGallery.shareToken = payload.shareToken;
+
       syncDetailsFields();
-      syncClientDeliveryFields();
 
       setMessage("Gallery saved.", "success");
       renderImages();
@@ -1397,8 +876,8 @@
         `${currentImages.length} image${currentImages.length === 1 ? "" : "s"}`;
 
       syncDetailsFields();
-      syncClientDeliveryFields();
-      await loadGalleryTags(galleryId);
+      loadGalleryTags();
+
       setMessage("Ready.", "");
       renderImages();
 
@@ -1413,20 +892,7 @@
   }
 
   if (allowedRoles.includes(currentUserRole)) {
-    loadSelectorData();
-
-    if (galleryId) {
-      loadGallery();
-    } else {
-      titleEl.textContent =
-        "Gallery Manager";
-
-      subtitleEl.textContent =
-        "Select a project, folder, and gallery to manage.";
-
-      setMessage("Choose a gallery above.", "");
-      renderTagList();
-    }
+    loadGallery();
   }
 </script>
 
