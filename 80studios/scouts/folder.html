@@ -158,7 +158,19 @@
   }
 
   function getGalleryCover(gallery) {
-    return gallery.cover || gallery.url || gallery.imageUrl || gallery.image_url || "";
+    return gallery.cover || gallery.coverUrl || gallery.cover_url || gallery.thumbnailUrl || gallery.thumbnail_url || gallery.url || gallery.imageUrl || gallery.image_url || "";
+  }
+
+  function getFolderCover(folder, galleries) {
+    const firstGallery =
+      galleries.find(gallery =>
+        getGalleryFolderId(gallery) === folder.id &&
+        getGalleryCover(gallery)
+      );
+
+    return firstGallery
+      ? getGalleryCover(firstGallery)
+      : "";
   }
 
   function getGalleryTitle(gallery) {
@@ -292,7 +304,7 @@
     `;
   }
 
-  function renderChildFolders(childFolders) {
+  function renderChildFolders(childFolders, galleries) {
     if (!childFolders.length) {
       return "";
     }
@@ -303,12 +315,19 @@
       </div>
 
       <div class="grid">
-        ${childFolders.map(folder => `
+        ${childFolders.map(folder => {
+          const folderCover =
+            getFolderCover(folder, galleries);
+
+          return `
           <a
             class="card"
             href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folder.id)}"
           >
-            <div class="folder-icon">📁</div>
+            ${folderCover
+              ? `<img src="${folderCover}" class="thumb">`
+              : `<div class="folder-icon">📁</div>`
+            }
 
             <div>
               ${getFolderTitle(folder)}
@@ -318,7 +337,8 @@
               Folder
             </div>
           </a>
-        `).join("")}
+        `;
+        }).join("")}
       </div>
     `;
   }
@@ -365,7 +385,8 @@
             }
 
           </a>
-        `).join("")}
+        `;
+        }).join("")}
       </div>
     `;
   }
@@ -441,7 +462,7 @@
           getFolderTitle(folder);
 
         const childFolderHtml =
-          renderChildFolders(childFolders);
+          renderChildFolders(childFolders, galleries);
 
         const galleryHtml =
           renderGalleries(folderGalleries);
