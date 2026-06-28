@@ -1,777 +1,38 @@
-ChatGPT Plus
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-80Studios_Roadmap_v4_TwoColumn_OnePage.pdf
-PDF
-80 Studios Scouts - Phase 4B
-
-Attached:
-
-* Latest GitHub ZIP
-* Roadmap PDF
-
-Project Status:
-
-We are continuing development of the 80 Studios Scouts platform.
-
-Current stack:
-
-* Vercel
-* Cloudflare D1
-* Cloudflare R2
-* GitHub
-
-Development rules:
-
-* Files under 1000 lines: always return full replacement file.
-* Files over 1000 lines: provide exact patches with line references.
-* Do not provide partial snippets when a full file replacement is practical.
-* Minimize discussion and move directly into implementation.
-* Prioritize stability over feature expansion.
-* Assume this is being prepared for real production use, not a prototype.
-
-Current state:
-
-Completed:
-
-* D1 migration
-* Login system
-* Session handling
-* Project permissions
-* Project memberships
-* Project creation
-* Folder creation
-* Nested folders
-* Gallery creation
-* HEIC uploads
-* Thumbnail generation
-* Mobile uploads
-* Gallery viewing
-* Library page
-* Gallery Manager foundation
-* LM / ALM Portal
-* Master Portal
-* Scout Portal
-* Project auto-assignment
-
-Current focus:
-
-Phase 4B
-
-1. Crew / Scout invitation system
-2. Project Administration Dashboard
-3. Library operations
-4. Gallery management completion
-
-   * cover images
-   * image ordering
-   * image deletion
-5. Client delivery workflow
-6. Navigation consistency
-7. Production readiness
-
-Important:
-
-Monday workflow must remain functional:
-
-LM creates project
-→ creates folders
-→ creates galleries
-→ uploads photos from phone
-→ organizes gallery
-→ sends gallery to clients
-
-Do not redesign working workflows unless required.
-
-Before making changes, assess the uploaded codebase against the roadmap and identify the exact remaining work for Phase 4.
-
-git hub zip to follow.
-
-
-site-main (1).zip
-Zip Archive
-
-
-site-main (2).zip
-Zip Archive
-
-
-Pasted text.txt
-Document
-from this it tells me that client gallery hasn't been touched in 2 weeks, so this was probaly the first version, whereas view gallery was edited yesterday. here's view_gallery.html. please ensure that it was patched I already uploaded the other three files.
-
-
-the page is there, but the only way i could get to it was just by typing in the direct link. i think there are just no buttons to get there yet. I started using On The Vineyard as a real life project, so don't want to do do any testing there. let's use summerhouse project for testing since I have a gallery there with a few images, I also still have images on my phone from that project still so have things to practice/work with. 
-
-Success I think we just need to fix / make links in all three portals to this page, and then on this page we can put a required project selection box at the top, and below that a smaller folder selection box, and next to it or below on mobile a gallery selection box.
-
-this should solve it all.
-
-
-site-main (3).zip
-Zip Archive
-
-Wait! What? - i can just drag files into git hub? how, where?
-
-all updated and committed
-
-Ok some minor issues:
-1. the link needs to be on the landing pages for scout/lm/alm/master, but for that matter the nav bar needs to be updated in all the files except client side facing ones. The portals are all fine.
-2. the gallery manager is missing the fields i explained before to create funtionality. basically the same drop down fields as our current folder manager- see screenshot
-
-
-site-main (4).zip
-Zip Archive
-great and please just the patched files and print a list here of the files so I can review on my own.
-
-ah wait, i kept testing and found more bugs before we go...
-
-1. (highest priority) there is no way to read the details for the gallery. these should show up and be editable in the gallery manager. and we should add a details manager card at the bottom of the admin/master/scout portal. Details are just as important as the photos and should be accesed and edited easily. they should also never be client facing. (4 file update, may require creation of details.html)
-
-2. After the project link is clicked this page (see screenshot) is missing nav link for gallery manager,  (1 file update)
-
-
-site-main (5).zip
-Zip Archive
-
-i agree with issue one solve for today. 
-
-Issue two you didn't assess properly. i stated that project html is fine. the landing page after you select a project from the project page is the one that is broken/missing navbar. the screenshot is not project.html, it is the landing page after clicking on "summerhouse" from project.html
-
-
-Pasted text.txt
-Document
-here is current gal-man page. 
-patch by adding details sections and tags section:
-
-
-Screenshot 2026-06-22 at 7.13.46 PM.png
-Screenshot 2026-06-22 at 7.17.43 PM.png
-
-gallery-manager.html
-File
-still no details or tags section. please put the details card in between actions and client delivery- see screenshot 1
-and the tags/add tags  card underneath the images section- see screenshot 2 
-
-heres the api list.
-
-still nothing. I though it might be because the project was old so I created an empty gallery I knew I will need in On the Vineyard to test with. nope still not there- see screenshot.
-
-Screenshot 2026-06-22 at 7.38.36 PM.png
-Screenshot 2026-06-22 at 7.38.50 PM.png
-Screenshot 2026-06-22 at 7.39.07 PM.png
-yeah it's not deploying. I changed the page title from Gallery Manager to Gallery 2 Manager just to test. 
-
-Screenshot 2026-06-22 at 7.44.37 PM.png
-Screenshot 2026-06-22 at 7.47.41 PM.png
-every other page has been updating deploying why not this one, it cant be the root, or it would have broken long ago. is there a way to force the deployment after i make aminor change like fiing the adjusted title. ready to commit, am i in the right spot to view deployments?
-
-im getting really tired, and this is the second to last fix for the night please be specific. in git hub im looking for the repo main page
-
-ah, why are cackle, jerky sites wasting deployments. First off didn't know there was a count, 2nd those sites don't need new deployments until I'm ready to work on them with new files. they are all just landing pages.
-
-not working
-
-Screenshot 2026-06-22 at 8.58.22 PM.png
-Screenshot 2026-06-22 at 8.57.51 PM.png
-
-ok, I think it is # 14 - notes. so thats good
-
-Ok and at least I can still add details and tags during uploading, but why is it still showing Apostasy in the top left as the user?
-
-
-Pasted text.txt
-Document
-i'm accessing these files remotely so the text is very small. I want to make sure that the details will show up in the gallery manager here is the code:
-
-
-
-Pasted text.txt
-Document
-please send me the proper code for this file. This is the live file so if it's old, that was part of the problem. please patch for me so I can see and edit the details as well as other functions. everything else works. this is the main broken issue right now. here's the file again: 
-
-
-80Studios_Roadmap_v4_TwoColumn_OnePage.pdf
-PDF
-i have to get to uploading now for my photo review, but before i go take a look at our roadmap and see how far we are I think were still missing the invite for phase 4, but I think we have done some blocks on later phases. I just want to know what blocks I can cross off my list, no lenghty explanation, simply a list of finished blocks.
-
-i accidentally hit enter, instead of shift+enter. there was more.
-
-3. when uploading many galleries. after the gallery was finished there was no way to continue adding galleries other than to click back on projects, then click upload again. not a huge slowdown but having an "upload more" or "upload another gallery" button makes sense on the upload page to save time.
-
-4. One thing that smugmug does that this doesnot is shows a (selectable) thumb on each folder as well as on the galleries, this helps showcase the galleries as well as shows which galleries are empty, because they dont have an image.
-
-5. Email content helper. This is a lower priority, but After spending all the time uploading I then had to spend an hour composing an email after creating all the links. It would be Great if there was a client view manager/email composer that composed all the titles, galleries and pre-created links for sending to clients. this is a sample of how i composed the email with data from the site:
-
-obviously the comments I added would not need to be generated. just the title, location, and link in clean client ready format.
-
- Hello all,
-
-Three days wasn't much time but I pulled together what I could and tried to round out the locations as best I could. Please keep in mind availability and price may vary and I haven't yet received many of these details. 
-
-
-"Inn":
-
-The Break Hotel
-Narragansett
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-bayside-inn-mqpmr8ty-the-break-hotel-1782342741845 
-
-299 Davisville Rd
-Davisville/ North Kingstown
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-the-inkwell-inn-mqp5b76s-299-davisville-rd-1782341642665
-
-Hamilton Village Inn
-North Kingstown 
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-the-inkwell-inn-mqp5b76s-hamilton-village-inn-1782489245468
-
-Laurel Lane Country Club
-West Kingstown 
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-the-inkwell-inn-mqp5b76s-laurel-lane-country-club-1782483777721
-
-Light on the Bay
-Warwick
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-the-inkwell-inn-mqp5b76s-light-on-the-bay-1782483400388
-
-North Kingstown Golf Course
-North Kingstown 
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-the-inkwell-inn-mqp5b76s-north-kingstown-golf-course-1782487192959
-
-Shepherd's Run
-South Kingstown 
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-the-inkwell-inn-mqp5b76s-shepherds-run-1782485126956
-
-The Nordic
-Charlestown
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-the-inkwell-inn-mqp5b76s-the-nordic-1782445829491
-
-I also received a note from RI FIlm this morning:
-
-We heard back from the owner of the Hopkinton (Ashaway) home, and he is interested in the possibility of you using their house for the movie. He also said that they just redid the front garden, the exterior, and the tower to bring it back to its original look.
-
-
-"Circuit Ave":
-
-Kingstown Rd - Peace Dale
-Peace Dale
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-circuit-avenue-mqpmro5v-kingstown-rd-peace-dale-1782486843297
-
-Main St - Wakefield
-Wakefield
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-circuit-avenue-mqpmro5v-main-st-wakefield-1782486332352
-
-Wickford Commons/ Village
-Wickford
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-circuit-avenue-mqpmro5v-wickford-commons-village-1782238353927
-
-
-"Oak Bluffs Marina":
-
-Allen Harbor Marina
-North Kingstown
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-marina-mqpmof9l-allen-harbor-marina-1782487660359
-
-Bay Marina
-Warwick 
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-marina-mqpmof9l-bay-marina-1782482792178
-
-Flying Bridge at Harbor Lights
-Warwick
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-marina-mqpmof9l-flying-harbor-lights-1782482634160
-
-Pleasure Marina
-Warwick
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-marina-mqpmof9l-pleasure-marina-1782444446115
-
-Winstead Marina
-Warwick 
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-marina-mqpmof9l-winstead-marina-1782482205224
-
-
-"Oak Bluffs Bar":
-
-Birch and Bay
-Wakefield
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-bar-mqv1ygqh-birch-and-bay-1782486139199
-
-
-"Oak Bluffs Pool":
-
-Private Residence
-South Kingstown
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-oak-bluffs-pool-mqv0ux4g-krist-and-jess-1782484104390
-
-
-"Reliable Market":
-
-Farmgirl's Front Porch
-Wickford (Craft Store)
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-reliable-market-mqpmsk7g-farmgirls-front-porch-1782488364980
-
-
-"Inkwell Beach":
-
-Narragansett Town Beach
-Narragansett 
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-inkwell-beach-mqpn4o4f-narragansett-town-beach-1782485631694
-
-North Kingstown Town Beach
-North Kingstown
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-inkwell-beach-mqpn4o4f-north-kingstown-town-beach-1782488818008
-
-Oakland Beach
- Warwick
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-inkwell-beach-mqpn4o4f-oakland-beach-1782485363212
-
-
-"Fisherman's Shack":
-
-Gardner's Wharf Seafood
-North Kingstown
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-fisherman-s-shack-harbor-mqpmu3ek-gardners-wharf-seafood-1782487968076
-
-The Bait Company
-Narragansett 
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-fisherman-s-shack-harbor-mqpmu3ek-the-bait-company-1782484557096
-
-
-"Pumping Station":
-
-Pump House Music Works
-Peace Dale
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-pumping-station-mqocc7my-pump-house-music-works-1782340789701
-
-RI State Police Wickford Precinct
-Wickford  (ext only)
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-pumping-station-mqocc7my-ri-state-police-wickford-precinct-1782444768793
-
-
-"Brading Salon":
-
-Hair on Mane
-Wakefield
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-brading-salon-mqpn3q8d-hair-on-mane-1782486583511
-
--------------------
-
-Finally I found a local stage specializing in AR/Virtual Productions for virtual car shots or custom scenery (Gingerbread Houses).
-
-AR / Virtual / Unreal Stage:
-
-Door G
-East Providence
-https://www.80studios.pro/scouts/client-gallery.html?share=gallery-folder-door-g-studios-mqueey10-door-g-1782446543822
-
-
-
-
-Pasted text.txt
-Document
-im not sure if it does so I will attach just in case.
-
-import crypto from "crypto";
-
-function hmac(key, data) {
-  return crypto
-    .createHmac("sha256", key)
-    .update(data)
-    .digest();
-}
-
-function sha256(data) {
-  return crypto
-    .createHash("sha256")
-    .update(data)
-    .digest("hex");
-}
-
-function encodeRfc3986(value) {
-  return encodeURIComponent(value)
-    .replace(/[!'()*]/g, char =>
-      "%" + char.charCodeAt(0).toString(16).toUpperCase()
-    );
-}
-
-function getSigningKey(secretKey, dateStamp, region, service) {
-  const kDate = hmac("AWS4" + secretKey, dateStamp);
-  const kRegion = hmac(kDate, region);
-  const kService = hmac(kRegion, service);
-  return hmac(kService, "aws4_request");
-}
-
-export default async function handler(request, response) {
-  if (request.method !== "POST") {
-    return response.status(405).json({
-      ok: false,
-      error: "Method not allowed"
-    });
-  }
-
-  try {
-    const {
-      filename,
-      folder = "test-uploads",
-      contentType = "application/octet-stream"
-    } = request.body;
-
-    if (!filename) {
-      return response.status(400).json({
-        ok: false,
-        error: "Missing filename"
-      });
-    }
-
-    const accountId = process.env.R2_ACCOUNT_ID;
-    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-    const bucket = process.env.R2_BUCKET_NAME;
-
-    if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
-      return response.status(500).json({
-        ok: false,
-        error: "Missing R2 environment variables"
-      });
-    }
-
-    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "-");
-    const safeFolder = folder
-      .split("/")
-      .map(part => part.replace(/[^a-zA-Z0-9._-]/g, "-"))
-      .filter(Boolean)
-      .join("/");
-
-    const objectKey = ${safeFolder}/${Date.now()}-${safeFilename};
-
-    const method = "PUT";
-    const service = "s3";
-    const region = "auto";
-    const algorithm = "AWS4-HMAC-SHA256";
-    const host = ${accountId}.r2.cloudflarestorage.com;
-    const endpoint = https://${host}/${bucket}/${objectKey};
-
-    const now = new Date();
-    const amzDate = now
-      .toISOString()
-      .replace(/[:-]|\.\d{3}/g, "");
-
-    const dateStamp = amzDate.slice(0, 8);
-    const credentialScope = ${dateStamp}/${region}/${service}/aws4_request;
-    const credential = ${accessKeyId}/${credentialScope};
-
-    const expires = 900;
-
-    const canonicalUri = /${bucket}/${objectKey}
-      .split("/")
-      .map(part => encodeRfc3986(part))
-      .join("/");
-
-    const queryParams = {
-      "X-Amz-Algorithm": algorithm,
-      "X-Amz-Credential": credential,
-      "X-Amz-Date": amzDate,
-      "X-Amz-Expires": String(expires),
-      "X-Amz-SignedHeaders": "host"
-    };
-
-    const canonicalQueryString = Object.keys(queryParams)
-      .sort()
-      .map(key =>
-        ${encodeRfc3986(key)}=${encodeRfc3986(queryParams[key])}
-      )
-      .join("&");
-
-    const canonicalHeaders = host:${host}\n;
-    const signedHeaders = "host";
-    const payloadHash = "UNSIGNED-PAYLOAD";
-
-    const canonicalRequest = [
-      method,
-      canonicalUri,
-      canonicalQueryString,
-      canonicalHeaders,
-      signedHeaders,
-      payloadHash
-    ].join("\n");
-
-    const stringToSign = [
-      algorithm,
-      amzDate,
-      credentialScope,
-      sha256(canonicalRequest)
-    ].join("\n");
-
-    const signingKey = getSigningKey(
-      secretAccessKey,
-      dateStamp,
-      region,
-      service
-    );
-
-    const signature = crypto
-      .createHmac("sha256", signingKey)
-      .update(stringToSign)
-      .digest("hex");
-
-    const uploadUrl =
-      ${endpoint}?${canonicalQueryString}&X-Amz-Signature=${signature};
-
-    const publicUrl =
-      https://pub-6f2a633f65d94c21ac63975ce07c6c7c.r2.dev/${objectKey};
-
-    return response.status(200).json({
-      ok: true,
-      method,
-      objectKey,
-      uploadUrl,
-      publicUrl,
-      contentType
-    });
-
-  } catch (error) {
-    return response.status(500).json({
-      ok: false,
-      error: error.message
-    });
-  }
-}
-
-Perfect.
-
-Use Summerhouse exactly as you planned. Don't touch On The Vineyard until this passes.
-
-Test sequence
-Test 1 — Delete
-Add 5–6 photos.
-
-Delete the middle one.
-
-Expected: It disappears immediately, numbering stays correct, no blank slot.
-
-Test 2 — Reorder
-Move the last image to the front.
-
-Move the first image to the end.
-
-Expected: Preview order changes correctly and stays changed.
-
-Test 3 — Cover
-Set image #4 as Cover.
-
-Move it to another position.
-
-Expected: The green cover border follows the image, not the old position.
-
-Test 4 — Upload
-Upload the gallery.
-
-Expected: Upload order matches the final preview order.
-
-Test 5 — Client
-Open the client gallery.
-
-Expected: Images appear in the same order as uploaded.
-
-If all five pass, we can immediately move to "Upload More Images" in Gallery Manager, which I think is the biggest remaining productivity improvement.
-
-I'm standing by while you test.
-
-
-most things work, but some bugs for laterthe gallery edit works well, but during upload from mobile delete/move visualy work, but there is no way to save changes (maybe a button above status at bottom) , so they dont keep. but it works enough to move on for now. so let's keep on, and just make a note to fix before end of phase 4. 
-
-Good catch. Before we start another patch, let's verify.
-
-From what I remember, we discussed two different "upload more" workflows:
-
-Upload page
-
-After finishing one gallery:
-
-Upload Complete
-[Upload Another Gallery]
-This keeps the current project/folder selected and clears the gallery/images for the next upload.
-
-Gallery Manager
-
-After selecting an existing gallery:
-
-Existing Images
-
-[Upload More Images]
-This appends images to an existing gallery.
-
-The patch we just worked on was focused on the upload queue (delete/move/cover behavior). It did not intentionally add either of those buttons.
-
-Before I patch anything else, check these two pages:
-
-Upload page (admin.html)
-
-After a successful upload, do you see "Upload Another Gallery"?
-
-Gallery Manager
-
-After loading a gallery, do you see "Upload More Images"?
-
-I'm expecting the answer to both is no, but it's worth confirming so we don't duplicate work or accidentally overwrite something that already exists.
-
-
-let's come back to this. I am about to leave for the day, but I wanted to see if I could fix one thing first. how quickly can we fix the thumbnails of folder's buttons. they can auto select by gallery order for now.
-
-Quickly, yes — likely 20–30 minutes if we keep it simple.
-
-Lowest-risk version
-Use existing data only:
-
-Folder thumbnail = first gallery cover image inside that folder
-No new API. No D1 change.
-
-Likely file:
-
-scouts/folder.html
-Maybe also:
-
-scouts/project.html
-depending where the folder buttons/cards are rendered.
-
-What I need
-Upload the file that shows the folder buttons/cards where thumbnails are missing.
-
-Most likely:
-
-scouts/project.html
-If folder buttons also appear inside nested folder pages, send:
-
-scouts/folder.html
-Send those and I’ll patch only the needed file/files.
-
-
-
-Pasted text.txt
-Document
-
-Pasted text (2).txt
-Document
-
-This is a quick win.
-
-I looked through both files. The folder cards are still hardcoded to:
-
-<div class="folder-icon">📁</div>
-in both project.html and folder.html, so there is no logic yet to look for a gallery cover. 
-
- 
-
-
-I would implement it like this
-For every folder card:
-
-Find all galleries where:
-
-gallery.folderId === folder.id
-Sort by gallery order (current array order is fine for now).
-
-If the first gallery has:
-
-gallery.cover
-display:
-
-<img class="thumb" src="${gallery.cover}">
-Otherwise display:
-
-📁
-Exactly the same way folder.html already displays gallery covers, just one level higher.
-
-Time estimate
-About 20 minutes.
-
-Files:
-
-scouts/project.html
-scouts/folder.html
-No API changes.
-No D1 changes.
-No R2 changes.
-
-It simply uses data you're already downloading from /api/gallery-list.
-
-I actually like this better than SmugMug's implementation because your gallery cover becomes the folder cover automatically, so scouts don't have another thing to manage. Later we can always add an explicit "Folder Cover" override if you decide you want one.
-
-
-yes i'd like to do the folder cover later, but for now just patch the files
-
-Thought for 29s
-Patched.
-
-Download: scout_folder_thumb_patch.zip
-
-Files included:
-
-scouts/project.html
-scouts/folder.html
-What changed:
-
-- Folder cards now auto-use the first gallery cover inside that folder
-- If no gallery cover exists, it still shows the folder icon
-- No API changes
-- No D1/R2 changes
-- Existing gallery/client links untouched
-
-Oh no we broke some thing, now none of the folders work. I can select a project, but when clicking on a folder it says"loading folder.." and bricks
-
-Stop using that patch. Revert only:
-
-scouts/folder.html
-to the previous working version.
-
-Leave:
-
-scouts/project.html
-alone for the moment if project selection still works.
-
-Most likely I introduced a JS error in folder.html, which prevents the page from finishing after “Loading folder...”.
-
-Fastest recovery:
-
-In GitHub Desktop, discard/revert only scouts/folder.html, or replace it with your previous working copy.
-
-Commit.
-
-Deploy.
-
-Test one folder.
-
-Do not keep the folder thumbnail patch active right now. The system’s core navigation matters more than cover thumbnails.
-
-
 <!DOCTYPE html>
 
-<html> <head> <title>Scout Project</title> <meta name="viewport" content="width=device-width, initial-scale=1"> <meta name="robots" content="noindex,nofollow">
+<html>
+<head>
+  <title>Scout Project</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
 
-<style> body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; } a { color: inherit; text-decoration: none; } .back-link { display: inline-block; color: #888; font-size: 13px; margin-bottom: 12px; } .back-link:hover { color: #fff; } .top-nav { margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; } .top-nav a, .logout-btn { display: inline-block; color: #999; font-size: 14px; background: none; border: none; padding: 0; cursor: pointer; font-family: Arial, sans-serif; } .top-nav a:hover, .logout-btn:hover { color: #fff; text-decoration: underline; } .user-badge { color: #777; font-size: 13px; margin-left: auto; } .breadcrumb { color: #999; font-size: 13px; margin-bottom: 14px; line-height: 1.4; } .breadcrumb a:hover { color: #fff; text-decoration: underline; } h1 { font-size: 28px; margin-bottom: 6px; } .subtitle { color: #888; margin-bottom: 26px; font-size: 14px; } .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 30px; margin-bottom: 10px; } .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; } .card { display: block; background: #1c1c1c; color: white; padding: 15px; border-radius: 6px; border: 1px solid #333; } .card:hover { background: #252525; } .folder-icon { width: 100%; height: 120px; border-radius: 4px; margin-bottom: 10px; background: #202020; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 42px; color: #777; } .meta { color: #888; font-size: 12px; margin-top: 4px; line-height: 1.4; } .admin-panel { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; } .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; } .admin-card { background: #181818; border: 1px solid #2a2a2a; padding: 14px; border-radius: 6px; color: #aaa; font-size: 13px; } .admin-card:hover { background: #222; color: white; text-decoration: none; } .coming-soon { color: #666; font-size: 12px; margin-top: 6px; } .message { color: #888; } hr { border: none; border-top: 1px solid #333; margin: 12px 0; } </style>
+  <style>
+    body { margin: 0; background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
+    a { color: inherit; text-decoration: none; }
+    .back-link { display: inline-block; color: #888; font-size: 13px; margin-bottom: 12px; }
+    .back-link:hover { color: #fff; }
+    .top-nav { margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .top-nav a, .logout-btn { display: inline-block; color: #999; font-size: 14px; background: none; border: none; padding: 0; cursor: pointer; font-family: Arial, sans-serif; }
+    .top-nav a:hover, .logout-btn:hover { color: #fff; text-decoration: underline; }
+    .user-badge { color: #777; font-size: 13px; margin-left: auto; }
+    .breadcrumb { color: #999; font-size: 13px; margin-bottom: 14px; line-height: 1.4; }
+    .breadcrumb a:hover { color: #fff; text-decoration: underline; }
+    h1 { font-size: 28px; margin-bottom: 6px; }
+    .subtitle { color: #888; margin-bottom: 26px; font-size: 14px; }
+    .section-title { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 30px; margin-bottom: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .card { display: block; background: #1c1c1c; color: white; padding: 15px; border-radius: 6px; border: 1px solid #333; }
+    .card:hover { background: #252525; }
+    .folder-icon { width: 100%; height: 120px; border-radius: 4px; margin-bottom: 10px; background: #202020; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 42px; color: #777; }
+    .meta { color: #888; font-size: 12px; margin-top: 4px; line-height: 1.4; }
+    .admin-panel { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; }
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
+    .admin-card { background: #181818; border: 1px solid #2a2a2a; padding: 14px; border-radius: 6px; color: #aaa; font-size: 13px; }
+    .admin-card:hover { background: #222; color: white; text-decoration: none; }
+    .coming-soon { color: #666; font-size: 12px; margin-top: 6px; }
+    .message { color: #888; }
+    hr { border: none; border-top: 1px solid #333; margin: 12px 0; }
+  </style>
 
 </head>
 
@@ -781,11 +42,15 @@ Do not keep the folder thumbnail patch active right now. The system’s core nav
 
 <div class="top-nav" id="top-nav"></div>
 
-<div class="breadcrumb"> <a href="/scouts/">Projects</a> </div>
+<div class="breadcrumb">
+  <a href="/scouts/">Projects</a>
+</div>
 
 <h1 id="project-title">Loading Project...</h1>
 
-<div class="subtitle" id="project-subtitle"> Scout Project Overview </div>
+<div class="subtitle" id="project-subtitle">
+  Scout Project Overview
+</div>
 
 <hr>
 
@@ -793,9 +58,11 @@ Do not keep the folder thumbnail patch active right now. The system’s core nav
 
 <div class="admin-panel" id="admin-panel">
 
-<div class="section-title"> Project Tools </div>
+  <div class="section-title">
+    Project Tools
+  </div>
 
-<div class="admin-grid">
+  <div class="admin-grid">
 
 <a class="admin-card" href="/scouts/folder-manager.html">
   Folder Manager
@@ -816,13 +83,351 @@ Do not keep the folder thumbnail patch active right now. The system’s core nav
   Library
   <div class="coming-soon">Search uploaded scout archive</div>
 </a>
-</div>
+
+  </div>
 
 </div>
 
-<script> const SESSION_KEY = "eightyStudiosScoutUser"; const PROJECTS_URL = "/api/project-list"; const GALLERIES_URL = "/api/gallery-list"; const FOLDERS_URL = "/api/folder-list"; const PROJECT_MEMBERS_URL = "/api/project-member-list"; const savedUser = sessionStorage.getItem(SESSION_KEY); if (!savedUser) { window.location.href = "/scouts/login.html"; } const currentUser = savedUser ? JSON.parse(savedUser) : null; const currentUserId = currentUser?.id || ""; const currentUserRole = currentUser?.globalRole || ""; const params = new URLSearchParams(window.location.search); const projectId = params.get("project") || ""; const projectTitleEl = document.getElementById("project-title"); const projectSubtitleEl = document.getElementById("project-subtitle"); const contentEl = document.getElementById("content"); const adminPanelEl = document.getElementById("admin-panel"); const topNavEl = document.getElementById("top-nav"); function logout() { sessionStorage.removeItem(SESSION_KEY); window.location.href = "/scouts/login.html"; } function userIsMaster() { return currentUserRole === "master"; } function userCanUseAdminTools() { return ["master", "lm", "alm"].includes(currentUserRole); } function userCanUseLibrary() { return ["master", "lm", "alm", "scout"].includes(currentUserRole); } function titleFromSlug(value) { return (value || "") .replace(/-/g, " ") .replace(/\b\w/g, char => char.toUpperCase()); } function getProjectId(project) { return project.id || project.projectId || project.project_id || ""; } function getGalleryProjectId(gallery) { return gallery.projectId || gallery.project_id || ""; } function getFolderProjectId(folder) { return folder.projectId || folder.project_id || ""; } function getFolderParentId(folder) { return folder.parentFolderId || folder.parent_folder_id || ""; } function normalizeFolder(folder) { return { ...folder, projectId: getFolderProjectId(folder), parentFolderId: getFolderParentId(folder), sortOrder: folder.sortOrder || folder.sort_order || 0, folderType: folder.folderType || folder.folder_type || "location", createdBy: folder.createdBy || folder.created_by || "" }; } function getFolderTitle(folder) { return folder.title || folder.name || titleFromSlug(folder.slug || folder.id); } function getFolderMeta(folder, allFolders) { const childCount = allFolders.filter(item => item.parentFolderId === folder.id).length; return `${childCount} subfolders`; } function getMemberProjectId(member) { return member.projectId || member.project_id || ""; } function getMemberUserId(member) { return member.userId || member.user_id || ""; } function getMemberRole(member) { return member.projectRole || member.project_role || ""; } function formatRole(role) { const normalizedRole = (role || "").toLowerCase(); const roleLabels = { master: "Master", lm: "LM", alm: "ALM", scout: "Scout", producer: "Producer", client: "Client" }; return roleLabels[normalizedRole] || role; } function userCanAccessProject(members) { if (userIsMaster()) { return true; } return members.some(member => getMemberUserId(member) === currentUserId && getMemberProjectId(member) === projectId ); } function getUserProjectRole(members) { if (userIsMaster()) { return "master"; } const member = members.find(item => getMemberUserId(item) === currentUserId && getMemberProjectId(item) === projectId ); return member ? getMemberRole(member) : ""; } function renderTopNav() { let html = ` <a href="/scouts/">Projects</a> `; if (userIsMaster()) { html += `<a href="/scouts/master-portal.html">Master Portal</a>`; } if (["lm", "alm"].includes(currentUserRole)) { html += `<a href="/scouts/admin-portal.html">LM / ALM Portal</a>`; } if (currentUserRole === "scout") { html += `<a href="/scouts/scout-portal.html">Scout Portal</a>`; } if (userCanUseLibrary()) { html += `<a href="/scouts/library.html">Library</a>`; } if (userCanUseAdminTools()) { html += `<a href="/scouts/folder-manager.html">Folder Manager</a>`; html += `<a href="/scouts/gallery-manager.html">Gallery Manager</a>`; html += `<a href="/scouts/admin.html">Upload</a>`; } html += ` <button class="logout-btn" onclick="logout()">Logout</button> <div class="user-badge">${currentUser?.name || "User"} · ${currentUserRole}</div> `; topNavEl.innerHTML = html; } function renderFolders(folders) { const rootFolders = folders .filter(folder => !folder.parentFolderId) .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)); if (!rootFolders.length) { return ` <p class="message"> No root folders found for this project yet. Use Folder Manager to create your location folders. </p> `; } return ` <div class="grid"> ${rootFolders.map(folder => ` <a class="card" href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folder.id)}" > <div class="folder-icon">📁</div> <div> ${getFolderTitle(folder)} </div> <div class="meta"> ${getFolderMeta(folder, folders)} </div> </a> `).join("")} </div> `; } function renderAccessDenied() { projectTitleEl.textContent = "Access Denied"; projectSubtitleEl.textContent = `No project access for ${currentUser?.name || currentUserId}`; contentEl.innerHTML = ` <p class="message"> This user is not assigned to this project. </p> `; adminPanelEl.style.display = "none"; } function renderNoProject() { projectTitleEl.textContent = "No Project Selected"; projectSubtitleEl.textContent = "Return to Projects and select a project."; contentEl.innerHTML = ` <p class="message"> Missing project ID in the page URL. </p> `; adminPanelEl.style.display = "none"; } renderTopNav(); if (!projectId) { renderNoProject(); } else { if (!userCanUseAdminTools()) { adminPanelEl.style.display = "none"; } Promise.all([ fetch(PROJECTS_URL).then(response => response.json()), fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()), fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()), fetch(PROJECT_MEMBERS_URL).then(response => response.json()) ]) .then(([projectsData, galleriesData, foldersData, membersData]) => { const projects = projectsData.projects || []; const galleries = galleriesData.galleries || []; const folders = (foldersData.folders || []).map(normalizeFolder); const members = membersData.members || []; if (!userCanAccessProject(members)) { renderAccessDenied(); return; } const project = projects.find(item => getProjectId(item) === projectId); const projectGalleries = galleries.filter(gallery => getGalleryProjectId(gallery) === projectId); const role = getUserProjectRole(members); projectTitleEl.textContent = project?.title || project?.name || titleFromSlug(projectId); projectSubtitleEl.textContent = `${folders.length} folders · ${projectGalleries.length} galleries · Role: ${formatRole(role)}`; contentEl.innerHTML = ` <div class="section-title"> Root Folders </div> ${renderFolders(folders)} `; }) .catch(error => { console.error(error); projectTitleEl.textContent = "Could Not Load Project"; contentEl.innerHTML = ` <p class="message"> There was a problem loading project folder data. </p> `; }); } </script>
+<script>
+  const SESSION_KEY = "eightyStudiosScoutUser";
 
-</body> </html>
+  const PROJECTS_URL = "/api/project-list";
+  const GALLERIES_URL = "/api/gallery-list";
+  const FOLDERS_URL = "/api/folder-list";
+  const PROJECT_MEMBERS_URL = "/api/project-member-list";
 
+  const savedUser =
+    sessionStorage.getItem(SESSION_KEY);
 
-Close
+  if (!savedUser) {
+    window.location.href = "/scouts/login.html";
+  }
+
+  const currentUser =
+    savedUser ? JSON.parse(savedUser) : null;
+
+  const currentUserId =
+    currentUser?.id || "";
+
+  const currentUserRole =
+    currentUser?.globalRole || "";
+
+  const params =
+    new URLSearchParams(window.location.search);
+
+  const projectId =
+    params.get("project") || "";
+
+  const projectTitleEl =
+    document.getElementById("project-title");
+
+  const projectSubtitleEl =
+    document.getElementById("project-subtitle");
+
+  const contentEl =
+    document.getElementById("content");
+
+  const adminPanelEl =
+    document.getElementById("admin-panel");
+
+  const topNavEl =
+    document.getElementById("top-nav");
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href = "/scouts/login.html";
+  }
+
+  function userIsMaster() {
+    return currentUserRole === "master";
+  }
+
+  function userCanUseAdminTools() {
+    return ["master", "lm", "alm"].includes(currentUserRole);
+  }
+
+  function userCanUseLibrary() {
+    return ["master", "lm", "alm", "scout"].includes(currentUserRole);
+  }
+
+  function titleFromSlug(value) {
+    return (value || "")
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function getProjectId(project) {
+    return project.id || project.projectId || project.project_id || "";
+  }
+
+  function getGalleryProjectId(gallery) {
+    return gallery.projectId || gallery.project_id || "";
+  }
+
+  function getFolderProjectId(folder) {
+    return folder.projectId || folder.project_id || "";
+  }
+
+  function getFolderParentId(folder) {
+    return folder.parentFolderId || folder.parent_folder_id || "";
+  }
+
+  function normalizeFolder(folder) {
+    return {
+      ...folder,
+      projectId: getFolderProjectId(folder),
+      parentFolderId: getFolderParentId(folder),
+      sortOrder: folder.sortOrder || folder.sort_order || 0,
+      folderType: folder.folderType || folder.folder_type || "location",
+      createdBy: folder.createdBy || folder.created_by || ""
+    };
+  }
+
+  function getFolderTitle(folder) {
+    return folder.title || folder.name || titleFromSlug(folder.slug || folder.id);
+  }
+
+  function getFolderMeta(folder, allFolders) {
+    const childCount =
+      allFolders.filter(item => item.parentFolderId === folder.id).length;
+
+    return `${childCount} subfolders`;
+  }
+
+  function getMemberProjectId(member) {
+    return member.projectId || member.project_id || "";
+  }
+
+  function getMemberUserId(member) {
+    return member.userId || member.user_id || "";
+  }
+
+  function getMemberRole(member) {
+    return member.projectRole || member.project_role || "";
+  }
+
+  function formatRole(role) {
+    const normalizedRole =
+      (role || "").toLowerCase();
+
+    const roleLabels = {
+      master: "Master",
+      lm: "LM",
+      alm: "ALM",
+      scout: "Scout",
+      producer: "Producer",
+      client: "Client"
+    };
+
+    return roleLabels[normalizedRole] || role;
+  }
+
+  function userCanAccessProject(members) {
+    if (userIsMaster()) {
+      return true;
+    }
+
+    return members.some(member =>
+      getMemberUserId(member) === currentUserId &&
+      getMemberProjectId(member) === projectId
+    );
+  }
+
+  function getUserProjectRole(members) {
+    if (userIsMaster()) {
+      return "master";
+    }
+
+    const member =
+      members.find(item =>
+        getMemberUserId(item) === currentUserId &&
+        getMemberProjectId(item) === projectId
+      );
+
+    return member ? getMemberRole(member) : "";
+  }
+
+  function renderTopNav() {
+    let html = `
+      <a href="/scouts/">Projects</a>
+    `;
+
+    if (userIsMaster()) {
+      html += `<a href="/scouts/master-portal.html">Master Portal</a>`;
+    }
+
+    if (["lm", "alm"].includes(currentUserRole)) {
+      html += `<a href="/scouts/admin-portal.html">LM / ALM Portal</a>`;
+    }
+
+    if (currentUserRole === "scout") {
+      html += `<a href="/scouts/scout-portal.html">Scout Portal</a>`;
+    }
+
+    if (userCanUseLibrary()) {
+      html += `<a href="/scouts/library.html">Library</a>`;
+    }
+
+    if (userCanUseAdminTools()) {
+      html += `<a href="/scouts/folder-manager.html">Folder Manager</a>`;
+      html += `<a href="/scouts/gallery-manager.html">Gallery Manager</a>`;
+      html += `<a href="/scouts/admin.html">Upload</a>`;
+    }
+
+    html += `
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      <div class="user-badge">${currentUser?.name || "User"} · ${currentUserRole}</div>
+    `;
+
+    topNavEl.innerHTML = html;
+  }
+
+  function renderFolders(folders) {
+    const rootFolders =
+      folders
+        .filter(folder => !folder.parentFolderId)
+        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+    if (!rootFolders.length) {
+      return `
+        <p class="message">
+          No root folders found for this project yet. Use Folder Manager to create your location folders.
+        </p>
+      `;
+    }
+
+    return `
+      <div class="grid">
+        ${rootFolders.map(folder => `
+          <a
+            class="card"
+            href="/scouts/folder.html?project=${encodeURIComponent(projectId)}&folder=${encodeURIComponent(folder.id)}"
+          >
+            <div class="folder-icon">📁</div>
+
+            <div>
+              ${getFolderTitle(folder)}
+            </div>
+
+            <div class="meta">
+              ${getFolderMeta(folder, folders)}
+            </div>
+          </a>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function renderAccessDenied() {
+    projectTitleEl.textContent =
+      "Access Denied";
+
+    projectSubtitleEl.textContent =
+      `No project access for ${currentUser?.name || currentUserId}`;
+
+    contentEl.innerHTML = `
+      <p class="message">
+        This user is not assigned to this project.
+      </p>
+    `;
+
+    adminPanelEl.style.display =
+      "none";
+  }
+
+  function renderNoProject() {
+    projectTitleEl.textContent =
+      "No Project Selected";
+
+    projectSubtitleEl.textContent =
+      "Return to Projects and select a project.";
+
+    contentEl.innerHTML = `
+      <p class="message">
+        Missing project ID in the page URL.
+      </p>
+    `;
+
+    adminPanelEl.style.display =
+      "none";
+  }
+
+  renderTopNav();
+
+  if (!projectId) {
+    renderNoProject();
+  } else {
+
+    if (!userCanUseAdminTools()) {
+      adminPanelEl.style.display =
+        "none";
+    }
+
+    Promise.all([
+      fetch(PROJECTS_URL).then(response => response.json()),
+      fetch(`${GALLERIES_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+      fetch(`${FOLDERS_URL}?projectId=${encodeURIComponent(projectId)}`).then(response => response.json()),
+      fetch(PROJECT_MEMBERS_URL).then(response => response.json())
+    ])
+
+      .then(([projectsData, galleriesData, foldersData, membersData]) => {
+        const projects =
+          projectsData.projects || [];
+
+        const galleries =
+          galleriesData.galleries || [];
+
+        const folders =
+          (foldersData.folders || []).map(normalizeFolder);
+
+        const members =
+          membersData.members || [];
+
+        if (!userCanAccessProject(members)) {
+          renderAccessDenied();
+          return;
+        }
+
+        const project =
+          projects.find(item => getProjectId(item) === projectId);
+
+        const projectGalleries =
+          galleries.filter(gallery => getGalleryProjectId(gallery) === projectId);
+
+        const role =
+          getUserProjectRole(members);
+
+        projectTitleEl.textContent =
+          project?.title ||
+          project?.name ||
+          titleFromSlug(projectId);
+
+        projectSubtitleEl.textContent =
+          `${folders.length} folders · ${projectGalleries.length} galleries · Role: ${formatRole(role)}`;
+
+        contentEl.innerHTML = `
+          <div class="section-title">
+            Root Folders
+          </div>
+
+          ${renderFolders(folders)}
+        `;
+      })
+
+      .catch(error => {
+        console.error(error);
+
+        projectTitleEl.textContent =
+          "Could Not Load Project";
+
+        contentEl.innerHTML = `
+          <p class="message">
+            There was a problem loading project folder data.
+          </p>
+        `;
+      });
+  }
+</script>
+
+</body>
+</html>
