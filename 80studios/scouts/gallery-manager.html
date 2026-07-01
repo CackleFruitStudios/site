@@ -88,6 +88,22 @@
     .muted-note { color: #777; font-size: 12px; line-height: 1.4; }
     .tag-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
     .tag-chip { display: inline-block; background: #222; border: 1px solid #444; color: #bbb; border-radius: 999px; padding: 5px 10px; font-size: 12px; }
+    .upload-more-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .hidden-file-input { display: none; }
+    .upload-more-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+    .upload-more-card { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+    .upload-more-card img { width: 100%; height: 120px; object-fit: cover; display: block; background: #222; }
+    .upload-more-fallback { height: 120px; display: flex; align-items: center; justify-content: center; background: #222; color: #aaa; font-size: 13px; text-align: center; padding: 12px; box-sizing: border-box; }
+    .upload-more-info { padding: 9px; }
+    .upload-more-name { font-size: 12px; color: #ddd; word-break: break-word; margin-bottom: 6px; }
+    .upload-more-meta { color: #888; font-size: 11px; line-height: 1.4; }
+    .progress-wrap { margin-top: 8px; height: 8px; background: #222; border-radius: 999px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: #71d685; transition: width 0.2s; }
+    .status-pill { display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 999px; font-size: 10px; background: #222; color: #aaa; }
+    .status-pill.uploading { background: #4d3a12; color: #f4cb68; }
+    .status-pill.complete { background: #18351d; color: #71d685; }
+    .status-pill.error { background: #3b1717; color: #ff8f8f; }
+    .status-pill.heic { background: #1b2740; color: #9fc5ff; }
     @media (max-width: 850px) {
       .selector-grid { grid-template-columns: 1fr; }
     }
@@ -233,6 +249,41 @@
 </div>
 
 <div class="panel">
+  <div class="section-title">Upload More Images</div>
+
+  <div class="client-panel">
+    <div class="muted-note">
+      Add more photos to the currently loaded gallery. Existing images, cover, details, client link, and tags are preserved.
+    </div>
+
+    <div class="upload-more-actions">
+      <button type="button" onclick="document.getElementById('more-file-input').click()">
+        Choose More Photos
+      </button>
+
+      <button type="button" onclick="uploadMoreImages()">
+        Upload Selected
+      </button>
+
+      <button type="button" onclick="clearMoreImagesQueue()">
+        Clear Queue
+      </button>
+    </div>
+
+    <input
+      class="hidden-file-input"
+      id="more-file-input"
+      type="file"
+      multiple
+      accept="image/*,.heic,.heif"
+    >
+
+    <div class="upload-more-grid" id="upload-more-grid"></div>
+    <div class="message" id="upload-more-message">Load a gallery, then choose photos to append.</div>
+  </div>
+</div>
+
+<div class="panel">
   <div class="section-title">Images</div>
   <div class="grid" id="image-grid"></div>
 </div>
@@ -262,6 +313,8 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
+
 <script>
   const SESSION_KEY = "eightyStudiosScoutUser";
 
@@ -273,6 +326,10 @@
   const GALLERY_SAVE_URL = "/api/gallery-save";
   const LOCATION_TAGS_URL = "/api/location-tag-list";
   const LOCATION_TAG_SAVE_URL = "/api/location-tag-save";
+
+  const DISPLAY_MAX_SIZE = 1920;
+  const THUMBNAIL_MAX_SIZE = 420;
+  const JPEG_QUALITY = 0.82;
 
   const savedUser =
     sessionStorage.getItem(SESSION_KEY);
@@ -360,6 +417,15 @@
   const tagMessageEl =
     document.getElementById("tag-message");
 
+  const moreFileInputEl =
+    document.getElementById("more-file-input");
+
+  const uploadMoreGridEl =
+    document.getElementById("upload-more-grid");
+
+  const uploadMoreMessageEl =
+    document.getElementById("upload-more-message");
+
   let allProjects = [];
   let allGalleries = [];
   let allMembers = [];
@@ -369,6 +435,10 @@
   let currentImages = [];
   let currentTags = [];
   let currentCover = "";
+
+  let moreFiles = [];
+  let moreUploadProgress = {};
+  let moreUploadStatus = {};
 
   if (currentUser) {
     userBadgeEl.textContent =
@@ -1046,6 +1116,542 @@
     }
   }
 
+  function setUploadMoreMessage(text, type) {
+    if (!uploadMoreMessageEl) {
+      return;
+    }
+
+    uploadMoreMessageEl.textContent =
+      text || "";
+
+    uploadMoreMessageEl.className =
+      type ? `message ${type}` : "message";
+  }
+
+  function isHeicFile(file) {
+    const name =
+      (file.name || "").toLowerCase();
+
+    return (
+      name.endsWith(".heic") ||
+      name.endsWith(".heif") ||
+      file.type === "image/heic" ||
+      file.type === "image/heif"
+    );
+  }
+
+  function getUploadContentType(file) {
+    if (file.type) {
+      return file.type;
+    }
+
+    if (isHeicFile(file)) {
+      return "image/heic";
+    }
+
+    return "application/octet-stream";
+  }
+
+  function slugify(value) {
+    return (value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/'/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function getBaseFilename(file) {
+    return (file.name || "image")
+      .replace(/\.[^/.]+$/, "");
+  }
+
+  function uniqueAssetId(file, index) {
+    return `${slugify(getBaseFilename(file))}-${Date.now()}-${index}`;
+  }
+
+  function blobToImage(blob) {
+    return new Promise((resolve, reject) => {
+      const url =
+        URL.createObjectURL(blob);
+
+      const img =
+        new Image();
+
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not read image for conversion."));
+      };
+
+      img.src = url;
+    });
+  }
+
+  function canvasToJpegBlob(canvas, quality = JPEG_QUALITY) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (!blob) {
+          reject(new Error("Could not create JPG output."));
+          return;
+        }
+
+        resolve(blob);
+      }, "image/jpeg", quality);
+    });
+  }
+
+  async function convertHeicToJpegBlob(file) {
+    if (!window.heic2any) {
+      throw new Error("HEIC converter did not load. Refresh and try again.");
+    }
+
+    const converted =
+      await window.heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: JPEG_QUALITY
+      });
+
+    return Array.isArray(converted)
+      ? converted[0]
+      : converted;
+  }
+
+  async function resizeImageBlob(blob, maxSize) {
+    const img =
+      await blobToImage(blob);
+
+    const originalWidth =
+      img.naturalWidth || img.width;
+
+    const originalHeight =
+      img.naturalHeight || img.height;
+
+    const scale =
+      Math.min(
+        1,
+        maxSize / Math.max(originalWidth, originalHeight)
+      );
+
+    const width =
+      Math.round(originalWidth * scale);
+
+    const height =
+      Math.round(originalHeight * scale);
+
+    const canvas =
+      document.createElement("canvas");
+
+    canvas.width =
+      width;
+
+    canvas.height =
+      height;
+
+    const context =
+      canvas.getContext("2d");
+
+    context.drawImage(
+      img,
+      0,
+      0,
+      width,
+      height
+    );
+
+    return canvasToJpegBlob(canvas);
+  }
+
+  async function buildProcessedImageFiles(file) {
+    let sourceBlob =
+      file;
+
+    if (isHeicFile(file)) {
+      setUploadMoreMessage(`Converting HEIC: ${file.name}`);
+      sourceBlob =
+        await convertHeicToJpegBlob(file);
+    }
+
+    setUploadMoreMessage(`Creating display image: ${file.name}`);
+
+    const displayBlob =
+      await resizeImageBlob(sourceBlob, DISPLAY_MAX_SIZE);
+
+    setUploadMoreMessage(`Creating thumbnail: ${file.name}`);
+
+    const thumbnailBlob =
+      await resizeImageBlob(sourceBlob, THUMBNAIL_MAX_SIZE);
+
+    const base =
+      slugify(getBaseFilename(file));
+
+    return {
+      display: {
+        blob: displayBlob,
+        filename: `${base}-display.jpg`,
+        contentType: "image/jpeg"
+      },
+      thumbnail: {
+        blob: thumbnailBlob,
+        filename: `${base}-thumb.jpg`,
+        contentType: "image/jpeg"
+      }
+    };
+  }
+
+  async function uploadBlobToR2(blob, filename, folder, contentType) {
+    const presignResponse =
+      await fetch("/api/r2-presign", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body:
+          JSON.stringify({
+            filename,
+            folder,
+            contentType
+          })
+      });
+
+    const presignData =
+      await presignResponse.json();
+
+    if (!presignResponse.ok || !presignData.uploadUrl) {
+      throw new Error(presignData.error || "Could not prepare R2 upload.");
+    }
+
+    const uploadResponse =
+      await fetch(presignData.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": contentType
+        },
+        body: blob
+      });
+
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed (${uploadResponse.status})`);
+    }
+
+    return presignData.publicUrl;
+  }
+
+  function renderUploadMorePreviews() {
+    if (!uploadMoreGridEl) {
+      return;
+    }
+
+    if (!moreFiles.length) {
+      uploadMoreGridEl.innerHTML = "";
+      return;
+    }
+
+    uploadMoreGridEl.innerHTML = "";
+
+    moreFiles.forEach((file, index) => {
+      const card =
+        document.createElement("div");
+
+      card.className =
+        "upload-more-card";
+
+      if (isHeicFile(file)) {
+        const fallback =
+          document.createElement("div");
+
+        fallback.className =
+          "upload-more-fallback";
+
+        fallback.innerHTML =
+          "HEIC / HEIF<br>Display conversion pending";
+
+        card.appendChild(fallback);
+
+      } else {
+        const img =
+          document.createElement("img");
+
+        const reader =
+          new FileReader();
+
+        reader.onload = event => {
+          img.src = event.target.result;
+        };
+
+        reader.readAsDataURL(file);
+        card.appendChild(img);
+      }
+
+      const progress =
+        moreUploadProgress[index] || 0;
+
+      const status =
+        moreUploadStatus[index] || "ready";
+
+      const heicStatus =
+        isHeicFile(file)
+          ? `<div class="status-pill heic">HEIC</div>`
+          : "";
+
+      const info =
+        document.createElement("div");
+
+      info.className =
+        "upload-more-info";
+
+      info.innerHTML = `
+        <div class="upload-more-name">
+          ${file.name}
+        </div>
+
+        <div class="upload-more-meta">
+          ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
+          ${getUploadContentType(file)}
+        </div>
+
+        ${heicStatus}
+
+        <div class="status-pill ${status}">
+          ${
+            status === "complete"
+              ? "Complete"
+              : status === "uploading"
+              ? "Uploading"
+              : status === "error"
+              ? "Error"
+              : "Ready"
+          }
+        </div>
+
+        <div class="progress-wrap">
+          <div
+            class="progress-bar"
+            style="width:${progress}%"
+          ></div>
+        </div>
+      `;
+
+      card.appendChild(info);
+      uploadMoreGridEl.appendChild(card);
+    });
+  }
+
+  function addMoreFiles(files) {
+    if (!currentGallery) {
+      setUploadMoreMessage("Load a gallery before adding images.", "error");
+      return;
+    }
+
+    const incoming =
+      [...files]
+        .filter(file =>
+          file.type.startsWith("image/") ||
+          isHeicFile(file)
+        );
+
+    moreFiles =
+      [
+        ...moreFiles,
+        ...incoming
+      ];
+
+    moreUploadProgress = {};
+    moreUploadStatus = {};
+
+    renderUploadMorePreviews();
+
+    setUploadMoreMessage(
+      `${moreFiles.length} image${moreFiles.length === 1 ? "" : "s"} ready to upload.`
+    );
+  }
+
+  function clearMoreImagesQueue() {
+    moreFiles = [];
+    moreUploadProgress = {};
+    moreUploadStatus = {};
+    renderUploadMorePreviews();
+
+    setUploadMoreMessage(
+      currentGallery
+        ? "Upload-more queue cleared."
+        : "Load a gallery, then choose photos to append."
+    );
+  }
+
+  async function uploadMoreImages() {
+    if (!currentGallery || !galleryId) {
+      setUploadMoreMessage("Load a gallery first.", "error");
+      return;
+    }
+
+    if (!moreFiles.length) {
+      setUploadMoreMessage("Choose photos first.", "error");
+      return;
+    }
+
+    const projectId =
+      getGalleryProjectId(currentGallery);
+
+    const folderId =
+      getGalleryFolderId(currentGallery);
+
+    const root =
+      [projectId, folderId, galleryId]
+        .filter(Boolean)
+        .join("/");
+
+    const appendedImages =
+      [];
+
+    setUploadMoreMessage("Uploading more images...");
+
+    for (let index = 0; index < moreFiles.length; index++) {
+      const file =
+        moreFiles[index];
+
+      try {
+        moreUploadStatus[index] =
+          "uploading";
+
+        moreUploadProgress[index] =
+          5;
+
+        renderUploadMorePreviews();
+
+        const processed =
+          await buildProcessedImageFiles(file);
+
+        moreUploadProgress[index] =
+          30;
+
+        renderUploadMorePreviews();
+
+        setUploadMoreMessage(`Uploading display image: ${file.name}`);
+
+        const displayUrl =
+          await uploadBlobToR2(
+            processed.display.blob,
+            processed.display.filename,
+            root,
+            processed.display.contentType
+          );
+
+        moreUploadProgress[index] =
+          70;
+
+        renderUploadMorePreviews();
+
+        setUploadMoreMessage(`Uploading thumbnail: ${file.name}`);
+
+        const thumbnailUrl =
+          await uploadBlobToR2(
+            processed.thumbnail.blob,
+            processed.thumbnail.filename,
+            root,
+            processed.thumbnail.contentType
+          );
+
+        moreUploadProgress[index] =
+          100;
+
+        moreUploadStatus[index] =
+          "complete";
+
+        appendedImages.push({
+          assetId:
+            uniqueAssetId(file, currentImages.length + appendedImages.length),
+
+          filename:
+            processed.display.filename,
+
+          url:
+            displayUrl,
+
+          displayUrl:
+            displayUrl,
+
+          thumbnailUrl:
+            thumbnailUrl,
+
+          tags: [],
+
+          caption: "",
+
+          source: "r2",
+
+          contentType:
+            "image/jpeg"
+        });
+
+        renderUploadMorePreviews();
+
+      } catch (error) {
+        console.error(error);
+
+        moreUploadStatus[index] =
+          "error";
+
+        renderUploadMorePreviews();
+      }
+    }
+
+    if (!appendedImages.length) {
+      setUploadMoreMessage("No new images uploaded successfully.", "error");
+      return;
+    }
+
+    currentImages =
+      [
+        ...currentImages,
+        ...appendedImages
+      ];
+
+    if (!currentCover) {
+      currentCover =
+        getImageThumbnailUrl(currentImages[0]) ||
+        getImageUrl(currentImages[0]) ||
+        "";
+    }
+
+    renderImages();
+
+    setUploadMoreMessage("Saving gallery with new images...");
+
+    try {
+      await saveGallery();
+
+      moreFiles = [];
+      moreUploadProgress = {};
+      moreUploadStatus = {};
+      renderUploadMorePreviews();
+
+      subtitleEl.textContent =
+        `${currentImages.length} image${currentImages.length === 1 ? "" : "s"}`;
+
+      setUploadMoreMessage(
+        `${appendedImages.length} image${appendedImages.length === 1 ? "" : "s"} added to gallery.`,
+        "success"
+      );
+
+    } catch (error) {
+      console.error(error);
+      setUploadMoreMessage(error.message || "Images uploaded, but gallery save failed.", "error");
+    }
+  }
+
+  if (moreFileInputEl) {
+    moreFileInputEl.addEventListener("change", event => {
+      addMoreFiles(event.target.files);
+      moreFileInputEl.value = "";
+    });
+  }
+
   function renderImages() {
     if (!currentImages.length) {
       imageGridEl.innerHTML = `
@@ -1400,6 +2006,7 @@
       syncClientDeliveryFields();
       await loadGalleryTags(galleryId);
       setMessage("Ready.", "");
+      setUploadMoreMessage("Choose photos to append more images to this gallery.");
       renderImages();
 
     } catch (error) {
@@ -1425,6 +2032,7 @@
         "Select a project, folder, and gallery to manage.";
 
       setMessage("Choose a gallery above.", "");
+      setUploadMoreMessage("Load a gallery, then choose photos to append.");
       renderTagList();
     }
   }
