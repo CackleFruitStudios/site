@@ -335,36 +335,43 @@
 
       <div class="grid">
         ${galleries.map(gallery => `
-          <a
-            class="card"
-            href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}"
-          >
+          <div class="card">
 
-            ${getGalleryCover(gallery)
-              ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
-              : `<div class="folder-icon">🖼️</div>`
-            }
+            <a
+              href="/scouts/gallery.html?gallery=${encodeURIComponent(gallery.id)}"
+              style="display:block;color:inherit;text-decoration:none;"
+            >
 
-            <div>
-              ${getGalleryTitle(gallery)}
-            </div>
+              ${getGalleryCover(gallery)
+                ? `<img src="${getGalleryCover(gallery)}" class="thumb">`
+                : `<div class="folder-icon">🖼️</div>`
+              }
 
-            <div class="meta">
-              ${getImageCount(gallery)}
-            </div>
+              <div>
+                ${getGalleryTitle(gallery)}
+              </div>
+
+              <div class="meta">
+                ${getImageCount(gallery)}
+              </div>
+
+            </a>
 
             ${userCanManageGalleries()
               ? `
-                <div class="meta" style="margin-top:8px;">
-                  <span style="color:#71d685;">
+                <div class="meta" style="margin-top:10px;">
+                  <a
+                    href="/scouts/gallery-manager.html?gallery=${encodeURIComponent(gallery.id)}"
+                    style="color:#71d685;font-weight:bold;text-decoration:none;"
+                  >
                     Manage Gallery
-                  </span>
+                  </a>
                 </div>
               `
               : ""
             }
 
-          </a>
+          </div>
         `).join("")}
       </div>
     `;
